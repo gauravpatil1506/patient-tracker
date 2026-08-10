@@ -13,18 +13,21 @@
         button:hover { background: #0056b3; }
         
         /* Tab Navigation */
-        .nav-tabs { display: flex; margin-bottom: 20px; gap: 10px; }
-        .nav-tabs button { margin-top: 0; background: #e9ecef; color: #333; }
+        .nav-tabs { display: flex; margin-bottom: 20px; gap: 10px; flex-wrap: wrap; }
+        .nav-tabs button { margin-top: 0; background: #e9ecef; color: #333; flex: 1; min-width: 100px; }
         .nav-tabs button.active { background: #007bff; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
         .status { margin-top: 15px; text-align: center; font-weight: bold; }
         
-        /* Payment Card Styles */
-        .payment-card { border: 1px solid #eee; border-left: 4px solid #ff9800; padding: 15px; margin-top: 15px; border-radius: 4px; background: #fffaf0; }
-        .payment-card h4 { margin: 0 0 10px 0; color: #333; }
-        .payment-card p { margin: 5px 0; font-size: 14px; color: #555; }
+        /* Card Styles */
+        .card { border: 1px solid #eee; padding: 15px; margin-top: 15px; border-radius: 4px; background: #fffaf0; }
+        .payment-card { border-left: 4px solid #ff9800; }
+        .history-card { border-left: 4px solid #007bff; background: #f8f9fa; }
+        .card h4 { margin: 0 0 10px 0; color: #333; }
+        .card p { margin: 5px 0; font-size: 14px; color: #555; }
+        
         .payment-row { display: flex; gap: 10px; margin-top: 10px; align-items: flex-end; }
         .payment-row div { flex: 1; }
         .update-btn { margin-top: 0; background: #28a745; }
@@ -37,7 +40,7 @@
     <div class="nav-tabs">
         <button id="btnTab1" class="active" onclick="switchTab('tab1')">1. New Visit</button>
         <button id="btnTab2" onclick="switchTab('tab2')">2. Payments</button>
-        <button id="btnTab3" disabled>3. History (Coming Next)</button>
+        <button id="btnTab3" onclick="switchTab('tab3')">3. History</button>
     </div>
 
     <!-- TAB 1: NEW VISIT -->
@@ -62,6 +65,7 @@
             <input type="number" id="amountPaid" required>
             <label>Payment Type</label>
             <select id="paymentType">
+                <!-- CAPITALIZED VALUES FIX -->
                 <option value="Pending">Pending (Unpaid)</option>
                 <option value="Cash">Cash</option>
                 <option value="Online">Online</option>
@@ -80,15 +84,28 @@
     <!-- TAB 2: PAYMENTS -->
     <div id="tab2" class="tab-content container">
         <h2>Pending Payments</h2>
-        <p style="font-size: 14px; color: #666;">Showing sessions marked as 'pending' or partially paid.</p>
         <button onclick="loadPendingPayments()" style="background: #17a2b8;">Refresh List</button>
         <div id="paymentStatus" class="status"></div>
         <div id="pendingList"></div>
     </div>
 
+    <!-- TAB 3: HISTORY -->
+    <div id="tab3" class="tab-content container">
+        <h2>Patient History</h2>
+        <label>Select Patient</label>
+        <select id="patientSelect" onchange="showPatientHistory()">
+            <option value="">-- Choose a Patient --</option>
+        </select>
+        <button onclick="loadHistoryData()" style="background: #17a2b8;">Refresh Patient List</button>
+        <div id="historyStatus" class="status"></div>
+        <div id="historyTimeline"></div>
+    </div>
+
     <script>
         // === PASTE YOUR GOOGLE SCRIPT URL BELOW ===
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
+        
+        let allSheetData = []; // Stores data so we don't have to keep asking Google for it
 
         // Handle Tab Switching
         function switchTab(tabId) {
@@ -97,9 +114,14 @@
             
             document.getElementById(tabId).classList.add('active');
             if(tabId === 'tab1') document.getElementById('btnTab1').classList.add('active');
+            
             if(tabId === 'tab2') {
                 document.getElementById('btnTab2').classList.add('active');
-                loadPendingPayments(); // Auto-load when clicking tab
+                loadPendingPayments(); 
+            }
+            if(tabId === 'tab3') {
+                document.getElementById('btnTab3').classList.add('active');
+                if(allSheetData.length === 0) loadHistoryData();
             }
         }
 
@@ -132,6 +154,7 @@
                 if(data.status === 'success') {
                     status.style.color = "green"; status.innerText = "Entry added to Google Sheets.";
                     document.getElementById('entryForm').reset();
+                    allSheetData = []; // Clear local data so it refreshes next time
                 } else {
                     status.style.color = "red"; status.innerText = "Error: " + data.message;
                 }
@@ -147,65 +170,46 @@
         function loadPendingPayments() {
             const listDiv = document.getElementById('pendingList');
             const status = document.getElementById('paymentStatus');
-            listDiv.innerHTML = "";
-            status.style.color = "black";
-            status.innerText = "Loading data from Google Sheets...";
+            listDiv.innerHTML = ""; status.style.color = "black"; status.innerText = "Loading data...";
 
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "getInitialData" })
-            })
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json())
             .then(data => {
                 if(data.status !== 'success') throw new Error(data.message);
-                
-                const rows = data.data;
-                let foundPending = false;
-                status.innerText = "";
+                allSheetData = data.data; // Save data globally for the history tab too
+                let foundPending = false; status.innerText = "";
 
-                // Start from 1 to skip headers (Row 0 in array is Row 1 in sheet)
-                for(let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    // Format the date so it looks nice
-                    const rawDate = row[1]; 
-                    const date = rawDate ? new Date(rawDate).toLocaleDateString() : "No Date";
+                for(let i = 1; i < allSheetData.length; i++) {
+                    const row = allSheetData[i];
+                    const date = row[1] ? new Date(row[1]).toLocaleDateString() : "No Date";
                     const name = row[2];
                     const paymentType = String(row[4]).toLowerCase().trim();
                     const amountPaid = parseFloat(row[5]) || 0;
                     const totalFee = parseFloat(row[6]) || 0;
 
-                    // The exact logic you requested:
                     const isPendingText = (paymentType === 'pending');
                     const isPartialPayment = (paymentType === 'cash' || paymentType === 'online') && (amountPaid < totalFee);
 
                     if (isPendingText || isPartialPayment) {
                         foundPending = true;
-                        // rowNumber is i + 1 because Sheets rows start at 1
                         createPaymentCard(listDiv, name, date, totalFee, amountPaid, paymentType, i + 1);
                     }
                 }
-
-                if(!foundPending) {
-                    listDiv.innerHTML = "<p>All caught up! No pending payments found.</p>";
-                }
+                if(!foundPending) listDiv.innerHTML = "<p>All caught up! No pending payments found.</p>";
             })
-            .catch(err => {
-                status.style.color = "red"; status.innerText = "Error loading data.";
-            });
+            .catch(err => { status.style.color = "red"; status.innerText = "Error loading data."; });
         }
 
-        // Helper to draw the payment card
+        // Tab 2 Helper: Draw Payment Card (Capitalized HTML values here too!)
         function createPaymentCard(container, name, date, totalFee, currentPaid, currentType, rowNum) {
             const balance = totalFee - currentPaid;
-            
             const card = document.createElement('div');
-            card.className = "payment-card";
+            card.className = "card payment-card";
             card.innerHTML = `
                 <h4>${name}</h4>
                 <p><strong>Visit Date:</strong> ${date}</p>
                 <p><strong>Total Fee:</strong> ₹${totalFee} | <strong>Already Paid:</strong> ₹${currentPaid}</p>
                 <p style="color:red; font-weight:bold;">Balance Due: ₹${balance}</p>
-                
                 <div class="payment-row">
                     <div>
                         <label>New Total Paid</label>
@@ -214,52 +218,105 @@
                     <div>
                         <label>Method</label>
                         <select id="payType_${rowNum}">
-                            <option value="cash" ${currentType==='cash'?'selected':''}>Cash</option>
-                            <option value="online" ${currentType==='online'?'selected':''}>Online</option>
-                            <option value="closed">Closed (Old Session)</option>
+                            <option value="Cash" ${currentType==='cash'?'selected':''}>Cash</option>
+                            <option value="Online" ${currentType==='online'?'selected':''}>Online</option>
+                            <option value="Closed">Closed</option>
                         </select>
                     </div>
-                    <div>
-                        <button class="update-btn" onclick="submitPaymentUpdate(${rowNum})">Update</button>
-                    </div>
+                    <div><button class="update-btn" onclick="submitPaymentUpdate(${rowNum})">Update</button></div>
                 </div>
                 <div id="payStatus_${rowNum}" style="font-size: 12px; margin-top: 5px; font-weight: bold;"></div>
             `;
             container.appendChild(card);
         }
 
-        // Send payment update back to Google Sheets
+        // Tab 2 Helper: Submit Payment
         function submitPaymentUpdate(rowNum) {
             const status = document.getElementById('payStatus_' + rowNum);
             const newAmount = document.getElementById('payAmt_' + rowNum).value;
             const newType = document.getElementById('payType_' + rowNum).value;
-            
-            status.style.color = "black";
-            status.innerText = "Updating Google Sheet...";
-
-            const payload = {
-                action: "updatePayment",
-                rowNumber: rowNum,
-                newAmountPaid: newAmount,
-                newPaymentType: newType
-            };
+            status.style.color = "black"; status.innerText = "Updating...";
 
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: newAmount, newPaymentType: newType })
             })
             .then(res => res.json())
             .then(data => {
                 if(data.status === 'success') {
-                    status.style.color = "green"; 
-                    status.innerText = "Updated successfully!";
-                    setTimeout(loadPendingPayments, 1500); // Reload list after 1.5 seconds to remove the card
+                    status.style.color = "green"; status.innerText = "Updated successfully!";
+                    setTimeout(loadPendingPayments, 1500); 
                 } else {
                     status.style.color = "red"; status.innerText = "Error: " + data.message;
                 }
             })
-            .catch(err => {
-                status.style.color = "red"; status.innerText = "Network Error.";
+            .catch(err => { status.style.color = "red"; status.innerText = "Network Error."; });
+        }
+
+        // Tab 3: Load Patient Dropdown
+        function loadHistoryData() {
+            const status = document.getElementById('historyStatus');
+            const select = document.getElementById('patientSelect');
+            status.style.color = "black"; status.innerText = "Loading patient list...";
+
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status !== 'success') throw new Error(data.message);
+                allSheetData = data.data;
+                
+                // Get unique patient names
+                let names = new Set();
+                for(let i = 1; i < allSheetData.length; i++) {
+                    if(allSheetData[i][2]) names.add(allSheetData[i][2].trim());
+                }
+                
+                // Fill the dropdown alphabetically
+                select.innerHTML = '<option value="">-- Choose a Patient --</option>';
+                Array.from(names).sort().forEach(name => {
+                    let opt = document.createElement('option');
+                    opt.value = name; opt.innerText = name;
+                    select.appendChild(opt);
+                });
+                status.innerText = "";
+            })
+            .catch(err => { status.style.color = "red"; status.innerText = "Error loading list."; });
+        }
+
+        // Tab 3: Show Timeline for Selected Patient
+        function showPatientHistory() {
+            const selectedName = document.getElementById('patientSelect').value;
+            const timeline = document.getElementById('historyTimeline');
+            timeline.innerHTML = "";
+            
+            if(!selectedName) return;
+
+            // Find all rows matching the patient name
+            let records = [];
+            for(let i = 1; i < allSheetData.length; i++) {
+                if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
+                    records.push(allSheetData[i]);
+                }
+            }
+
+            // Sort by Date (Ascending: Oldest to Newest)
+            records.sort((a, b) => new Date(a[1]) - new Date(b[1]));
+
+            records.forEach(row => {
+                const date = row[1] ? new Date(row[1]).toLocaleDateString() : "No Date";
+                const painBefore = row[7] !== "" ? row[7] : "N/A";
+                const painAfter = row[8] !== "" ? row[8] : "N/A";
+                const sessionType = row[9] || "Standard Session";
+                const notes = row[11] || "No notes recorded.";
+
+                const card = document.createElement('div');
+                card.className = "card history-card";
+                card.innerHTML = `
+                    <h4>${date} - ${sessionType}</h4>
+                    <p><strong>Pain Level:</strong> ${painBefore} (Before) &rarr; ${painAfter} (After)</p>
+                    <p><strong>Notes:</strong><br/>${notes}</p>
+                `;
+                timeline.appendChild(card);
             });
         }
     </script>
