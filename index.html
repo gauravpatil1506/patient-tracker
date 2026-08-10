@@ -5,64 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Management</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; padding: 20px; max-width: 600px; margin: 0 auto; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f6; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; font-size: 14px;}
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; margin-top: 20px; cursor: pointer; }
         button:hover { background: #0056b3; }
+        
+        /* Tab Navigation */
         .nav-tabs { display: flex; margin-bottom: 20px; gap: 10px; }
         .nav-tabs button { margin-top: 0; background: #e9ecef; color: #333; }
         .nav-tabs button.active { background: #007bff; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .status { margin-top: 15px; text-align: center; font-weight: bold; }
+        
+        /* Payment Card Styles */
+        .payment-card { border: 1px solid #eee; border-left: 4px solid #ff9800; padding: 15px; margin-top: 15px; border-radius: 4px; background: #fffaf0; }
+        .payment-card h4 { margin: 0 0 10px 0; color: #333; }
+        .payment-card p { margin: 5px 0; font-size: 14px; color: #555; }
+        .payment-row { display: flex; gap: 10px; margin-top: 10px; align-items: flex-end; }
+        .payment-row div { flex: 1; }
+        .update-btn { margin-top: 0; background: #28a745; }
+        .update-btn:hover { background: #218838; }
     </style>
 </head>
 <body>
 
-    <!-- Navigation Placeholder for future pages -->
+    <!-- Navigation -->
     <div class="nav-tabs">
-        <button class="active">1. New Visit</button>
-        <button disabled>2. Payments (Coming Next)</button>
-        <button disabled>3. History (Coming Next)</button>
+        <button id="btnTab1" class="active" onclick="switchTab('tab1')">1. New Visit</button>
+        <button id="btnTab2" onclick="switchTab('tab2')">2. Payments</button>
+        <button id="btnTab3" disabled>3. History (Coming Next)</button>
     </div>
 
-    <div class="container">
+    <!-- TAB 1: NEW VISIT -->
+    <div id="tab1" class="tab-content active container">
         <h2>Patient Visit Entry</h2>
         <form id="entryForm">
             <label>Date of Visit</label>
             <input type="date" id="date" required>
-
             <label>Patient Name</label>
-            <input type="text" id="name" required placeholder="Enter or search name...">
-
+            <input type="text" id="name" required placeholder="Enter name...">
             <label>Location (City)</label>
             <input type="text" id="location" required>
-
             <label>Session Type</label>
-            <input type="text" id="sessionType" required placeholder="e.g., Consultation, Therapy...">
-
+            <input type="text" id="sessionType" required placeholder="e.g., Consultation...">
             <label>Pain Level Before (1-10)</label>
             <input type="number" id="painBefore" min="1" max="10">
-
             <label>Pain Level After (1-10)</label>
             <input type="number" id="painAfter" min="1" max="10">
-
             <label>Total Fee</label>
             <input type="number" id="totalFee" required>
-
             <label>Amount Paid Now</label>
             <input type="number" id="amountPaid" required>
-
             <label>Payment Type</label>
             <select id="paymentType">
                 <option value="pending">Pending (Unpaid)</option>
                 <option value="cash">Cash</option>
                 <option value="online">Online</option>
+                <option value="closed">Closed</option>
             </select>
-
             <label>Next Appointment Date</label>
             <input type="date" id="nextAppt">
-
             <label>Notes</label>
             <textarea id="notes" rows="3"></textarea>
 
@@ -71,20 +77,39 @@
         </form>
     </div>
 
+    <!-- TAB 2: PAYMENTS -->
+    <div id="tab2" class="tab-content container">
+        <h2>Pending Payments</h2>
+        <p style="font-size: 14px; color: #666;">Showing sessions marked as 'pending' or partially paid.</p>
+        <button onclick="loadPendingPayments()" style="background: #17a2b8;">Refresh List</button>
+        <div id="paymentStatus" class="status"></div>
+        <div id="pendingList"></div>
+    </div>
+
     <script>
         // === PASTE YOUR GOOGLE SCRIPT URL BELOW ===
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
 
+        // Handle Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            if(tabId === 'tab1') document.getElementById('btnTab1').classList.add('active');
+            if(tabId === 'tab2') {
+                document.getElementById('btnTab2').classList.add('active');
+                loadPendingPayments(); // Auto-load when clicking tab
+            }
+        }
+
+        // Tab 1: Submit New Visit
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const status = document.getElementById('statusMsg');
-            
-            btn.innerText = "Saving...";
-            btn.disabled = true;
-            status.innerText = "";
+            btn.innerText = "Saving..."; btn.disabled = true; status.innerText = "";
 
-            // Gather the form data
             const payload = {
                 action: "addVisit",
                 date: document.getElementById('date').value,
@@ -98,34 +123,145 @@
                 paymentType: document.getElementById('paymentType').value,
                 nextAppt: document.getElementById('nextAppt').value,
                 notes: document.getElementById('notes').value,
-                month: "" // The backend script handles this dynamically
+                month: "" 
             };
 
-            // Send to Google Sheets
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    status.style.color = "green"; status.innerText = "Entry added to Google Sheets.";
+                    document.getElementById('entryForm').reset();
+                } else {
+                    status.style.color = "red"; status.innerText = "Error: " + data.message;
+                }
+                btn.innerText = "Save Visit"; btn.disabled = false;
+            })
+            .catch(err => {
+                status.style.color = "red"; status.innerText = "Network Error.";
+                btn.innerText = "Save Visit"; btn.disabled = false;
+            });
+        });
+
+        // Tab 2: Fetch and Display Pending Payments
+        function loadPendingPayments() {
+            const listDiv = document.getElementById('pendingList');
+            const status = document.getElementById('paymentStatus');
+            listDiv.innerHTML = "";
+            status.style.color = "black";
+            status.innerText = "Loading data from Google Sheets...";
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getInitialData" })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status !== 'success') throw new Error(data.message);
+                
+                const rows = data.data;
+                let foundPending = false;
+                status.innerText = "";
+
+                // Start from 1 to skip headers (Row 0 in array is Row 1 in sheet)
+                for(let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    // Format the date so it looks nice
+                    const rawDate = row[1]; 
+                    const date = rawDate ? new Date(rawDate).toLocaleDateString() : "No Date";
+                    const name = row[2];
+                    const paymentType = String(row[4]).toLowerCase().trim();
+                    const amountPaid = parseFloat(row[5]) || 0;
+                    const totalFee = parseFloat(row[6]) || 0;
+
+                    // The exact logic you requested:
+                    const isPendingText = (paymentType === 'pending');
+                    const isPartialPayment = (paymentType === 'cash' || paymentType === 'online') && (amountPaid < totalFee);
+
+                    if (isPendingText || isPartialPayment) {
+                        foundPending = true;
+                        // rowNumber is i + 1 because Sheets rows start at 1
+                        createPaymentCard(listDiv, name, date, totalFee, amountPaid, paymentType, i + 1);
+                    }
+                }
+
+                if(!foundPending) {
+                    listDiv.innerHTML = "<p>All caught up! No pending payments found.</p>";
+                }
+            })
+            .catch(err => {
+                status.style.color = "red"; status.innerText = "Error loading data.";
+            });
+        }
+
+        // Helper to draw the payment card
+        function createPaymentCard(container, name, date, totalFee, currentPaid, currentType, rowNum) {
+            const balance = totalFee - currentPaid;
+            
+            const card = document.createElement('div');
+            card.className = "payment-card";
+            card.innerHTML = `
+                <h4>${name}</h4>
+                <p><strong>Visit Date:</strong> ${date}</p>
+                <p><strong>Total Fee:</strong> ₹${totalFee} | <strong>Already Paid:</strong> ₹${currentPaid}</p>
+                <p style="color:red; font-weight:bold;">Balance Due: ₹${balance}</p>
+                
+                <div class="payment-row">
+                    <div>
+                        <label>New Total Paid</label>
+                        <input type="number" id="payAmt_${rowNum}" value="${totalFee}">
+                    </div>
+                    <div>
+                        <label>Method</label>
+                        <select id="payType_${rowNum}">
+                            <option value="cash" ${currentType==='cash'?'selected':''}>Cash</option>
+                            <option value="online" ${currentType==='online'?'selected':''}>Online</option>
+                            <option value="closed">Closed (Old Session)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="update-btn" onclick="submitPaymentUpdate(${rowNum})">Update</button>
+                    </div>
+                </div>
+                <div id="payStatus_${rowNum}" style="font-size: 12px; margin-top: 5px; font-weight: bold;"></div>
+            `;
+            container.appendChild(card);
+        }
+
+        // Send payment update back to Google Sheets
+        function submitPaymentUpdate(rowNum) {
+            const status = document.getElementById('payStatus_' + rowNum);
+            const newAmount = document.getElementById('payAmt_' + rowNum).value;
+            const newType = document.getElementById('payType_' + rowNum).value;
+            
+            status.style.color = "black";
+            status.innerText = "Updating Google Sheet...";
+
+            const payload = {
+                action: "updatePayment",
+                rowNumber: rowNum,
+                newAmountPaid: newAmount,
+                newPaymentType: newType
+            };
+
             fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if(data.status === 'success') {
-                    status.style.color = "green";
-                    status.innerText = "Success! Entry added to Google Sheets.";
-                    document.getElementById('entryForm').reset();
+                    status.style.color = "green"; 
+                    status.innerText = "Updated successfully!";
+                    setTimeout(loadPendingPayments, 1500); // Reload list after 1.5 seconds to remove the card
                 } else {
-                    status.style.color = "red";
-                    status.innerText = "Error: " + data.message;
+                    status.style.color = "red"; status.innerText = "Error: " + data.message;
                 }
-                btn.innerText = "Save Visit";
-                btn.disabled = false;
             })
-            .catch(error => {
-                status.style.color = "red";
-                status.innerText = "Network Error. Check console.";
-                btn.innerText = "Save Visit";
-                btn.disabled = false;
+            .catch(err => {
+                status.style.color = "red"; status.innerText = "Network Error.";
             });
-        });
+        }
     </script>
 </body>
 </html>
