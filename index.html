@@ -49,10 +49,15 @@
         <form id="entryForm">
             <label>Date of Visit</label>
             <input type="date" id="date" required>
+            
             <label>Patient Name</label>
-            <input type="text" id="name" required placeholder="Enter name...">
+            <!-- Added 'list' attribute to link to the datalist below -->
+            <input type="text" id="name" required placeholder="Type to search or enter new..." list="patientList" autocomplete="off">
+            <datalist id="patientList"></datalist>
+
             <label>Location (City)</label>
             <input type="text" id="location" required>
+            
             <label>Session Type</label>
             <input type="text" id="sessionType" required placeholder="e.g., Consultation...">
             <label>Pain Level Before (1-10)</label>
@@ -65,7 +70,6 @@
             <input type="number" id="amountPaid" required>
             <label>Payment Type</label>
             <select id="paymentType">
-                <!-- CAPITALIZED VALUES FIX -->
                 <option value="Pending">Pending (Unpaid)</option>
                 <option value="Cash">Cash</option>
                 <option value="Online">Online</option>
@@ -96,7 +100,7 @@
         <select id="patientSelect" onchange="showPatientHistory()">
             <option value="">-- Choose a Patient --</option>
         </select>
-        <button onclick="loadHistoryData()" style="background: #17a2b8;">Refresh Patient List</button>
+        <button onclick="refreshData()" style="background: #17a2b8; margin-top: 10px;">Refresh Patient List</button>
         <div id="historyStatus" class="status"></div>
         <div id="historyTimeline"></div>
     </div>
@@ -105,7 +109,68 @@
         // === PASTE YOUR GOOGLE SCRIPT URL BELOW ===
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
         
-        let allSheetData = []; // Stores data so we don't have to keep asking Google for it
+        let allSheetData = []; 
+        let patientLocationMap = {}; // Our new dictionary for auto-filling cities
+
+        // PRE-LOAD DATA ON STARTUP: Makes the app feel instantly responsive
+        window.onload = function() {
+            refreshData();
+        };
+
+        // Fetch data from Google and process all dropdowns
+        function refreshData() {
+            document.getElementById('historyStatus').innerText = "Loading data...";
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    allSheetData = data.data;
+                    updateDropdowns();
+                    document.getElementById('historyStatus').innerText = "";
+                }
+            })
+            .catch(e => console.log("Silent load failed"));
+        }
+
+        // Build the datalist and the dictionary
+        function updateDropdowns() {
+            const datalist = document.getElementById('patientList');
+            const historySelect = document.getElementById('patientSelect');
+            datalist.innerHTML = '';
+            
+            let names = new Set();
+            
+            // Loop top to bottom. This ensures the map saves their NEWEST location if they moved
+            for(let i = 1; i < allSheetData.length; i++) {
+                const name = allSheetData[i][2] ? allSheetData[i][2].trim() : "";
+                const loc = allSheetData[i][3] ? allSheetData[i][3].trim() : "";
+                if(name) {
+                    names.add(name);
+                    patientLocationMap[name] = loc;
+                }
+            }
+
+            // Populate both Tab 1 and Tab 3 dropdowns
+            historySelect.innerHTML = '<option value="">-- Choose a Patient --</option>';
+            Array.from(names).sort().forEach(name => {
+                let opt = document.createElement('option');
+                opt.value = name;
+                datalist.appendChild(opt);
+                
+                let histOpt = document.createElement('option');
+                histOpt.value = name; histOpt.innerText = name;
+                historySelect.appendChild(histOpt);
+            });
+        }
+
+        // AUTO-FILL MAGIC: Listen to the Name box
+        document.getElementById('name').addEventListener('input', function(e) {
+            const selectedName = e.target.value.trim();
+            // If the name exists in our dictionary, fill the city!
+            if (patientLocationMap[selectedName]) {
+                document.getElementById('location').value = patientLocationMap[selectedName];
+            }
+        });
 
         // Handle Tab Switching
         function switchTab(tabId) {
@@ -114,15 +179,11 @@
             
             document.getElementById(tabId).classList.add('active');
             if(tabId === 'tab1') document.getElementById('btnTab1').classList.add('active');
-            
             if(tabId === 'tab2') {
                 document.getElementById('btnTab2').classList.add('active');
                 loadPendingPayments(); 
             }
-            if(tabId === 'tab3') {
-                document.getElementById('btnTab3').classList.add('active');
-                if(allSheetData.length === 0) loadHistoryData();
-            }
+            if(tabId === 'tab3') document.getElementById('btnTab3').classList.add('active');
         }
 
         // Tab 1: Submit New Visit
@@ -154,7 +215,7 @@
                 if(data.status === 'success') {
                     status.style.color = "green"; status.innerText = "Entry added to Google Sheets.";
                     document.getElementById('entryForm').reset();
-                    allSheetData = []; // Clear local data so it refreshes next time
+                    refreshData(); // Download the fresh sheet so the new patient is in the dropdowns immediately
                 } else {
                     status.style.color = "red"; status.innerText = "Error: " + data.message;
                 }
@@ -176,7 +237,8 @@
             .then(res => res.json())
             .then(data => {
                 if(data.status !== 'success') throw new Error(data.message);
-                allSheetData = data.data; // Save data globally for the history tab too
+                allSheetData = data.data; 
+                updateDropdowns(); // Keep dropdowns fresh
                 let foundPending = false; status.innerText = "";
 
                 for(let i = 1; i < allSheetData.length; i++) {
@@ -200,7 +262,6 @@
             .catch(err => { status.style.color = "red"; status.innerText = "Error loading data."; });
         }
 
-        // Tab 2 Helper: Draw Payment Card (Capitalized HTML values here too!)
         function createPaymentCard(container, name, date, totalFee, currentPaid, currentType, rowNum) {
             const balance = totalFee - currentPaid;
             const card = document.createElement('div');
@@ -230,7 +291,6 @@
             container.appendChild(card);
         }
 
-        // Tab 2 Helper: Submit Payment
         function submitPaymentUpdate(rowNum) {
             const status = document.getElementById('payStatus_' + rowNum);
             const newAmount = document.getElementById('payAmt_' + rowNum).value;
@@ -253,36 +313,6 @@
             .catch(err => { status.style.color = "red"; status.innerText = "Network Error."; });
         }
 
-        // Tab 3: Load Patient Dropdown
-        function loadHistoryData() {
-            const status = document.getElementById('historyStatus');
-            const select = document.getElementById('patientSelect');
-            status.style.color = "black"; status.innerText = "Loading patient list...";
-
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status !== 'success') throw new Error(data.message);
-                allSheetData = data.data;
-                
-                // Get unique patient names
-                let names = new Set();
-                for(let i = 1; i < allSheetData.length; i++) {
-                    if(allSheetData[i][2]) names.add(allSheetData[i][2].trim());
-                }
-                
-                // Fill the dropdown alphabetically
-                select.innerHTML = '<option value="">-- Choose a Patient --</option>';
-                Array.from(names).sort().forEach(name => {
-                    let opt = document.createElement('option');
-                    opt.value = name; opt.innerText = name;
-                    select.appendChild(opt);
-                });
-                status.innerText = "";
-            })
-            .catch(err => { status.style.color = "red"; status.innerText = "Error loading list."; });
-        }
-
         // Tab 3: Show Timeline for Selected Patient
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
@@ -291,7 +321,6 @@
             
             if(!selectedName) return;
 
-            // Find all rows matching the patient name
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) {
                 if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
@@ -299,7 +328,6 @@
                 }
             }
 
-            // Sort by Date (Ascending: Oldest to Newest)
             records.sort((a, b) => new Date(a[1]) - new Date(b[1]));
 
             records.forEach(row => {
