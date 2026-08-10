@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Management</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; font-size: 14px;}
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .nav-tabs { display: flex; margin-bottom: 20px; gap: 10px; }
+        .nav-tabs button { margin-top: 0; background: #e9ecef; color: #333; }
+        .nav-tabs button.active { background: #007bff; color: white; }
+        .status { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Placeholder for future pages -->
+    <div class="nav-tabs">
+        <button class="active">1. New Visit</button>
+        <button disabled>2. Payments (Coming Next)</button>
+        <button disabled>3. History (Coming Next)</button>
+    </div>
+
+    <div class="container">
+        <h2>Patient Visit Entry</h2>
+        <form id="entryForm">
+            <label>Date of Visit</label>
+            <input type="date" id="date" required>
+
+            <label>Patient Name</label>
+            <input type="text" id="name" required placeholder="Enter or search name...">
+
+            <label>Location (City)</label>
+            <input type="text" id="location" required>
+
+            <label>Session Type</label>
+            <input type="text" id="sessionType" required placeholder="e.g., Consultation, Therapy...">
+
+            <label>Pain Level Before (1-10)</label>
+            <input type="number" id="painBefore" min="1" max="10">
+
+            <label>Pain Level After (1-10)</label>
+            <input type="number" id="painAfter" min="1" max="10">
+
+            <label>Total Fee</label>
+            <input type="number" id="totalFee" required>
+
+            <label>Amount Paid Now</label>
+            <input type="number" id="amountPaid" required>
+
+            <label>Payment Type</label>
+            <select id="paymentType">
+                <option value="pending">Pending (Unpaid)</option>
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+            </select>
+
+            <label>Next Appointment Date</label>
+            <input type="date" id="nextAppt">
+
+            <label>Notes</label>
+            <textarea id="notes" rows="3"></textarea>
+
+            <button type="submit" id="submitBtn">Save Visit</button>
+            <div id="statusMsg" class="status"></div>
+        </form>
+    </div>
+
+    <script>
+        // === PASTE YOUR GOOGLE SCRIPT URL BELOW ===
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
+
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('statusMsg');
+            
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+            status.innerText = "";
+
+            // Gather the form data
+            const payload = {
+                action: "addVisit",
+                date: document.getElementById('date').value,
+                name: document.getElementById('name').value,
+                location: document.getElementById('location').value,
+                sessionType: document.getElementById('sessionType').value,
+                painBefore: document.getElementById('painBefore').value,
+                painAfter: document.getElementById('painAfter').value,
+                totalFee: document.getElementById('totalFee').value,
+                amountPaid: document.getElementById('amountPaid').value,
+                paymentType: document.getElementById('paymentType').value,
+                nextAppt: document.getElementById('nextAppt').value,
+                notes: document.getElementById('notes').value,
+                month: "" // The backend script handles this dynamically
+            };
+
+            // Send to Google Sheets
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    status.style.color = "green";
+                    status.innerText = "Success! Entry added to Google Sheets.";
+                    document.getElementById('entryForm').reset();
+                } else {
+                    status.style.color = "red";
+                    status.innerText = "Error: " + data.message;
+                }
+                btn.innerText = "Save Visit";
+                btn.disabled = false;
+            })
+            .catch(error => {
+                status.style.color = "red";
+                status.innerText = "Network Error. Check console.";
+                btn.innerText = "Save Visit";
+                btn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
