@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- This meta tag makes it fit perfectly on mobile screens like a real app -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dr. Rutika's Physio Clinic</title>
+    <title>Dr. Anjali Vishwakarma - Physio Clinic</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #00796b;      /* Professional Medical Teal */
+            --primary: #00796b;      
             --primary-dark: #004d40;
             --secondary: #26a69a;
             --bg-color: #f0f4f8;
@@ -24,7 +23,7 @@
             background-color: var(--bg-color); 
             margin: 0; 
             padding: 0;
-            padding-bottom: 80px; /* Space for bottom nav */
+            padding-bottom: 80px; 
             color: var(--text-main); 
         }
 
@@ -92,7 +91,7 @@
         .dash-card.full-width { grid-column: span 2; }
         .chart-wrapper { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 
-        /* Bottom Navigation Bar (Mobile App Feel) */
+        /* Bottom Navigation Bar */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: white; display: flex; justify-content: space-between;
@@ -113,7 +112,7 @@
 <body>
 
     <!-- App Header -->
-    <div class="app-header">Dr. Rutika's Physio Clinic</div>
+    <div class="app-header">Dr. Anjali Vishwakarma</div>
 
     <!-- TAB 1: NEW VISIT -->
     <div id="tab1" class="tab-content active container">
@@ -288,7 +287,6 @@
         let monthlyChartInstance = null;
         let paymentChartInstance = null;
 
-        // Auto-set today's date on load
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
             refreshData(); 
@@ -335,9 +333,8 @@
             if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
         });
 
-        // App Navigation Logic
         function switchTab(tabId) {
-            window.scrollTo(0, 0); // scroll to top like a real app
+            window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             
@@ -348,7 +345,6 @@
             if(tabId === 'tab4') renderDashboard(); 
         }
 
-        // --- DASHBOARD LOGIC ---
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
 
@@ -364,7 +360,6 @@
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0;
                 const totalFee = parseFloat(row[6]) || 0;
-                // Generate a clean Month-Year string from the actual date (row[1])
                 const rowDate = new Date(row[1]);
                 const month = rowDate.toLocaleString('default', { month: 'short' }) + " " + rowDate.getFullYear().toString().substr(-2);
                 
@@ -385,7 +380,7 @@
             document.getElementById('dashMonthRev').innerText = "₹" + thisMonthRev.toLocaleString('en-IN');
             document.getElementById('dashPending').innerText = "₹" + totalPending.toLocaleString('en-IN');
 
-            const monthLabels = Object.keys(monthTotals).slice(-6); // Show last 6 active months
+            const monthLabels = Object.keys(monthTotals).slice(-6);
             const monthData = monthLabels.map(m => monthTotals[m]);
 
             const ctx1 = document.getElementById('monthlyChart').getContext('2d');
@@ -411,7 +406,6 @@
             });
         }
 
-        // Patient Level Analytics
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
@@ -435,7 +429,6 @@
             container.style.display = 'block';
         }
 
-        // Tab 1: Submit Visit 
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
@@ -460,7 +453,6 @@
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
         });
 
-        // Tab 2: Ledger
         function loadPendingPayments() {
             const listDiv = document.getElementById('pendingList'); const status = document.getElementById('paymentStatus');
             listDiv.innerHTML = ""; status.style.color = "var(--text-muted)"; status.innerText = "Syncing with database...";
@@ -504,7 +496,6 @@
             });
         }
 
-        // Tab 3: History
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); timeline.innerHTML = "";
@@ -512,7 +503,7 @@
             
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) records.push(allSheetData[i]); }
-            records.sort((a, b) => new Date(b[1]) - new Date(a[1])); // Sort Newest to Oldest for clinical review
+            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
             
             records.forEach(row => {
                 const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
