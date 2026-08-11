@@ -27,7 +27,7 @@
             color: var(--text-main); 
         }
 
-        /* Top App Header */
+        /* Top App Header with Sync Indicator */
         .app-header {
             background: var(--primary);
             color: white;
@@ -40,14 +40,24 @@
             top: 0;
             z-index: 100;
             letter-spacing: 0.5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .sync-indicator {
+            position: absolute;
+            right: 15px;
+            font-size: 10px;
+            font-weight: 500;
+            opacity: 0.8;
         }
 
         /* Main Container */
         .container { padding: 20px; }
         
-        .tab-content { display: none; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Form Inputs */
         .form-group { margin-bottom: 18px; }
@@ -112,7 +122,10 @@
 <body>
 
     <!-- App Header -->
-    <div class="app-header">Dr. Anjali Vishwakarma</div>
+    <div class="app-header">
+        Dr. Anjali Vishwakarma
+        <span id="syncStatus" class="sync-indicator"></span>
+    </div>
 
     <!-- TAB 1: NEW VISIT -->
     <div id="tab1" class="tab-content active container">
@@ -299,10 +312,13 @@
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
-            syncWithDatabase(); 
+            document.getElementById('syncStatus').innerText = "↻ Initializing...";
+            syncWithDatabase(() => {
+                document.getElementById('syncStatus').innerText = "";
+            }); 
         };
 
-        // CENTRALIZED LIVE SYNC FUNCTION
+        // Fetch data from Google Sheets in the background
         function syncWithDatabase(callback) {
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json())
@@ -312,10 +328,12 @@
                     updateDropdowns();
                     if(callback) callback(); 
                 }
-            }).catch(e => console.log("Live sync failed"));
+            }).catch(e => {
+                console.log("Sync failed");
+                document.getElementById('syncStatus').innerText = "⚠️ Offline";
+            });
         }
 
-        // Manual Force Sync Button in Ledger
         function manualSync() {
             const status = document.getElementById('paymentStatus');
             status.style.color = "var(--primary)";
@@ -331,7 +349,7 @@
             const historySelect = document.getElementById('patientSelect');
             const analyticsSelect = document.getElementById('analyticsPatientSelect');
             
-            // REMEMBER SELECTIONS TO PREVENT FLICKER / RESET
+            // REMEMBER SELECTIONS
             const savedHistoryPatient = historySelect.value;
             const savedAnalyticsPatient = analyticsSelect.value;
             
@@ -364,7 +382,7 @@
             if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
         });
 
-        // TAB SWITCHING: FETCH LIVE ON EVERY CLICK 
+        // --- THE PERFECT HYBRID TAB SWITCHER ---
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -373,25 +391,32 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
-            // Display clean loading indicator
-            if(tabId === 'tab2') document.getElementById('recentList').innerHTML = "<div style='text-align:center; padding: 20px; color: var(--primary); font-weight: bold;'>↻ Fetching Live Data...</div>";
-            if(tabId === 'tab3') document.getElementById('pendingList').innerHTML = "<div style='text-align:center; padding: 20px; color: var(--primary); font-weight: bold;'>↻ Fetching Live Data...</div>";
+            // 1. Instantly render what we currently have (0ms delay)
+            renderCurrentTab(tabId);
             
-            // Fetch live data immediately on click
+            // 2. Secretly fetch live data to check if you changed anything on your end
+            document.getElementById('syncStatus').innerText = "↻ Syncing...";
             syncWithDatabase(() => {
-                if(tabId === 'tab2') loadRecentPatients(); 
-                if(tabId === 'tab3') renderPendingPayments(); 
-                if(tabId === 'tab4') showPatientHistory();
-                if(tabId === 'tab5') {
-                    renderDashboard(); 
-                    if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
-                }
+                // 3. Silently update the screen with fresh data without clearing the screen
+                renderCurrentTab(tabId);
+                document.getElementById('syncStatus').innerText = "";
             });
+        }
+
+        // Helper function to render whatever tab is open
+        function renderCurrentTab(tabId) {
+            if(tabId === 'tab2') loadRecentPatients(); 
+            if(tabId === 'tab3') renderPendingPayments(); 
+            if(tabId === 'tab4') showPatientHistory();
+            if(tabId === 'tab5') {
+                renderDashboard(); 
+                if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
+            }
         }
 
         function loadRecentPatients() {
             const listDiv = document.getElementById('recentList');
-            listDiv.innerHTML = "";
+            // Remove the hard clear so it doesn't flicker during background syncs!
             
             if(allSheetData.length <= 1) {
                 listDiv.innerHTML = "<p>No recent patients found.</p>";
@@ -412,17 +437,11 @@
                 return;
             }
 
+            let newHTML = "";
             top5.forEach(row => {
                 const dateStr = new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
-                const card = document.createElement('div'); 
-                card.className = "card"; 
-                card.style.borderLeft = "4px solid var(--secondary)";
-                card.style.display = "flex";
-                card.style.justifyContent = "space-between";
-                card.style.alignItems = "center";
-                card.style.padding = "14px";
-                
-                card.innerHTML = `
+                newHTML += `
+                <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
                     <div>
                         <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
                         <span style="font-size: 12px; color: var(--text-muted);">${row[3] || "No City"}</span>
@@ -430,15 +449,15 @@
                     <div style="font-weight: bold; color: var(--primary); font-size: 14px;">
                         ${dateStr}
                     </div>
-                `;
-                listDiv.appendChild(card);
+                </div>`;
             });
+            listDiv.innerHTML = newHTML; // Replace HTML in one smooth motion
         }
 
         function renderPendingPayments() {
             const listDiv = document.getElementById('pendingList');
-            listDiv.innerHTML = ""; 
             let foundPending = false; 
+            let newHTML = "";
             
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; 
@@ -450,26 +469,36 @@
                 
                 if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
                     foundPending = true; 
-                    createPaymentCard(listDiv, name, date, totalFee, amountPaid, paymentType, i + 1);
+                    const balance = totalFee - amountPaid;
+                    const rowNum = i + 1;
+                    
+                    newHTML += `
+                    <div class="card" style="border-left: 4px solid var(--danger);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
+                            <div style="font-size:12px; color:var(--text-muted);">${date}</div>
+                        </div>
+                        <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
+                        <div style="display:flex; gap:10px;">
+                            <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${totalFee}"></div>
+                            <div style="flex:1"><label>Via</label>
+                                <select id="payType_${rowNum}">
+                                    <option value="Cash" ${paymentType==='cash'?'selected':''}>Cash</option>
+                                    <option value="Online" ${paymentType==='online'?'selected':''}>Online</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-main" style="padding: 10px;" onclick="submitPaymentUpdate(${rowNum})">Clear Balance</button>
+                        <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px;"></div>
+                    </div>`;
                 }
             }
-            if(!foundPending) listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances!</p></div>";
-        }
-
-        function createPaymentCard(container, name, date, totalFee, currentPaid, currentType, rowNum) {
-            const balance = totalFee - currentPaid;
-            const card = document.createElement('div'); card.className = "card"; card.style.borderLeft = "4px solid var(--danger)";
-            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
-                <div style="font-size:12px; color:var(--text-muted);">${date}</div></div>
-                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${totalFee}"></div>
-                    <div style="flex:1"><label>Via</label><select id="payType_${rowNum}"><option value="Cash" ${currentType==='cash'?'selected':''}>Cash</option><option value="Online" ${currentType==='online'?'selected':''}>Online</option><option value="Closed">Closed</option></select></div>
-                </div>
-                <button class="btn-main" style="padding: 10px;" onclick="submitPaymentUpdate(${rowNum})">Clear Balance</button>
-                <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px;"></div>`;
-            container.appendChild(card);
+            if(!foundPending) {
+                listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances!</p></div>";
+            } else {
+                listDiv.innerHTML = newHTML;
+            }
         }
 
         function submitPaymentUpdate(rowNum) {
@@ -494,7 +523,7 @@
                 if(data.status === 'success') { 
                     status.style.color = "var(--success)"; 
                     status.innerText = "✓ Cleared"; 
-                    setTimeout(() => { syncWithDatabase(() => renderPendingPayments()); }, 800); 
+                    syncWithDatabase(() => renderPendingPayments()); 
                 } else { 
                     status.style.color = "var(--danger)"; 
                     status.innerText = "Error"; 
@@ -529,28 +558,35 @@
 
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
-            const timeline = document.getElementById('historyTimeline'); timeline.innerHTML = "";
-            if(!selectedName) return;
+            const timeline = document.getElementById('historyTimeline'); 
+            
+            if(!selectedName) {
+                timeline.innerHTML = "";
+                return;
+            }
             
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) records.push(allSheetData[i]); }
             records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
             
+            let newHTML = "";
             records.forEach(row => {
                 const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
-                const card = document.createElement('div'); card.className = "card"; card.style.borderLeft = "4px solid var(--primary)";
-                card.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
-                    <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
-                    <span class="badge badge-success">${row[9]||"Session"}</span>
-                </div>
-                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
-                    <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
-                    <div style="color:#cbd5e0; font-size:20px;">&rarr;</div>
-                    <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
-                </div>
-                <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>`;
-                timeline.appendChild(card);
+                newHTML += `
+                <div class="card" style="border-left: 4px solid var(--primary);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+                        <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
+                        <span class="badge badge-success">${row[9]||"Session"}</span>
+                    </div>
+                    <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
+                        <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
+                        <div style="color:#cbd5e0; font-size:20px;">&rarr;</div>
+                        <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
+                    </div>
+                    <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>
+                </div>`;
             });
+            timeline.innerHTML = newHTML;
         }
 
         function renderDashboard() {
@@ -599,7 +635,7 @@
                     labels: monthLabels,
                     datasets: [{ label: 'Revenue (₹)', data: monthData, backgroundColor: 'rgba(0, 121, 107, 0.8)', borderRadius: 4 }]
                 },
-                options: { responsive: true, plugins: { legend: {display: false}, title: { display: true, text: '6-Month Revenue Trend' } } }
+                options: { responsive: true, plugins: { legend: {display: false}, title: { display: true, text: '6-Month Revenue Trend' } }, animation: { duration: 0 } }
             });
 
             const ctx2 = document.getElementById('paymentChart').getContext('2d');
@@ -610,7 +646,7 @@
                     labels: ['Cash', 'Online'],
                     datasets: [{ data: [methodCounts['Cash'], methodCounts['Online']], backgroundColor: ['#38a169', '#3182ce'], borderWidth: 0 }]
                 },
-                options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } } }
+                options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } }, animation: { duration: 0 } }
             });
         }
 
