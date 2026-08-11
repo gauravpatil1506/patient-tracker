@@ -195,7 +195,7 @@
     <!-- TAB 3: PAYMENTS (LEDGER) -->
     <div id="tab3" class="tab-content container">
         <h3 style="margin-top:0; color: var(--primary-dark);">Outstanding Balances</h3>
-        <button class="btn-main btn-secondary" onclick="loadPendingPayments()" style="margin-bottom: 15px;">Refresh Ledger</button>
+        <button class="btn-main btn-secondary" onclick="manualSync()" style="margin-bottom: 15px;">Force Sync</button>
         <div id="paymentStatus" class="status-msg"></div>
         <div id="pendingList"></div>
     </div>
@@ -299,18 +299,31 @@
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
-            refreshData(); 
+            syncWithDatabase(); 
         };
 
-        function refreshData() {
+        // CENTRALIZED LIVE SYNC FUNCTION
+        function syncWithDatabase(callback) {
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json())
             .then(data => {
                 if(data.status === 'success') {
                     allSheetData = data.data;
                     updateDropdowns();
+                    if(callback) callback(); // Run whatever needs to be rendered after data arrives
                 }
-            }).catch(e => console.log("Silent load failed"));
+            }).catch(e => console.log("Silent sync failed"));
+        }
+
+        // Manual Force Sync Button in Ledger
+        function manualSync() {
+            const status = document.getElementById('paymentStatus');
+            status.style.color = "var(--primary)";
+            status.innerText = "Syncing with database...";
+            syncWithDatabase(() => {
+                renderPendingPayments();
+                status.innerText = "";
+            });
         }
 
         function updateDropdowns() {
@@ -343,6 +356,7 @@
             if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
         });
 
+        // TAB SWITCHING: Instantly render old data, then secretly fetch live data to update it
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -351,12 +365,27 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
+            // 1. Instantly render what we currently have
             if(tabId === 'tab2') loadRecentPatients(); 
-            if(tabId === 'tab3') loadPendingPayments(); 
-            if(tabId === 'tab5') renderDashboard(); 
+            if(tabId === 'tab3') renderPendingPayments(); 
+            if(tabId === 'tab4') showPatientHistory();
+            if(tabId === 'tab5') {
+                renderDashboard(); 
+                if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
+            }
+
+            // 2. Trigger a background sync and re-render to guarantee live data
+            syncWithDatabase(() => {
+                if(tabId === 'tab2') loadRecentPatients(); 
+                if(tabId === 'tab3') renderPendingPayments(); 
+                if(tabId === 'tab4') showPatientHistory();
+                if(tabId === 'tab5') {
+                    renderDashboard(); 
+                    if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
+                }
+            });
         }
 
-        // --- RECENT 5 PATIENTS LOGIC ---
         function loadRecentPatients() {
             const listDiv = document.getElementById('recentList');
             listDiv.innerHTML = "";
@@ -372,10 +401,7 @@
                 records.push(allSheetData[i]);
             }
 
-            // Sort descending to get newest dates first
             records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
-
-            // Get top 5 records
             const top5 = records.slice(0, 5);
 
             if(top5.length === 0) {
@@ -393,7 +419,6 @@
                 card.style.alignItems = "center";
                 card.style.padding = "14px";
                 
-                // Changed from Session Type (row[9]) to Location/City (row[3])
                 card.innerHTML = `
                     <div>
                         <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
@@ -407,7 +432,131 @@
             });
         }
 
-        // --- DASHBOARD LOGIC ---
+        function renderPendingPayments() {
+            const listDiv = document.getElementById('pendingList');
+            listDiv.innerHTML = ""; 
+            let foundPending = false; 
+            
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i]; 
+                const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                const name = row[2]; 
+                const paymentType = String(row[4]).toLowerCase().trim();
+                const amountPaid = parseFloat(row[5]) || 0; 
+                const totalFee = parseFloat(row[6]) || 0;
+                
+                if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
+                    foundPending = true; 
+                    createPaymentCard(listDiv, name, date, totalFee, amountPaid, paymentType, i + 1);
+                }
+            }
+            if(!foundPending) listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances!</p></div>";
+        }
+
+        function createPaymentCard(container, name, date, totalFee, currentPaid, currentType, rowNum) {
+            const balance = totalFee - currentPaid;
+            const card = document.createElement('div'); card.className = "card"; card.style.borderLeft = "4px solid var(--danger)";
+            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
+                <div style="font-size:12px; color:var(--text-muted);">${date}</div></div>
+                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${totalFee}"></div>
+                    <div style="flex:1"><label>Via</label><select id="payType_${rowNum}"><option value="Cash" ${currentType==='cash'?'selected':''}>Cash</option><option value="Online" ${currentType==='online'?'selected':''}>Online</option><option value="Closed">Closed</option></select></div>
+                </div>
+                <button class="btn-main" style="padding: 10px;" onclick="submitPaymentUpdate(${rowNum})">Clear Balance</button>
+                <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px;"></div>`;
+            container.appendChild(card);
+        }
+
+        // CONFIRMATION ADDED HERE
+        function submitPaymentUpdate(rowNum) {
+            // Ask for final Yes/No before doing anything
+            const isConfirmed = confirm("Are you sure you want to update and clear this balance?");
+            if (!isConfirmed) {
+                return; // User cancelled
+            }
+
+            const status = document.getElementById('payStatus_' + rowNum); 
+            status.style.color = "var(--primary)"; 
+            status.innerText = "Updating ledger...";
+
+            fetch(WEB_APP_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    action: "updatePayment", 
+                    rowNumber: rowNum, 
+                    newAmountPaid: document.getElementById('payAmt_' + rowNum).value, 
+                    newPaymentType: document.getElementById('payType_' + rowNum).value 
+                }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') { 
+                    status.style.color = "var(--success)"; 
+                    status.innerText = "✓ Cleared"; 
+                    // Force a live sync to pull the newest data and remove the cleared item from the screen
+                    setTimeout(() => {
+                        syncWithDatabase(() => renderPendingPayments());
+                    }, 800); 
+                } else { 
+                    status.style.color = "var(--danger)"; 
+                    status.innerText = "Error"; 
+                }
+            });
+        }
+
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
+            btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
+            
+            const payload = {
+                action: "addVisit", date: document.getElementById('date').value, name: document.getElementById('name').value,
+                location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
+                painBefore: document.getElementById('painBefore').value, painAfter: document.getElementById('painAfter').value,
+                totalFee: document.getElementById('totalFee').value, amountPaid: document.getElementById('amountPaid').value,
+                paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
+                notes: document.getElementById('notes').value, month: "" 
+            };
+            
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                if(data.status === 'success') {
+                    status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
+                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
+                    syncWithDatabase(); // Sync so the new record is instantly in history and ledger
+                } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
+                btn.innerText = "Save Session Record"; btn.disabled = false;
+            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
+        });
+
+        function showPatientHistory() {
+            const selectedName = document.getElementById('patientSelect').value;
+            const timeline = document.getElementById('historyTimeline'); timeline.innerHTML = "";
+            if(!selectedName) return;
+            
+            let records = [];
+            for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) records.push(allSheetData[i]); }
+            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+            
+            records.forEach(row => {
+                const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                const card = document.createElement('div'); card.className = "card"; card.style.borderLeft = "4px solid var(--primary)";
+                card.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+                    <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
+                    <span class="badge badge-success">${row[9]||"Session"}</span>
+                </div>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
+                    <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
+                    <div style="color:#cbd5e0; font-size:20px;">&rarr;</div>
+                    <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
+                </div>
+                <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>`;
+                timeline.appendChild(card);
+            });
+        }
+
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
 
@@ -490,99 +639,6 @@
             document.getElementById('patTotalSpent').innerText = "₹" + spent.toLocaleString('en-IN');
             document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
             container.style.display = 'block';
-        }
-
-        document.getElementById('entryForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
-            btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
-            
-            const payload = {
-                action: "addVisit", date: document.getElementById('date').value, name: document.getElementById('name').value,
-                location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
-                painBefore: document.getElementById('painBefore').value, painAfter: document.getElementById('painAfter').value,
-                totalFee: document.getElementById('totalFee').value, amountPaid: document.getElementById('amountPaid').value,
-                paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
-                notes: document.getElementById('notes').value, month: "" 
-            };
-            
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(res => res.json()).then(data => {
-                if(data.status === 'success') {
-                    status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
-                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); refreshData();
-                } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
-                btn.innerText = "Save Session Record"; btn.disabled = false;
-            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
-        });
-
-        function loadPendingPayments() {
-            const listDiv = document.getElementById('pendingList'); const status = document.getElementById('paymentStatus');
-            listDiv.innerHTML = ""; status.style.color = "var(--text-muted)"; status.innerText = "Syncing with database...";
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
-            .then(res => res.json()).then(data => {
-                allSheetData = data.data; updateDropdowns(); let foundPending = false; status.innerText = "";
-                for(let i = 1; i < allSheetData.length; i++) {
-                    const row = allSheetData[i]; const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
-                    const name = row[2]; const paymentType = String(row[4]).toLowerCase().trim();
-                    const amountPaid = parseFloat(row[5]) || 0; const totalFee = parseFloat(row[6]) || 0;
-                    if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
-                        foundPending = true; createPaymentCard(listDiv, name, date, totalFee, amountPaid, paymentType, i + 1);
-                    }
-                }
-                if(!foundPending) listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances!</p></div>";
-            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Sync failed."; });
-        }
-
-        function createPaymentCard(container, name, date, totalFee, currentPaid, currentType, rowNum) {
-            const balance = totalFee - currentPaid;
-            const card = document.createElement('div'); card.className = "card"; card.style.borderLeft = "4px solid var(--danger)";
-            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
-                <div style="font-size:12px; color:var(--text-muted);">${date}</div></div>
-                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${totalFee}"></div>
-                    <div style="flex:1"><label>Via</label><select id="payType_${rowNum}"><option value="Cash" ${currentType==='cash'?'selected':''}>Cash</option><option value="Online" ${currentType==='online'?'selected':''}>Online</option><option value="Closed">Closed</option></select></div>
-                </div>
-                <button class="btn-main" style="padding: 10px;" onclick="submitPaymentUpdate(${rowNum})">Clear Balance</button>
-                <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px;"></div>`;
-            container.appendChild(card);
-        }
-
-        function submitPaymentUpdate(rowNum) {
-            const status = document.getElementById('payStatus_' + rowNum); status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
-            .then(res => res.json()).then(data => {
-                if(data.status === 'success') { status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; setTimeout(loadPendingPayments, 1000); } 
-                else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
-            });
-        }
-
-        function showPatientHistory() {
-            const selectedName = document.getElementById('patientSelect').value;
-            const timeline = document.getElementById('historyTimeline'); timeline.innerHTML = "";
-            if(!selectedName) return;
-            
-            let records = [];
-            for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) records.push(allSheetData[i]); }
-            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
-            
-            records.forEach(row => {
-                const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
-                const card = document.createElement('div'); card.className = "card"; card.style.borderLeft = "4px solid var(--primary)";
-                card.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
-                    <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
-                    <span class="badge badge-success">${row[9]||"Session"}</span>
-                </div>
-                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
-                    <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
-                    <div style="color:#cbd5e0; font-size:20px;">&rarr;</div>
-                    <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
-                </div>
-                <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>`;
-                timeline.appendChild(card);
-            });
         }
     </script>
 </body>
