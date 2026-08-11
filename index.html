@@ -331,6 +331,10 @@
             const historySelect = document.getElementById('patientSelect');
             const analyticsSelect = document.getElementById('analyticsPatientSelect');
             
+            // 1. Remember what is currently selected before rebuilding!
+            const savedHistoryPatient = historySelect.value;
+            const savedAnalyticsPatient = analyticsSelect.value;
+            
             datalist.innerHTML = '';
             let names = new Set();
             
@@ -349,6 +353,10 @@
                 historySelect.appendChild(new Option(name, name));
                 analyticsSelect.appendChild(new Option(name, name));
             });
+
+            // 2. Put the selected names back!
+            if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
+            if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
         }
 
         document.getElementById('name').addEventListener('input', function(e) {
