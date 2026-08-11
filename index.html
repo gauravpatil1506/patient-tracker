@@ -373,7 +373,8 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
-            // 1. Instantly render what we currently have
+            // Instantly render the data we already have in memory.
+            // (The database only needs to sync when she actively adds a visit or clears a payment!)
             if(tabId === 'tab2') loadRecentPatients(); 
             if(tabId === 'tab3') renderPendingPayments(); 
             if(tabId === 'tab4') showPatientHistory();
@@ -381,17 +382,6 @@
                 renderDashboard(); 
                 if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
             }
-
-            // 2. Trigger a background sync and re-render to guarantee live data
-            syncWithDatabase(() => {
-                if(tabId === 'tab2') loadRecentPatients(); 
-                if(tabId === 'tab3') renderPendingPayments(); 
-                if(tabId === 'tab4') showPatientHistory();
-                if(tabId === 'tab5') {
-                    renderDashboard(); 
-                    if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
-                }
-            });
         }
 
         function loadRecentPatients() {
