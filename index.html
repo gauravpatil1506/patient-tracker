@@ -95,16 +95,16 @@
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: white; display: flex; justify-content: space-between;
-            padding: 10px 15px 20px 15px; box-sizing: border-box;
+            padding: 10px 10px 20px 10px; box-sizing: border-box;
             box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 1000;
         }
         .nav-item {
-            display: flex; flex-direction: column; align-items: center;
-            color: var(--text-muted); font-size: 11px; font-weight: 600;
-            cursor: pointer; flex: 1; transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 10px; font-weight: 600;
+            cursor: pointer; flex: 1; transition: 0.2s; text-align: center;
         }
         .nav-item.active { color: var(--primary); }
-        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+        .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
         
         .status-msg { text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px; }
     </style>
@@ -185,16 +185,23 @@
         </form>
     </div>
 
-    <!-- TAB 2: PAYMENTS -->
+    <!-- TAB 2: RECENT (LAST 5 SESSIONS) -->
     <div id="tab2" class="tab-content container">
+        <h3 style="margin-top:0; color: var(--primary-dark);">Last 5 Sessions</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Your most recently recorded patient visits.</p>
+        <div id="recentList"></div>
+    </div>
+
+    <!-- TAB 3: PAYMENTS (LEDGER) -->
+    <div id="tab3" class="tab-content container">
         <h3 style="margin-top:0; color: var(--primary-dark);">Outstanding Balances</h3>
         <button class="btn-main btn-secondary" onclick="loadPendingPayments()" style="margin-bottom: 15px;">Refresh Ledger</button>
         <div id="paymentStatus" class="status-msg"></div>
         <div id="pendingList"></div>
     </div>
 
-    <!-- TAB 3: HISTORY -->
-    <div id="tab3" class="tab-content container">
+    <!-- TAB 4: HISTORY (RECORDS) -->
+    <div id="tab4" class="tab-content container">
         <h3 style="margin-top:0; color: var(--primary-dark);">Clinical Records</h3>
         <div class="card">
             <label>Select Patient</label>
@@ -205,8 +212,8 @@
         <div id="historyTimeline"></div>
     </div>
 
-    <!-- TAB 4: INSIGHTS DASHBOARD -->
-    <div id="tab4" class="tab-content container">
+    <!-- TAB 5: INSIGHTS DASHBOARD -->
+    <div id="tab5" class="tab-content container">
         <h3 style="margin-top:0; color: var(--primary-dark);">Clinic Analytics</h3>
         
         <div class="dash-grid">
@@ -232,7 +239,6 @@
             <canvas id="paymentChart"></canvas>
         </div>
 
-        <!-- Advanced Patient Drilldown -->
         <h3 style="margin-top:25px; color: var(--primary-dark);">Patient Level Data</h3>
         <div class="card">
             <label>Analyze Specific Patient</label>
@@ -260,17 +266,21 @@
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-tab1" onclick="switchTab('tab1')">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-            New Visit
+            New
         </div>
         <div class="nav-item" id="nav-tab2" onclick="switchTab('tab2')">
+            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            Recent
+        </div>
+        <div class="nav-item" id="nav-tab3" onclick="switchTab('tab3')">
             <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
             Ledger
         </div>
-        <div class="nav-item" id="nav-tab3" onclick="switchTab('tab3')">
+        <div class="nav-item" id="nav-tab4" onclick="switchTab('tab4')">
             <svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg>
             Records
         </div>
-        <div class="nav-item" id="nav-tab4" onclick="switchTab('tab4')">
+        <div class="nav-item" id="nav-tab5" onclick="switchTab('tab5')">
             <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
             Insights
         </div>
@@ -341,10 +351,63 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
-            if(tabId === 'tab2') loadPendingPayments(); 
-            if(tabId === 'tab4') renderDashboard(); 
+            if(tabId === 'tab2') loadRecentPatients(); 
+            if(tabId === 'tab3') loadPendingPayments(); 
+            if(tabId === 'tab5') renderDashboard(); 
         }
 
+        // --- RECENT 5 PATIENTS LOGIC ---
+        function loadRecentPatients() {
+            const listDiv = document.getElementById('recentList');
+            listDiv.innerHTML = "";
+            
+            if(allSheetData.length <= 1) {
+                listDiv.innerHTML = "<p>No recent patients found.</p>";
+                return;
+            }
+
+            let records = [];
+            for(let i = 1; i < allSheetData.length; i++) {
+                if(!allSheetData[i][1]) continue;
+                records.push(allSheetData[i]);
+            }
+
+            // Sort descending to get newest dates first
+            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+
+            // Get top 5 records
+            const top5 = records.slice(0, 5);
+
+            if(top5.length === 0) {
+                listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>";
+                return;
+            }
+
+            top5.forEach(row => {
+                const dateStr = new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                const card = document.createElement('div'); 
+                card.className = "card"; 
+                card.style.borderLeft = "4px solid var(--secondary)";
+                card.style.display = "flex";
+                card.style.justifyContent = "space-between";
+                card.style.alignItems = "center";
+                card.style.padding = "14px";
+                
+                // Changed from Session Type (row[9]) to Location/City (row[3])
+                card.innerHTML = `
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
+                        <span style="font-size: 12px; color: var(--text-muted);">${row[3] || "No City"}</span>
+                    </div>
+                    <div style="font-weight: bold; color: var(--primary); font-size: 14px;">
+                        ${dateStr}
+                    </div>
+                `;
+                listDiv.appendChild(card);
+            });
+        }
+
+        // --- DASHBOARD LOGIC ---
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
 
