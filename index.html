@@ -310,9 +310,9 @@
                 if(data.status === 'success') {
                     allSheetData = data.data;
                     updateDropdowns();
-                    if(callback) callback(); // Run whatever needs to be rendered after data arrives
+                    if(callback) callback(); 
                 }
-            }).catch(e => console.log("Silent sync failed"));
+            }).catch(e => console.log("Live sync failed"));
         }
 
         // Manual Force Sync Button in Ledger
@@ -331,7 +331,7 @@
             const historySelect = document.getElementById('patientSelect');
             const analyticsSelect = document.getElementById('analyticsPatientSelect');
             
-            // 1. Remember what is currently selected before rebuilding!
+            // REMEMBER SELECTIONS TO PREVENT FLICKER / RESET
             const savedHistoryPatient = historySelect.value;
             const savedAnalyticsPatient = analyticsSelect.value;
             
@@ -354,7 +354,7 @@
                 analyticsSelect.appendChild(new Option(name, name));
             });
 
-            // 2. Put the selected names back!
+            // RESTORE SELECTIONS
             if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
             if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
         }
@@ -364,7 +364,7 @@
             if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
         });
 
-        // TAB SWITCHING: Instantly render old data, then secretly fetch live data to update it
+        // TAB SWITCHING: FETCH LIVE ON EVERY CLICK 
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -373,15 +373,20 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
-            // Instantly render the data we already have in memory.
-            // (The database only needs to sync when she actively adds a visit or clears a payment!)
-            if(tabId === 'tab2') loadRecentPatients(); 
-            if(tabId === 'tab3') renderPendingPayments(); 
-            if(tabId === 'tab4') showPatientHistory();
-            if(tabId === 'tab5') {
-                renderDashboard(); 
-                if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
-            }
+            // Display clean loading indicator
+            if(tabId === 'tab2') document.getElementById('recentList').innerHTML = "<div style='text-align:center; padding: 20px; color: var(--primary); font-weight: bold;'>↻ Fetching Live Data...</div>";
+            if(tabId === 'tab3') document.getElementById('pendingList').innerHTML = "<div style='text-align:center; padding: 20px; color: var(--primary); font-weight: bold;'>↻ Fetching Live Data...</div>";
+            
+            // Fetch live data immediately on click
+            syncWithDatabase(() => {
+                if(tabId === 'tab2') loadRecentPatients(); 
+                if(tabId === 'tab3') renderPendingPayments(); 
+                if(tabId === 'tab4') showPatientHistory();
+                if(tabId === 'tab5') {
+                    renderDashboard(); 
+                    if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
+                }
+            });
         }
 
         function loadRecentPatients() {
@@ -467,13 +472,9 @@
             container.appendChild(card);
         }
 
-        // CONFIRMATION ADDED HERE
         function submitPaymentUpdate(rowNum) {
-            // Ask for final Yes/No before doing anything
             const isConfirmed = confirm("Are you sure you want to update and clear this balance?");
-            if (!isConfirmed) {
-                return; // User cancelled
-            }
+            if (!isConfirmed) return; 
 
             const status = document.getElementById('payStatus_' + rowNum); 
             status.style.color = "var(--primary)"; 
@@ -493,10 +494,7 @@
                 if(data.status === 'success') { 
                     status.style.color = "var(--success)"; 
                     status.innerText = "✓ Cleared"; 
-                    // Force a live sync to pull the newest data and remove the cleared item from the screen
-                    setTimeout(() => {
-                        syncWithDatabase(() => renderPendingPayments());
-                    }, 800); 
+                    setTimeout(() => { syncWithDatabase(() => renderPendingPayments()); }, 800); 
                 } else { 
                     status.style.color = "var(--danger)"; 
                     status.innerText = "Error"; 
@@ -523,7 +521,7 @@
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
                     document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
-                    syncWithDatabase(); // Sync so the new record is instantly in history and ledger
+                    syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
