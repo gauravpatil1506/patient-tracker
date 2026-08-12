@@ -96,11 +96,11 @@
         .badge-success { background: #f0fff4; color: var(--success); border: 1px solid #c6f6d5; }
 
         /* Dashboard Grid */
-        .dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-        .dash-card { background: white; padding: 16px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .dash-card h3 { margin: 0; font-size: 22px; color: var(--primary); }
-        .dash-card span { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-        .dash-card.full-width { grid-column: span 2; }
+        .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .dash-card { background: white; padding: 14px 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .dash-card h3 { margin: 0; font-size: 18px; color: var(--primary); white-space: nowrap; }
+        .dash-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .dash-card.span-2 { grid-column: span 2; }
         .chart-wrapper { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 
         /* Bottom Navigation Bar */
@@ -213,7 +213,6 @@
             <h3 style="margin:0; color: var(--primary-dark);">Outstanding</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none; white-space: nowrap; line-height: 1;"></div>
-                <!-- WhatsApp Single Reminder Button -->
                 <button id="waReminderBtn" class="btn-main" style="margin-top: 0; padding: 0; background: var(--whatsapp); display: none; width: 34px; height: 34px; border-radius: 50%; justify-content: center; align-items: center; flex-shrink: 0;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Reminder">
                     <svg style="width: 18px; height: 18px; fill: white;" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
                 </button>
@@ -246,34 +245,50 @@
 
     <!-- TAB 5: INSIGHTS DASHBOARD -->
     <div id="tab5" class="tab-content container">
-        <h3 style="margin-top:0; color: var(--primary-dark);">Clinic Analytics</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <h3 style="margin:0; color: var(--primary-dark);">Business Insights</h3>
+            <select id="dashYearFilter" onchange="renderDashboard()" style="width: auto; padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background: white;">
+                <option value="All">All-Time</option>
+            </select>
+        </div>
         
+        <!-- Advanced Metrics Grid -->
         <div class="dash-grid">
-            <div class="dash-card full-width">
-                <h3 id="dashTotalRev">₹0</h3>
-                <span>All-Time Revenue</span>
+            <div class="dash-card">
+                <h3 id="dashBilled">₹0</h3>
+                <span>Total Billed</span>
             </div>
             <div class="dash-card">
-                <h3 id="dashMonthRev" style="color: var(--success);">₹0</h3>
-                <span>This Month</span>
+                <h3 id="dashCollected" style="color: var(--success);">₹0</h3>
+                <span>Collected</span>
             </div>
             <div class="dash-card">
                 <h3 id="dashPending" style="color: var(--danger);">₹0</h3>
-                <span>Total Pending</span>
+                <span>Pending</span>
+            </div>
+            <div class="dash-card span-2">
+                <h3 id="dashTopCity">-</h3>
+                <span>Top Location</span>
+            </div>
+            <div class="dash-card">
+                <h3 id="dashARPV">₹0</h3>
+                <span>Avg/Patient</span>
             </div>
         </div>
 
+        <!-- Stacked Cashflow Matrix -->
         <div class="chart-wrapper">
-            <canvas id="monthlyChart"></canvas>
+            <canvas id="cashflowChart"></canvas>
         </div>
         
         <div class="chart-wrapper">
             <canvas id="paymentChart"></canvas>
         </div>
 
-        <h3 style="margin-top:25px; color: var(--primary-dark);">Patient Level Data</h3>
+        <!-- Clinical & Financial Drill-Down -->
+        <h3 style="margin-top:25px; color: var(--primary-dark);">Patient Performance</h3>
         <div class="card">
-            <label>Analyze Specific Patient</label>
+            <label>Select Patient</label>
             <select id="analyticsPatientSelect" onchange="showPatientAnalytics()">
                 <option value="">-- Select Patient --</option>
             </select>
@@ -283,12 +298,16 @@
                     <strong id="patTotalSessions">0</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: var(--text-muted);">Total Generated:</span>
+                    <span style="color: var(--text-muted);">Total Paid:</span>
                     <strong id="patTotalSpent" style="color: var(--success);">₹0</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
                     <span style="color: var(--text-muted);">Current Pending:</span>
                     <strong id="patTotalPending" style="color: var(--danger);">₹0</strong>
+                </div>
+                <!-- Clinical Pain Chart -->
+                <div style="border-top: 1px solid #eee; padding-top: 15px;">
+                    <canvas id="painChart"></canvas>
                 </div>
             </div>
         </div>
@@ -326,10 +345,11 @@
         
         let allSheetData = []; 
         let patientLocationMap = {}; 
-        let monthlyChartInstance = null;
-        let paymentChartInstance = null;
         
-        // This array will hold the current pending sessions for WhatsApp formatting
+        let cashflowChartInstance = null;
+        let paymentChartInstance = null;
+        let painChartInstance = null;
+        
         let currentPendingSessionsForWA = [];
 
         window.onload = function() { 
@@ -350,7 +370,6 @@
                     if(callback) callback(); 
                 }
             }).catch(e => {
-                console.log("Sync failed");
                 document.getElementById('syncStatus').innerText = "⚠️ Offline";
             });
         }
@@ -370,26 +389,30 @@
             const historySelect = document.getElementById('patientSelect');
             const analyticsSelect = document.getElementById('analyticsPatientSelect');
             const ledgerSelect = document.getElementById('ledgerPatientSelect');
+            const yearFilter = document.getElementById('dashYearFilter');
             
             const savedHistoryPatient = historySelect.value;
             const savedAnalyticsPatient = analyticsSelect.value;
             const savedLedgerPatient = ledgerSelect.value;
+            const savedYear = yearFilter.value;
             
             datalist.innerHTML = '';
             let names = new Set();
+            let years = new Set();
             
             for(let i = 1; i < allSheetData.length; i++) {
-                const name = allSheetData[i][2] ? allSheetData[i][2].trim() : "";
-                const loc = allSheetData[i][3] ? allSheetData[i][3].trim() : "";
-                if(name) { names.add(name); patientLocationMap[name] = loc; }
+                const row = allSheetData[i];
+                if(row[2]) { names.add(row[2].trim()); patientLocationMap[row[2].trim()] = row[3] ? row[3].trim() : ""; }
+                if(row[1]) {
+                    const y = new Date(row[1]).getFullYear();
+                    if(y && !isNaN(y)) years.add(y);
+                }
             }
 
+            // Repopulate Patient Dropdowns
             const defaultOpt = '<option value="">-- Select Patient --</option>';
             const defaultAllOpt = '<option value="">-- All Patients --</option>';
-            
-            historySelect.innerHTML = defaultOpt;
-            analyticsSelect.innerHTML = defaultOpt;
-            ledgerSelect.innerHTML = defaultAllOpt;
+            historySelect.innerHTML = defaultOpt; analyticsSelect.innerHTML = defaultOpt; ledgerSelect.innerHTML = defaultAllOpt;
 
             Array.from(names).sort().forEach(name => {
                 datalist.appendChild(new Option(name, name));
@@ -398,9 +421,17 @@
                 ledgerSelect.appendChild(new Option(name, name));
             });
 
+            // Repopulate Year Filter
+            yearFilter.innerHTML = '<option value="All">All-Time</option>';
+            Array.from(years).sort((a,b)=>b-a).forEach(y => {
+                yearFilter.appendChild(new Option(y, y));
+            });
+
+            // Restore states
             if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
             if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
             if(savedLedgerPatient) ledgerSelect.value = savedLedgerPatient;
+            if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
         }
 
         document.getElementById('name').addEventListener('input', function(e) {
@@ -474,8 +505,6 @@
             let newHTML = "";
             let summaryCount = 0;
             let summaryTotal = 0;
-            
-            // Reset the WhatsApp array
             currentPendingSessionsForWA = [];
             
             for(let i = 1; i < allSheetData.length; i++) {
@@ -485,7 +514,6 @@
                 const dateObj = new Date(row[1]);
                 const displayDate = row[1] ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
                 const waDateStr = row[1] ? dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-') : "No Date";
-                
                 const name = row[2] ? row[2].trim() : ""; 
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0; 
@@ -498,10 +526,7 @@
                     const balance = totalFee - amountPaid;
                     const rowNum = i + 1;
                     
-                    summaryCount++;
-                    summaryTotal += balance;
-                    
-                    // Push to our array for the WhatsApp button builder
+                    summaryCount++; summaryTotal += balance;
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
                     newHTML += `
@@ -530,73 +555,40 @@
             if(!foundPending) {
                 if(filterName) { listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
                 else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
-            } else {
-                listDiv.innerHTML = newHTML;
-            }
+            } else { listDiv.innerHTML = newHTML; }
 
-            // Show/Hide Summary Badge & WhatsApp Button
             if (filterName && foundPending) {
                 summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`;
                 summaryBadge.style.display = "block";
-                waButton.style.display = "flex"; // Show WA button
+                waButton.style.display = "flex"; 
             } else {
                 summaryBadge.style.display = "none";
-                waButton.style.display = "none"; // Hide WA button
+                waButton.style.display = "none"; 
             }
         }
 
-        // --- THE WHATSAPP MESSAGE GENERATOR ---
         function sendWhatsAppReminder() {
             if (currentPendingSessionsForWA.length === 0) return;
-            
-            // Build the text using WhatsApp *bold* syntax and standard newlines (\n)
             let msg = `🌸 *Greetings, this is Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
-            
             let totalAmount = 0;
             currentPendingSessionsForWA.forEach(session => {
                 msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
                 totalAmount += session.amount;
             });
-            
-            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n`;
-            msg += `💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\n`;
-            msg += `Kindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
-
-            // encodeURIComponent ensures spaces and symbols are perfectly translated for the phone's web browser to open the app correctly
+            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
             const encodedMessage = encodeURIComponent(msg);
-            const waUrl = `https://wa.me/?text=${encodedMessage}`;
-            
-            // Open WhatsApp
-            window.open(waUrl, '_blank');
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
         }
 
         function submitPaymentUpdate(rowNum) {
-            const isConfirmed = confirm("Are you sure you want to update and clear this balance?");
+            const isConfirmed = confirm("Are you sure you want to clear this balance?");
             if (!isConfirmed) return; 
-
             const status = document.getElementById('payStatus_' + rowNum); 
-            status.style.color = "var(--primary)"; 
-            status.innerText = "Updating ledger...";
-
-            fetch(WEB_APP_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({ 
-                    action: "updatePayment", 
-                    rowNumber: rowNum, 
-                    newAmountPaid: document.getElementById('payAmt_' + rowNum).value, 
-                    newPaymentType: document.getElementById('payType_' + rowNum).value 
-                }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'success') { 
-                    status.style.color = "var(--success)"; 
-                    status.innerText = "✓ Cleared"; 
-                    syncWithDatabase(() => renderPendingPayments()); 
-                } else { 
-                    status.style.color = "var(--danger)"; 
-                    status.innerText = "Error"; 
-                }
+            status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === 'success') { status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; syncWithDatabase(() => renderPendingPayments()); } 
+                else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
             });
         }
 
@@ -604,7 +596,6 @@
             e.preventDefault();
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
-            
             const payload = {
                 action: "addVisit", date: document.getElementById('date').value, name: document.getElementById('name').value,
                 location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
@@ -613,13 +604,11 @@
                 paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
                 notes: document.getElementById('notes').value, month: "" 
             };
-            
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
-                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
-                    syncWithDatabase(); 
+                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
@@ -628,13 +617,10 @@
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
-            
             if(!selectedName) { timeline.innerHTML = ""; return; }
-            
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) records.push(allSheetData[i]); }
             records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
-            
             let newHTML = "";
             records.forEach(row => {
                 const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
@@ -655,55 +641,104 @@
             timeline.innerHTML = newHTML;
         }
 
+        // --- NEW ENTERPRISE DASHBOARD LOGIC ---
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
 
-            let totalRev = 0; let thisMonthRev = 0; let totalPending = 0;
-            let monthTotals = {}; let methodCounts = { 'Cash': 0, 'Online': 0 };
+            const yearFilter = document.getElementById('dashYearFilter').value;
             
-            const currentMonthStr = new Date().toLocaleString('default', { month: 'short' }) + " " + new Date().getFullYear().toString().substr(-2);
+            let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
+            let monthDataMap = {}; let methodCounts = { 'Cash': 0, 'Online': 0 };
+            let uniquePatients = new Set();
+            let cityCounts = {};
+
+            // Initialize 12 months for Stacked Matrix if a specific year is chosen
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            if (yearFilter !== "All") {
+                monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 });
+            }
 
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i];
                 if(!row[1]) continue; 
                 
+                const dateObj = new Date(row[1]);
+                const rowYear = dateObj.getFullYear().toString();
+                
+                // Filter by Time Engine
+                if(yearFilter !== "All" && rowYear !== yearFilter) continue;
+
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0;
                 const totalFee = parseFloat(row[6]) || 0;
-                const rowDate = new Date(row[1]);
-                const month = rowDate.toLocaleString('default', { month: 'short' }) + " " + rowDate.getFullYear().toString().substr(-2);
-                
-                totalRev += amountPaid;
-                if (month === currentMonthStr) thisMonthRev += amountPaid;
-
                 const balance = totalFee - amountPaid;
+                const name = row[2] ? row[2].trim() : "";
+                const city = row[3] ? row[3].trim() : "";
+                
+                const monthName = monthNames[dateObj.getMonth()];
+                const allTimeLabel = monthName + " '" + rowYear.substr(-2);
+                const chartKey = yearFilter === "All" ? allTimeLabel : monthName;
+
+                // Aggregations
+                totalBilled += totalFee;
+                totalCollected += amountPaid;
                 if(balance > 0 || paymentType === 'pending') totalPending += balance;
+                if(name) uniquePatients.add(name);
+                if(city) cityCounts[city] = (cityCounts[city] || 0) + totalFee;
+
+                // Cashflow matrix arrays
+                if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
+                monthDataMap[chartKey].collected += amountPaid;
+                if(balance > 0) monthDataMap[chartKey].pending += balance;
 
                 if (paymentType === 'online') methodCounts['Online']++;
                 else if (paymentType === 'cash') methodCounts['Cash']++;
-
-                if(!monthTotals[month]) monthTotals[month] = 0;
-                monthTotals[month] += amountPaid;
             }
 
-            document.getElementById('dashTotalRev').innerText = "₹" + totalRev.toLocaleString('en-IN');
-            document.getElementById('dashMonthRev').innerText = "₹" + thisMonthRev.toLocaleString('en-IN');
+            // Calculations
+            const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
+            let topCity = "-"; let maxCityVal = 0;
+            for (const [city, val] of Object.entries(cityCounts)) {
+                if (val > maxCityVal) { maxCityVal = val; topCity = city; }
+            }
+
+            // Update UI 
+            document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
+            document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
             document.getElementById('dashPending').innerText = "₹" + totalPending.toLocaleString('en-IN');
+            document.getElementById('dashARPV').innerText = "₹" + arpv.toLocaleString('en-IN');
+            document.getElementById('dashTopCity').innerText = topCity;
 
-            const monthLabels = Object.keys(monthTotals).slice(-6);
-            const monthData = monthLabels.map(m => monthTotals[m]);
+            // Prepare Stacked Chart Data
+            let labels = Object.keys(monthDataMap);
+            if(yearFilter === "All") {
+                // Limit to last 6 active months if looking at All-Time to prevent crowding
+                labels = labels.slice(-6); 
+            }
+            const collectedData = labels.map(l => monthDataMap[l].collected);
+            const pendingData = labels.map(l => monthDataMap[l].pending);
 
-            const ctx1 = document.getElementById('monthlyChart').getContext('2d');
-            if(monthlyChartInstance) monthlyChartInstance.destroy();
-            monthlyChartInstance = new Chart(ctx1, {
+            // Draw Cashflow Matrix
+            const ctx1 = document.getElementById('cashflowChart').getContext('2d');
+            if(cashflowChartInstance) cashflowChartInstance.destroy();
+            cashflowChartInstance = new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: monthLabels,
-                    datasets: [{ label: 'Revenue (₹)', data: monthData, backgroundColor: 'rgba(0, 121, 107, 0.8)', borderRadius: 4 }]
+                    labels: labels,
+                    datasets: [
+                        { label: 'Collected (₹)', data: collectedData, backgroundColor: '#38a169', stack: 'Stack 0' },
+                        { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' }
+                    ]
                 },
-                options: { responsive: true, plugins: { legend: {display: false}, title: { display: true, text: '6-Month Revenue Trend' } }, animation: { duration: 0 } }
+                options: { 
+                    responsive: true, 
+                    plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } },
+                    scales: { x: { stacked: true }, y: { stacked: true } },
+                    animation: { duration: 0 } 
+                }
             });
 
+            // Draw Payment Pref
             const ctx2 = document.getElementById('paymentChart').getContext('2d');
             if(paymentChartInstance) paymentChartInstance.destroy();
             paymentChartInstance = new Chart(ctx2, {
@@ -716,27 +751,59 @@
             });
         }
 
+        // --- NEW CLINICAL DRILL-DOWN LOGIC ---
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
             if(!name) { container.style.display = 'none'; return; }
 
             let sessions = 0; let spent = 0; let pending = 0;
+            let chartDates = []; let painBeforeData = []; let painAfterData = [];
             
+            // Collect patient specific records and sort oldest to newest for the graph
+            let patRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i][2] && allSheetData[i][2].trim() === name) {
-                    sessions++;
-                    const paid = parseFloat(allSheetData[i][5]) || 0;
-                    const fee = parseFloat(allSheetData[i][6]) || 0;
-                    spent += paid;
-                    if(fee > paid) pending += (fee - paid);
-                }
+                if(allSheetData[i][2] && allSheetData[i][2].trim() === name) patRecords.push(allSheetData[i]);
             }
+            patRecords.sort((a, b) => new Date(a[1]) - new Date(b[1]));
+
+            patRecords.forEach(row => {
+                sessions++;
+                const paid = parseFloat(row[5]) || 0;
+                const fee = parseFloat(row[6]) || 0;
+                spent += paid;
+                if(fee > paid) pending += (fee - paid);
+
+                // For Chart
+                if(row[1]) chartDates.push(new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short'}));
+                painBeforeData.push(parseFloat(row[7]) || null);
+                painAfterData.push(parseFloat(row[8]) || null);
+            });
 
             document.getElementById('patTotalSessions').innerText = sessions;
             document.getElementById('patTotalSpent').innerText = "₹" + spent.toLocaleString('en-IN');
             document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
             container.style.display = 'block';
+
+            // Draw Pain Tracking Chart
+            const ctx3 = document.getElementById('painChart').getContext('2d');
+            if(painChartInstance) painChartInstance.destroy();
+            painChartInstance = new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: chartDates,
+                    datasets: [
+                        { label: 'Pain Before', data: painBeforeData, borderColor: '#e53e3e', backgroundColor: '#e53e3e', tension: 0.3 },
+                        { label: 'Pain After', data: painAfterData, borderColor: '#38a169', backgroundColor: '#38a169', tension: 0.3 }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { title: { display: true, text: 'Clinical Progress (Pain Score 1-10)' } },
+                    scales: { y: { min: 0, max: 10 } },
+                    animation: { duration: 0 } 
+                }
+            });
         }
     </script>
 </body>
