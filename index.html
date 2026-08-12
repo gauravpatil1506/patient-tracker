@@ -16,6 +16,7 @@
             --text-muted: #718096;
             --danger: #e53e3e;
             --success: #38a169;
+            --whatsapp: #25D366;
         }
 
         body { 
@@ -75,6 +76,7 @@
             color: white; border: none; border-radius: 10px; 
             font-size: 16px; font-weight: 700; margin-top: 10px; 
             cursor: pointer; box-shadow: 0 4px 6px rgba(0,121,107,0.2);
+            display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         .btn-secondary { background: #edf2f7; color: var(--primary); border: 1px solid #cbd5e0; }
@@ -209,8 +211,14 @@
     <div id="tab3" class="tab-content container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin:0; color: var(--primary-dark);">Outstanding</h3>
-            <!-- The new Badge for Sessions | Amount -->
-            <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none;"></div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none;"></div>
+                <!-- WhatsApp Single Reminder Button -->
+                <button id="waReminderBtn" class="btn-main" style="margin-top: 0; padding: 4px 10px; background: var(--whatsapp); display: none; font-size: 12px;" onclick="sendWhatsAppReminder()">
+                    <svg style="width: 14px; height: 14px; fill: white;" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
+                    Send
+                </button>
+            </div>
         </div>
         
         <div class="card" style="padding: 12px; margin-bottom: 15px;">
@@ -321,6 +329,9 @@
         let patientLocationMap = {}; 
         let monthlyChartInstance = null;
         let paymentChartInstance = null;
+        
+        // This array will hold the current pending sessions for WhatsApp formatting
+        let currentPendingSessionsForWA = [];
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
@@ -330,7 +341,6 @@
             }); 
         };
 
-        // Fetch data from Google Sheets in the background
         function syncWithDatabase(callback) {
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json())
@@ -362,7 +372,6 @@
             const analyticsSelect = document.getElementById('analyticsPatientSelect');
             const ledgerSelect = document.getElementById('ledgerPatientSelect');
             
-            // REMEMBER SELECTIONS
             const savedHistoryPatient = historySelect.value;
             const savedAnalyticsPatient = analyticsSelect.value;
             const savedLedgerPatient = ledgerSelect.value;
@@ -390,7 +399,6 @@
                 ledgerSelect.appendChild(new Option(name, name));
             });
 
-            // RESTORE SELECTIONS
             if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
             if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
             if(savedLedgerPatient) ledgerSelect.value = savedLedgerPatient;
@@ -401,7 +409,6 @@
             if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
         });
 
-        // --- THE PERFECT HYBRID TAB SWITCHER ---
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -431,25 +438,17 @@
 
         function loadRecentPatients() {
             const listDiv = document.getElementById('recentList');
-            
-            if(allSheetData.length <= 1) {
-                listDiv.innerHTML = "<p>No recent patients found.</p>";
-                return;
-            }
+            if(allSheetData.length <= 1) { listDiv.innerHTML = "<p>No recent patients found.</p>"; return; }
 
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) {
                 if(!allSheetData[i][1]) continue;
                 records.push(allSheetData[i]);
             }
-
             records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
             const top5 = records.slice(0, 5);
 
-            if(top5.length === 0) {
-                listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>";
-                return;
-            }
+            if(top5.length === 0) { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; return; }
 
             let newHTML = "";
             top5.forEach(row => {
@@ -460,37 +459,40 @@
                         <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
                         <span style="font-size: 12px; color: var(--text-muted);">${row[3] || "No City"}</span>
                     </div>
-                    <div style="font-weight: bold; color: var(--primary); font-size: 14px;">
-                        ${dateStr}
-                    </div>
+                    <div style="font-weight: bold; color: var(--primary); font-size: 14px;">${dateStr}</div>
                 </div>`;
             });
             listDiv.innerHTML = newHTML; 
         }
 
-        // --- UPDATED RENDER PENDING PAYMENTS WITH FILTER LOGIC ---
         function renderPendingPayments() {
             const listDiv = document.getElementById('pendingList');
             const filterName = document.getElementById('ledgerPatientSelect').value;
             const summaryBadge = document.getElementById('ledgerSummary');
+            const waButton = document.getElementById('waReminderBtn');
             
             let foundPending = false; 
             let newHTML = "";
             let summaryCount = 0;
             let summaryTotal = 0;
             
+            // Reset the WhatsApp array
+            currentPendingSessionsForWA = [];
+            
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; 
                 if(!row[1]) continue;
 
-                const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                const dateObj = new Date(row[1]);
+                const displayDate = row[1] ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                const waDateStr = row[1] ? dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-') : "No Date";
+                
                 const name = row[2] ? row[2].trim() : ""; 
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0; 
                 const totalFee = parseFloat(row[6]) || 0;
                 
                 if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
-                    // Apply Filter Logic
                     if (filterName && name !== filterName) continue;
 
                     foundPending = true; 
@@ -500,15 +502,18 @@
                     summaryCount++;
                     summaryTotal += balance;
                     
+                    // Push to our array for the WhatsApp button builder
+                    currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
+                    
                     newHTML += `
                     <div class="card" style="border-left: 4px solid var(--danger);">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
-                            <div style="font-size:12px; color:var(--text-muted);">${date}</div>
+                            <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
                         </div>
                         <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
                         <div style="display:flex; gap:10px;">
-                            <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${totalFee}"></div>
+                            <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${balance}"></div>
                             <div style="flex:1"><label>Via</label>
                                 <select id="payType_${rowNum}">
                                     <option value="Cash" ${paymentType==='cash'?'selected':''}>Cash</option>
@@ -524,22 +529,46 @@
             }
             
             if(!foundPending) {
-                if(filterName) {
-                    listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`;
-                } else {
-                    listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>";
-                }
+                if(filterName) { listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
+                else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
             } else {
                 listDiv.innerHTML = newHTML;
             }
 
-            // Show or hide the Summary Badge
+            // Show/Hide Summary Badge & WhatsApp Button
             if (filterName && foundPending) {
                 summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`;
                 summaryBadge.style.display = "block";
+                waButton.style.display = "flex"; // Show WA button
             } else {
                 summaryBadge.style.display = "none";
+                waButton.style.display = "none"; // Hide WA button
             }
+        }
+
+        // --- THE WHATSAPP MESSAGE GENERATOR ---
+        function sendWhatsAppReminder() {
+            if (currentPendingSessionsForWA.length === 0) return;
+            
+            // Build the text using WhatsApp *bold* syntax and standard newlines (\n)
+            let msg = `🌸 *Greetings, this is Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
+            
+            let totalAmount = 0;
+            currentPendingSessionsForWA.forEach(session => {
+                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
+                totalAmount += session.amount;
+            });
+            
+            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n`;
+            msg += `💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\n`;
+            msg += `Kindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
+
+            // encodeURIComponent ensures spaces and symbols are perfectly translated for the phone's web browser to open the app correctly
+            const encodedMessage = encodeURIComponent(msg);
+            const waUrl = `https://wa.me/?text=${encodedMessage}`;
+            
+            // Open WhatsApp
+            window.open(waUrl, '_blank');
         }
 
         function submitPaymentUpdate(rowNum) {
@@ -601,10 +630,7 @@
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
             
-            if(!selectedName) {
-                timeline.innerHTML = "";
-                return;
-            }
+            if(!selectedName) { timeline.innerHTML = ""; return; }
             
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) records.push(allSheetData[i]); }
