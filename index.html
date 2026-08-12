@@ -119,6 +119,11 @@
         .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
         
         .status-msg { text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px; }
+        
+        /* Clean Borderless List Styles */
+        .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+        .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
+        .patient-stats { font-weight: 700; color: var(--danger); white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -311,6 +316,12 @@
                 </div>
             </div>
         </div>
+
+        <!-- Vanishing Aged Debtors Report -->
+        <div id="agedDebtorsContainer" style="margin-top: 25px;">
+            <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Pending Balance Breakdown</h3>
+            <div id="agedDebtorsList"></div>
+        </div>
     </div>
 
     <!-- Native App Bottom Navigation -->
@@ -409,7 +420,6 @@
                 }
             }
 
-            // Repopulate Patient Dropdowns
             const defaultOpt = '<option value="">-- Select Patient --</option>';
             const defaultAllOpt = '<option value="">-- All Patients --</option>';
             historySelect.innerHTML = defaultOpt; analyticsSelect.innerHTML = defaultOpt; ledgerSelect.innerHTML = defaultAllOpt;
@@ -421,13 +431,11 @@
                 ledgerSelect.appendChild(new Option(name, name));
             });
 
-            // Repopulate Year Filter
             yearFilter.innerHTML = '<option value="All">All-Time</option>';
             Array.from(years).sort((a,b)=>b-a).forEach(y => {
                 yearFilter.appendChild(new Option(y, y));
             });
 
-            // Restore states
             if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
             if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
             if(savedLedgerPatient) ledgerSelect.value = savedLedgerPatient;
@@ -462,7 +470,7 @@
             if(tabId === 'tab4') showPatientHistory();
             if(tabId === 'tab5') {
                 renderDashboard(); 
-                if(document.getElementById('analyticsPatientSelect').value) showPatientAnalytics();
+                showPatientAnalytics(); 
             }
         }
 
@@ -651,8 +659,10 @@
             let monthDataMap = {}; let methodCounts = { 'Cash': 0, 'Online': 0 };
             let uniquePatients = new Set();
             let cityCounts = {};
+            
+            // For the Aged Debtors Vanishing List
+            let agedDebtorsObj = {};
 
-            // Initialize 12 months for Stacked Matrix if a specific year is chosen
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             if (yearFilter !== "All") {
                 monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 });
@@ -665,7 +675,6 @@
                 const dateObj = new Date(row[1]);
                 const rowYear = dateObj.getFullYear().toString();
                 
-                // Filter by Time Engine
                 if(yearFilter !== "All" && rowYear !== yearFilter) continue;
 
                 const paymentType = String(row[4]).toLowerCase().trim();
@@ -675,18 +684,33 @@
                 const name = row[2] ? row[2].trim() : "";
                 const city = row[3] ? row[3].trim() : "";
                 
-                const monthName = monthNames[dateObj.getMonth()];
-                const allTimeLabel = monthName + " '" + rowYear.substr(-2);
-                const chartKey = yearFilter === "All" ? allTimeLabel : monthName;
+                const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
+                const monthNameShort = monthNames[dateObj.getMonth()];
+                const allTimeLabelShort = monthNameShort + " '" + rowYear.substr(-2);
+                const chartKey = yearFilter === "All" ? allTimeLabelShort : monthNameShort;
+                
+                // Grouping for Aged Debtors List
+                const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+                const displayMonthYear = `${monthNameFull}-${rowYear}`;
 
-                // Aggregations
                 totalBilled += totalFee;
                 totalCollected += amountPaid;
-                if(balance > 0 || paymentType === 'pending') totalPending += balance;
+                if(balance > 0 || paymentType === 'pending') {
+                    totalPending += balance;
+                    
+                    // Build Aged Debtors Hierarchy
+                    if(name) {
+                        if(!agedDebtorsObj[sortableMonth]) agedDebtorsObj[sortableMonth] = { label: displayMonthYear, patients: {} };
+                        if(!agedDebtorsObj[sortableMonth].patients[name]) agedDebtorsObj[sortableMonth].patients[name] = { count: 0, amount: 0 };
+                        
+                        agedDebtorsObj[sortableMonth].patients[name].count += 1;
+                        agedDebtorsObj[sortableMonth].patients[name].amount += balance;
+                    }
+                }
+                
                 if(name) uniquePatients.add(name);
                 if(city) cityCounts[city] = (cityCounts[city] || 0) + totalFee;
 
-                // Cashflow matrix arrays
                 if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
                 monthDataMap[chartKey].collected += amountPaid;
                 if(balance > 0) monthDataMap[chartKey].pending += balance;
@@ -695,30 +719,23 @@
                 else if (paymentType === 'cash') methodCounts['Cash']++;
             }
 
-            // Calculations
             const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
             let topCity = "-"; let maxCityVal = 0;
             for (const [city, val] of Object.entries(cityCounts)) {
                 if (val > maxCityVal) { maxCityVal = val; topCity = city; }
             }
 
-            // Update UI 
             document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
             document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
             document.getElementById('dashPending').innerText = "₹" + totalPending.toLocaleString('en-IN');
             document.getElementById('dashARPV').innerText = "₹" + arpv.toLocaleString('en-IN');
             document.getElementById('dashTopCity').innerText = topCity;
 
-            // Prepare Stacked Chart Data
             let labels = Object.keys(monthDataMap);
-            if(yearFilter === "All") {
-                // Limit to last 6 active months if looking at All-Time to prevent crowding
-                labels = labels.slice(-6); 
-            }
+            if(yearFilter === "All") { labels = labels.slice(-6); }
             const collectedData = labels.map(l => monthDataMap[l].collected);
             const pendingData = labels.map(l => monthDataMap[l].pending);
 
-            // Draw Cashflow Matrix
             const ctx1 = document.getElementById('cashflowChart').getContext('2d');
             if(cashflowChartInstance) cashflowChartInstance.destroy();
             cashflowChartInstance = new Chart(ctx1, {
@@ -730,15 +747,9 @@
                         { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' }
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } },
-                    scales: { x: { stacked: true }, y: { stacked: true } },
-                    animation: { duration: 0 } 
-                }
+                options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } }, scales: { x: { stacked: true }, y: { stacked: true } }, animation: { duration: 0 } }
             });
 
-            // Draw Payment Pref
             const ctx2 = document.getElementById('paymentChart').getContext('2d');
             if(paymentChartInstance) paymentChartInstance.destroy();
             paymentChartInstance = new Chart(ctx2, {
@@ -749,18 +760,51 @@
                 },
                 options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } }, animation: { duration: 0 } }
             });
+            
+            // Render Aged Debtors List
+            const agedDebtorsDiv = document.getElementById('agedDebtorsList');
+            agedDebtorsDiv.innerHTML = "";
+            const sortedMonths = Object.keys(agedDebtorsObj).sort((a,b) => b.localeCompare(a));
+            
+            if (sortedMonths.length === 0) {
+                agedDebtorsDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 14px;'>No pending balances for the selected timeframe.</p>";
+            } else {
+                let listHTML = "";
+                sortedMonths.forEach(monthKey => {
+                    const monthData = agedDebtorsObj[monthKey];
+                    listHTML += `<div class="month-header">${monthData.label}</div>`;
+                    
+                    Object.keys(monthData.patients).sort().forEach(patName => {
+                        const stats = monthData.patients[patName];
+                        listHTML += `
+                        <div class="patient-row">
+                            <span>${patName}</span>
+                            <span class="patient-stats">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span>
+                        </div>`;
+                    });
+                });
+                agedDebtorsDiv.innerHTML = listHTML;
+            }
         }
 
-        // --- NEW CLINICAL DRILL-DOWN LOGIC ---
+        // --- THE VANISHING ACT & DRILL DOWN ---
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
-            if(!name) { container.style.display = 'none'; return; }
+            const debtorsContainer = document.getElementById('agedDebtorsContainer');
+            
+            if(!name) { 
+                container.style.display = 'none'; 
+                debtorsContainer.style.display = 'block'; // Bring it back!
+                return; 
+            }
+            
+            // Vanish the Aged Debtors list!
+            debtorsContainer.style.display = 'none';
 
             let sessions = 0; let spent = 0; let pending = 0;
             let chartDates = []; let painBeforeData = []; let painAfterData = [];
             
-            // Collect patient specific records and sort oldest to newest for the graph
             let patRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
                 if(allSheetData[i][2] && allSheetData[i][2].trim() === name) patRecords.push(allSheetData[i]);
@@ -774,7 +818,6 @@
                 spent += paid;
                 if(fee > paid) pending += (fee - paid);
 
-                // For Chart
                 if(row[1]) chartDates.push(new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short'}));
                 painBeforeData.push(parseFloat(row[7]) || null);
                 painAfterData.push(parseFloat(row[8]) || null);
@@ -785,7 +828,6 @@
             document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
             container.style.display = 'block';
 
-            // Draw Pain Tracking Chart
             const ctx3 = document.getElementById('painChart').getContext('2d');
             if(painChartInstance) painChartInstance.destroy();
             painChartInstance = new Chart(ctx3, {
@@ -797,12 +839,7 @@
                         { label: 'Pain After', data: painAfterData, borderColor: '#38a169', backgroundColor: '#38a169', tension: 0.3 }
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    plugins: { title: { display: true, text: 'Clinical Progress (Pain Score 1-10)' } },
-                    scales: { y: { min: 0, max: 10 } },
-                    animation: { duration: 0 } 
-                }
+                options: { responsive: true, plugins: { title: { display: true, text: 'Clinical Progress (Pain Score 1-10)' } }, scales: { y: { min: 0, max: 10 } }, animation: { duration: 0 } }
             });
         }
     </script>
