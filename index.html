@@ -362,26 +362,54 @@
         let painChartInstance = null;
         
         let currentPendingSessionsForWA = [];
+        
+        // --- NEW NETWORK LOCK & THROTTLE VARIABLES ---
+        let lastSyncTime = 0;
+        let isSyncing = false;
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
-            document.getElementById('syncStatus').innerText = "↻ Initializing...";
-            syncWithDatabase(() => {
-                document.getElementById('syncStatus').innerText = "";
-            }); 
+            syncWithDatabase(() => {}, true); // Force initial sync
         };
 
-        function syncWithDatabase(callback) {
+        function syncWithDatabase(callback, force = false) {
+            const now = Date.now();
+            
+            // 1. THROTTLING: Ignore background syncs if we synced < 15 seconds ago (unless forced)
+            if (!force && (now - lastSyncTime < 15000)) {
+                if(callback) callback(); 
+                return;
+            }
+            
+            // 2. LOCKING: Prevent multiple simultaneous requests
+            if (isSyncing) {
+                if(callback) callback();
+                return;
+            }
+
+            isSyncing = true;
+            document.getElementById('syncStatus').innerText = "↻ Syncing...";
+            
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json())
             .then(data => {
+                isSyncing = false;
                 if(data.status === 'success') {
                     allSheetData = data.data;
+                    lastSyncTime = Date.now(); // Record success time
                     updateDropdowns();
+                    document.getElementById('syncStatus').innerText = "";
                     if(callback) callback(); 
                 }
             }).catch(e => {
-                document.getElementById('syncStatus').innerText = "⚠️ Offline";
+                isSyncing = false;
+                // 3. SILENT FAILURE: Only panic if she has ZERO cached data.
+                if (allSheetData.length <= 1) {
+                    document.getElementById('syncStatus').innerText = "⚠️ Offline";
+                } else {
+                    document.getElementById('syncStatus').innerText = ""; 
+                }
+                if(callback) callback();
             });
         }
 
@@ -389,10 +417,11 @@
             const status = document.getElementById('paymentStatus');
             status.style.color = "var(--primary)";
             status.innerText = "Syncing with database...";
+            // Force true to bypass the 15-second cooldown
             syncWithDatabase(() => {
                 renderPendingPayments();
                 status.innerText = "";
-            });
+            }, true);
         }
 
         function updateDropdowns() {
@@ -457,10 +486,9 @@
             
             renderCurrentTab(tabId);
             
-            document.getElementById('syncStatus').innerText = "↻ Syncing...";
+            // Calls standard sync (will hit the 15-second block and skip fetching if recently synced)
             syncWithDatabase(() => {
                 renderCurrentTab(tabId);
-                document.getElementById('syncStatus').innerText = "";
             });
         }
 
@@ -595,8 +623,10 @@
             status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
             .then(res => res.json()).then(data => {
-                if(data.status === 'success') { status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; syncWithDatabase(() => renderPendingPayments()); } 
-                else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
+                if(data.status === 'success') { 
+                    status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
+                    syncWithDatabase(() => renderPendingPayments(), true); // Force true
+                } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
             });
         }
 
@@ -616,7 +646,8 @@
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
-                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); syncWithDatabase(); 
+                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
+                    syncWithDatabase(null, true); // Force true
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
@@ -649,7 +680,6 @@
             timeline.innerHTML = newHTML;
         }
 
-        // --- NEW ENTERPRISE DASHBOARD LOGIC ---
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
 
@@ -660,7 +690,6 @@
             let uniquePatients = new Set();
             let cityCounts = {};
             
-            // For the Aged Debtors Vanishing List
             let agedDebtorsObj = {};
 
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -689,7 +718,6 @@
                 const allTimeLabelShort = monthNameShort + " '" + rowYear.substr(-2);
                 const chartKey = yearFilter === "All" ? allTimeLabelShort : monthNameShort;
                 
-                // Grouping for Aged Debtors List
                 const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
                 const displayMonthYear = `${monthNameFull}-${rowYear}`;
 
@@ -698,7 +726,6 @@
                 if(balance > 0 || paymentType === 'pending') {
                     totalPending += balance;
                     
-                    // Build Aged Debtors Hierarchy
                     if(name) {
                         if(!agedDebtorsObj[sortableMonth]) agedDebtorsObj[sortableMonth] = { label: displayMonthYear, patients: {} };
                         if(!agedDebtorsObj[sortableMonth].patients[name]) agedDebtorsObj[sortableMonth].patients[name] = { count: 0, amount: 0 };
@@ -761,7 +788,6 @@
                 options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } }, animation: { duration: 0 } }
             });
             
-            // Render Aged Debtors List
             const agedDebtorsDiv = document.getElementById('agedDebtorsList');
             agedDebtorsDiv.innerHTML = "";
             const sortedMonths = Object.keys(agedDebtorsObj).sort((a,b) => b.localeCompare(a));
@@ -787,7 +813,6 @@
             }
         }
 
-        // --- THE VANISHING ACT & DRILL DOWN ---
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
@@ -795,11 +820,10 @@
             
             if(!name) { 
                 container.style.display = 'none'; 
-                debtorsContainer.style.display = 'block'; // Bring it back!
+                debtorsContainer.style.display = 'block'; 
                 return; 
             }
             
-            // Vanish the Aged Debtors list!
             debtorsContainer.style.display = 'none';
 
             let sessions = 0; let spent = 0; let pending = 0;
