@@ -207,8 +207,20 @@
 
     <!-- TAB 3: PAYMENTS (LEDGER) -->
     <div id="tab3" class="tab-content container">
-        <h3 style="margin-top:0; color: var(--primary-dark);">Outstanding Balances</h3>
-        <button class="btn-main btn-secondary" onclick="manualSync()" style="margin-bottom: 15px;">Force Sync</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin:0; color: var(--primary-dark);">Outstanding</h3>
+            <!-- The new Badge for Sessions | Amount -->
+            <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none;"></div>
+        </div>
+        
+        <div class="card" style="padding: 12px; margin-bottom: 15px;">
+            <label style="margin-bottom: 4px;">Filter by Patient</label>
+            <select id="ledgerPatientSelect" onchange="renderPendingPayments()" style="margin-bottom: 0; padding: 10px;">
+                <option value="">-- All Patients --</option>
+            </select>
+        </div>
+
+        <button class="btn-main btn-secondary" onclick="manualSync()" style="margin-bottom: 15px; padding: 12px;">Force Sync</button>
         <div id="paymentStatus" class="status-msg"></div>
         <div id="pendingList"></div>
     </div>
@@ -348,10 +360,12 @@
             const datalist = document.getElementById('patientList');
             const historySelect = document.getElementById('patientSelect');
             const analyticsSelect = document.getElementById('analyticsPatientSelect');
+            const ledgerSelect = document.getElementById('ledgerPatientSelect');
             
             // REMEMBER SELECTIONS
             const savedHistoryPatient = historySelect.value;
             const savedAnalyticsPatient = analyticsSelect.value;
+            const savedLedgerPatient = ledgerSelect.value;
             
             datalist.innerHTML = '';
             let names = new Set();
@@ -363,18 +377,23 @@
             }
 
             const defaultOpt = '<option value="">-- Select Patient --</option>';
+            const defaultAllOpt = '<option value="">-- All Patients --</option>';
+            
             historySelect.innerHTML = defaultOpt;
             analyticsSelect.innerHTML = defaultOpt;
+            ledgerSelect.innerHTML = defaultAllOpt;
 
             Array.from(names).sort().forEach(name => {
                 datalist.appendChild(new Option(name, name));
                 historySelect.appendChild(new Option(name, name));
                 analyticsSelect.appendChild(new Option(name, name));
+                ledgerSelect.appendChild(new Option(name, name));
             });
 
             // RESTORE SELECTIONS
             if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
             if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
+            if(savedLedgerPatient) ledgerSelect.value = savedLedgerPatient;
         }
 
         document.getElementById('name').addEventListener('input', function(e) {
@@ -391,19 +410,15 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
-            // 1. Instantly render what we currently have (0ms delay)
             renderCurrentTab(tabId);
             
-            // 2. Secretly fetch live data to check if you changed anything on your end
             document.getElementById('syncStatus').innerText = "↻ Syncing...";
             syncWithDatabase(() => {
-                // 3. Silently update the screen with fresh data without clearing the screen
                 renderCurrentTab(tabId);
                 document.getElementById('syncStatus').innerText = "";
             });
         }
 
-        // Helper function to render whatever tab is open
         function renderCurrentTab(tabId) {
             if(tabId === 'tab2') loadRecentPatients(); 
             if(tabId === 'tab3') renderPendingPayments(); 
@@ -416,7 +431,6 @@
 
         function loadRecentPatients() {
             const listDiv = document.getElementById('recentList');
-            // Remove the hard clear so it doesn't flicker during background syncs!
             
             if(allSheetData.length <= 1) {
                 listDiv.innerHTML = "<p>No recent patients found.</p>";
@@ -451,26 +465,40 @@
                     </div>
                 </div>`;
             });
-            listDiv.innerHTML = newHTML; // Replace HTML in one smooth motion
+            listDiv.innerHTML = newHTML; 
         }
 
+        // --- UPDATED RENDER PENDING PAYMENTS WITH FILTER LOGIC ---
         function renderPendingPayments() {
             const listDiv = document.getElementById('pendingList');
+            const filterName = document.getElementById('ledgerPatientSelect').value;
+            const summaryBadge = document.getElementById('ledgerSummary');
+            
             let foundPending = false; 
             let newHTML = "";
+            let summaryCount = 0;
+            let summaryTotal = 0;
             
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; 
+                if(!row[1]) continue;
+
                 const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
-                const name = row[2]; 
+                const name = row[2] ? row[2].trim() : ""; 
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0; 
                 const totalFee = parseFloat(row[6]) || 0;
                 
                 if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
+                    // Apply Filter Logic
+                    if (filterName && name !== filterName) continue;
+
                     foundPending = true; 
                     const balance = totalFee - amountPaid;
                     const rowNum = i + 1;
+                    
+                    summaryCount++;
+                    summaryTotal += balance;
                     
                     newHTML += `
                     <div class="card" style="border-left: 4px solid var(--danger);">
@@ -494,10 +522,23 @@
                     </div>`;
                 }
             }
+            
             if(!foundPending) {
-                listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances!</p></div>";
+                if(filterName) {
+                    listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`;
+                } else {
+                    listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>";
+                }
             } else {
                 listDiv.innerHTML = newHTML;
+            }
+
+            // Show or hide the Summary Badge
+            if (filterName && foundPending) {
+                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`;
+                summaryBadge.style.display = "block";
+            } else {
+                summaryBadge.style.display = "none";
             }
         }
 
