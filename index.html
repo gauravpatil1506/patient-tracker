@@ -404,4 +404,471 @@
         }
 
         function updateDropdowns() {
-            const datalist = document.getElementById('patientList'
+            const datalist = document.getElementById('patientList');
+            const historySelect = document.getElementById('patientSelect');
+            const analyticsSelect = document.getElementById('analyticsPatientSelect');
+            const ledgerSelect = document.getElementById('ledgerPatientSelect');
+            const yearFilter = document.getElementById('dashYearFilter');
+            
+            const savedHistoryPatient = historySelect.value;
+            const savedAnalyticsPatient = analyticsSelect.value;
+            const savedLedgerPatient = ledgerSelect.value;
+            const savedYear = yearFilter.value;
+            
+            datalist.innerHTML = '';
+            let names = new Set();
+            let years = new Set();
+            
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i];
+                if(!row) continue;
+                if(row[2]) { names.add(row[2].trim()); patientLocationMap[row[2].trim()] = row[3] ? row[3].trim() : ""; }
+                if(row[1]) {
+                    const y = new Date(row[1]).getFullYear();
+                    if(y && !isNaN(y)) years.add(y);
+                }
+            }
+
+            const defaultOpt = '<option value="">-- Select Patient --</option>';
+            const defaultAllOpt = '<option value="">-- All Patients --</option>';
+            historySelect.innerHTML = defaultOpt; analyticsSelect.innerHTML = defaultOpt; ledgerSelect.innerHTML = defaultAllOpt;
+
+            Array.from(names).sort().forEach(name => {
+                datalist.appendChild(new Option(name, name));
+                historySelect.appendChild(new Option(name, name));
+                analyticsSelect.appendChild(new Option(name, name));
+                ledgerSelect.appendChild(new Option(name, name));
+            });
+
+            yearFilter.innerHTML = '<option value="All">All-Time</option>';
+            Array.from(years).sort((a,b)=>b-a).forEach(y => {
+                yearFilter.appendChild(new Option(y, y));
+            });
+
+            if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
+            if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
+            if(savedLedgerPatient) ledgerSelect.value = savedLedgerPatient;
+            if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
+        }
+
+        document.getElementById('name').addEventListener('input', function(e) {
+            const selectedName = e.target.value.trim();
+            if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
+        });
+
+        // --- PURE LOCAL TAB SWITCHING ---
+        function switchTab(tabId) {
+            window.scrollTo(0, 0);
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('nav-' + tabId).classList.add('active');
+            
+            renderCurrentTab(tabId);
+        }
+
+        function renderCurrentTab(tabId) {
+            if(tabId === 'tab2') loadRecentPatients(); 
+            if(tabId === 'tab3') renderPendingPayments(); 
+            if(tabId === 'tab4') showPatientHistory();
+            if(tabId === 'tab5') {
+                renderDashboard(); 
+                showPatientAnalytics(); 
+            }
+        }
+
+        function loadRecentPatients() {
+            const listDiv = document.getElementById('recentList');
+            if(allSheetData.length <= 1) { listDiv.innerHTML = "<p>No recent patients found.</p>"; return; }
+
+            let records = [];
+            for(let i = 1; i < allSheetData.length; i++) {
+                if(!allSheetData[i] || !allSheetData[i][1]) continue;
+                records.push(allSheetData[i]);
+            }
+            // Strict sort by descending date
+            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+            const top5 = records.slice(0, 5);
+
+            if(top5.length === 0) { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; return; }
+
+            let newHTML = "";
+            top5.forEach(row => {
+                const dateStr = new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                newHTML += `
+                <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
+                        <span style="font-size: 12px; color: var(--text-muted);">${row[3] || "No City"}</span>
+                    </div>
+                    <div style="font-weight: bold; color: var(--primary); font-size: 14px;">${dateStr}</div>
+                </div>`;
+            });
+            listDiv.innerHTML = newHTML; 
+        }
+
+        function renderPendingPayments() {
+            const listDiv = document.getElementById('pendingList');
+            const filterName = document.getElementById('ledgerPatientSelect').value;
+            const summaryBadge = document.getElementById('ledgerSummary');
+            const waButton = document.getElementById('waReminderBtn');
+            
+            let foundPending = false; 
+            let newHTML = "";
+            let summaryCount = 0;
+            let summaryTotal = 0;
+            currentPendingSessionsForWA = [];
+            
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i]; 
+                if(!row || !row[1]) continue;
+
+                const dateObj = new Date(row[1]);
+                if(isNaN(dateObj)) continue;
+                
+                const displayDate = dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                const waDateStr = dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
+                const name = row[2] ? row[2].trim() : ""; 
+                const paymentType = String(row[4]).toLowerCase().trim();
+                const amountPaid = parseFloat(row[5]) || 0; 
+                const totalFee = parseFloat(row[6]) || 0;
+                
+                if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
+                    if (filterName && name !== filterName) continue;
+
+                    foundPending = true; 
+                    const balance = totalFee - amountPaid;
+                    const rowNum = i + 1;
+                    
+                    summaryCount++; summaryTotal += balance;
+                    currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
+                    
+                    newHTML += `
+                    <div class="card" style="border-left: 4px solid var(--danger);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
+                            <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
+                        </div>
+                        <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
+                        <div style="display:flex; gap:10px;">
+                            <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${balance}"></div>
+                            <div style="flex:1"><label>Via</label>
+                                <select id="payType_${rowNum}">
+                                    <option value="Cash" ${paymentType==='cash'?'selected':''}>Cash</option>
+                                    <option value="Online" ${paymentType==='online'?'selected':''}>Online</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-main" style="padding: 10px;" onclick="submitPaymentUpdate(${rowNum})">Clear Balance</button>
+                        <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px;"></div>
+                    </div>`;
+                }
+            }
+            
+            if(!foundPending) {
+                if(filterName) { listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
+                else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
+            } else { listDiv.innerHTML = newHTML; }
+
+            if (filterName && foundPending) {
+                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`;
+                summaryBadge.style.display = "block";
+                waButton.style.display = "flex"; 
+            } else {
+                summaryBadge.style.display = "none";
+                waButton.style.display = "none"; 
+            }
+        }
+
+        function sendWhatsAppReminder() {
+            if (currentPendingSessionsForWA.length === 0) return;
+            let msg = `🌸 *Greetings, this is Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
+            let totalAmount = 0;
+            currentPendingSessionsForWA.forEach(session => {
+                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
+                totalAmount += session.amount;
+            });
+            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
+            const encodedMessage = encodeURIComponent(msg);
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        }
+
+        function submitPaymentUpdate(rowNum) {
+            const isConfirmed = confirm("Are you sure you want to clear this balance?");
+            if (!isConfirmed) return; 
+            
+            const status = document.getElementById('payStatus_' + rowNum); 
+            status.style.color = "var(--primary)"; 
+            status.innerText = "Updating ledger...";
+            
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === 'success') { 
+                    status.style.color = "var(--success)"; 
+                    status.innerText = "✓ Cleared"; 
+                    syncWithDatabase(); 
+                } else { 
+                    status.style.color = "var(--danger)"; 
+                    status.innerText = "Error"; 
+                }
+            });
+        }
+
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
+            btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
+            
+            // Clean & Title-Case the Name before sending it to the database
+            let rawName = document.getElementById('name').value.trim();
+            let cleanName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+            
+            const payload = {
+                action: "addVisit", date: document.getElementById('date').value, name: cleanName,
+                location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
+                painBefore: document.getElementById('painBefore').value, painAfter: document.getElementById('painAfter').value,
+                totalFee: document.getElementById('totalFee').value, amountPaid: document.getElementById('amountPaid').value,
+                paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
+                notes: document.getElementById('notes').value, month: "" 
+            };
+            
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                if(data.status === 'success') {
+                    status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
+                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
+                    syncWithDatabase(); 
+                } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
+                btn.innerText = "Save Session Record"; btn.disabled = false;
+            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
+        });
+
+        function showPatientHistory() {
+            const selectedName = document.getElementById('patientSelect').value;
+            const timeline = document.getElementById('historyTimeline'); 
+            if(!selectedName) { timeline.innerHTML = ""; return; }
+            
+            let records = [];
+            for(let i = 1; i < allSheetData.length; i++) { 
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
+                    records.push(allSheetData[i]); 
+                }
+            }
+            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+            
+            let newHTML = "";
+            records.forEach(row => {
+                const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                newHTML += `
+                <div class="card" style="border-left: 4px solid var(--primary);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+                        <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
+                        <span class="badge badge-success">${row[9]||"Session"}</span>
+                    </div>
+                    <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
+                        <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
+                        <div style="color:#cbd5e0; font-size:20px;">&rarr;</div>
+                        <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
+                    </div>
+                    <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>
+                </div>`;
+            });
+            timeline.innerHTML = newHTML;
+        }
+
+        function renderDashboard() {
+            if(allSheetData.length <= 1) return; 
+
+            const yearFilter = document.getElementById('dashYearFilter').value;
+            
+            let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
+            let monthDataMap = {}; let methodCounts = { 'Cash': 0, 'Online': 0 };
+            let uniquePatients = new Set();
+            let cityCounts = {};
+            let agedDebtorsObj = {};
+
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            if (yearFilter !== "All") {
+                monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 });
+            }
+
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i];
+                if(!row || !row[1]) continue; 
+                
+                const dateObj = new Date(row[1]);
+                if(isNaN(dateObj)) continue;
+
+                const rowYear = dateObj.getFullYear().toString();
+                if(yearFilter !== "All" && rowYear !== yearFilter) continue;
+
+                const paymentType = String(row[4]).toLowerCase().trim();
+                const amountPaid = parseFloat(row[5]) || 0;
+                const totalFee = parseFloat(row[6]) || 0;
+                const balance = totalFee - amountPaid;
+                const name = row[2] ? row[2].trim() : "";
+                const city = row[3] ? row[3].trim() : "";
+                
+                const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
+                const monthNameShort = monthNames[dateObj.getMonth()];
+                const allTimeLabelShort = monthNameShort + " '" + rowYear.substr(-2);
+                const chartKey = yearFilter === "All" ? allTimeLabelShort : monthNameShort;
+                
+                const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+                const displayMonthYear = `${monthNameFull}-${rowYear}`;
+
+                totalBilled += totalFee;
+                totalCollected += amountPaid;
+                if(balance > 0 || paymentType === 'pending') {
+                    totalPending += balance;
+                    
+                    if(name) {
+                        if(!agedDebtorsObj[sortableMonth]) agedDebtorsObj[sortableMonth] = { label: displayMonthYear, patients: {} };
+                        if(!agedDebtorsObj[sortableMonth].patients[name]) agedDebtorsObj[sortableMonth].patients[name] = { count: 0, amount: 0 };
+                        
+                        agedDebtorsObj[sortableMonth].patients[name].count += 1;
+                        agedDebtorsObj[sortableMonth].patients[name].amount += balance;
+                    }
+                }
+                
+                if(name) uniquePatients.add(name);
+                if(city) cityCounts[city] = (cityCounts[city] || 0) + totalFee;
+
+                if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
+                monthDataMap[chartKey].collected += amountPaid;
+                if(balance > 0) monthDataMap[chartKey].pending += balance;
+
+                if (paymentType === 'online') methodCounts['Online']++;
+                else if (paymentType === 'cash') methodCounts['Cash']++;
+            }
+
+            const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
+            let topCity = "-"; let maxCityVal = 0;
+            for (const [city, val] of Object.entries(cityCounts)) {
+                if (val > maxCityVal) { maxCityVal = val; topCity = city; }
+            }
+
+            document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
+            document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
+            document.getElementById('dashPending').innerText = "₹" + totalPending.toLocaleString('en-IN');
+            document.getElementById('dashARPV').innerText = "₹" + arpv.toLocaleString('en-IN');
+            document.getElementById('dashTopCity').innerText = topCity;
+
+            let labels = Object.keys(monthDataMap);
+            if(yearFilter === "All") { labels = labels.slice(-6); }
+            const collectedData = labels.map(l => monthDataMap[l].collected);
+            const pendingData = labels.map(l => monthDataMap[l].pending);
+
+            const ctx1 = document.getElementById('cashflowChart').getContext('2d');
+            if(cashflowChartInstance) cashflowChartInstance.destroy();
+            cashflowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Collected (₹)', data: collectedData, backgroundColor: '#38a169', stack: 'Stack 0' },
+                        { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } }, scales: { x: { stacked: true }, y: { stacked: true } }, animation: { duration: 0 } }
+            });
+
+            const ctx2 = document.getElementById('paymentChart').getContext('2d');
+            if(paymentChartInstance) paymentChartInstance.destroy();
+            paymentChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cash', 'Online'],
+                    datasets: [{ data: [methodCounts['Cash'], methodCounts['Online']], backgroundColor: ['#38a169', '#3182ce'], borderWidth: 0 }]
+                },
+                options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } }, animation: { duration: 0 } }
+            });
+            
+            const agedDebtorsDiv = document.getElementById('agedDebtorsList');
+            agedDebtorsDiv.innerHTML = "";
+            const sortedMonths = Object.keys(agedDebtorsObj).sort((a,b) => b.localeCompare(a));
+            
+            if (sortedMonths.length === 0) {
+                agedDebtorsDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 14px;'>No pending balances for the selected timeframe.</p>";
+            } else {
+                let listHTML = "";
+                sortedMonths.forEach(monthKey => {
+                    const monthData = agedDebtorsObj[monthKey];
+                    listHTML += `<div class="month-header">${monthData.label}</div>`;
+                    
+                    Object.keys(monthData.patients).sort().forEach(patName => {
+                        const stats = monthData.patients[patName];
+                        listHTML += `
+                        <div class="patient-row">
+                            <span>${patName}</span>
+                            <span class="patient-stats">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span>
+                        </div>`;
+                    });
+                });
+                agedDebtorsDiv.innerHTML = listHTML;
+            }
+        }
+
+        function showPatientAnalytics() {
+            const name = document.getElementById('analyticsPatientSelect').value;
+            const container = document.getElementById('patientAnalyticsData');
+            const debtorsContainer = document.getElementById('agedDebtorsContainer');
+            
+            if(!name) { 
+                container.style.display = 'none'; 
+                debtorsContainer.style.display = 'block'; 
+                return; 
+            }
+            
+            debtorsContainer.style.display = 'none';
+
+            let sessions = 0; let spent = 0; let pending = 0;
+            let chartDates = []; let painBeforeData = []; let painAfterData = [];
+            
+            let patRecords = [];
+            for(let i = 1; i < allSheetData.length; i++) {
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === name) {
+                    patRecords.push(allSheetData[i]);
+                }
+            }
+            patRecords.sort((a, b) => new Date(a[1]) - new Date(b[1]));
+
+            patRecords.forEach(row => {
+                sessions++;
+                const paid = parseFloat(row[5]) || 0;
+                const fee = parseFloat(row[6]) || 0;
+                spent += paid;
+                if(fee > paid) pending += (fee - paid);
+
+                if(row[1]) {
+                    const d = new Date(row[1]);
+                    if(!isNaN(d)) chartDates.push(d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}));
+                }
+                painBeforeData.push(parseFloat(row[7]) || null);
+                painAfterData.push(parseFloat(row[8]) || null);
+            });
+
+            document.getElementById('patTotalSessions').innerText = sessions;
+            document.getElementById('patTotalSpent').innerText = "₹" + spent.toLocaleString('en-IN');
+            document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
+            container.style.display = 'block';
+
+            const ctx3 = document.getElementById('painChart').getContext('2d');
+            if(painChartInstance) painChartInstance.destroy();
+            painChartInstance = new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: chartDates,
+                    datasets: [
+                        { label: 'Pain Before', data: painBeforeData, borderColor: '#e53e3e', backgroundColor: '#e53e3e', tension: 0.3 },
+                        { label: 'Pain After', data: painAfterData, borderColor: '#38a169', backgroundColor: '#38a169', tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Clinical Progress (Pain Score 1-10)' } }, scales: { y: { min: 0, max: 10 } }, animation: { duration: 0 } }
+            });
+        }
+    </script>
+</body>
+</html>
