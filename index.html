@@ -78,7 +78,6 @@
             font-size: 16px; font-weight: 700; margin-top: 10px; 
             cursor: pointer; box-shadow: 0 4px 6px rgba(0,121,107,0.2);
             display: flex; justify-content: center; align-items: center; gap: 8px;
-            transition: background-color 0.3s ease; /* For smooth success color transition */
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         .btn-secondary { background: #edf2f7; color: var(--primary); border: 1px solid #cbd5e0; }
@@ -188,7 +187,7 @@
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>Amount Paid (₹)</label>
-                        <input type="number" id="amountPaid" required>
+                        <input type="number" id="amountPaid" value="0" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -471,6 +470,7 @@
             if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
         }
 
+        // SMART AUTO-FILL ENGINE
         document.getElementById('name').addEventListener('input', function(e) {
             const selectedName = e.target.value.trim();
             if (!selectedName) return;
@@ -513,6 +513,7 @@
             }
         }
 
+        // UPGRADED SORTING FOR RECENT TAB (Fixes Identical Dates issue)
         function loadRecentPatients() {
             const listDiv = document.getElementById('recentList');
             if(allSheetData.length <= 1) { listDiv.innerHTML = "<p>No recent patients found.</p>"; return; }
@@ -520,15 +521,23 @@
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) {
                 if(!allSheetData[i] || !allSheetData[i][1]) continue;
-                records.push(allSheetData[i]);
+                records.push({row: allSheetData[i], index: i});
             }
-            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+            
+            // Sort by Date DESC, then by Row Index DESC (guarantees newest save is on top)
+            records.sort((a, b) => {
+                const dateB = new Date(b.row[1]).getTime();
+                const dateA = new Date(a.row[1]).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                return b.index - a.index; 
+            });
             const top5 = records.slice(0, 5);
 
             if(top5.length === 0) { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; return; }
 
             let newHTML = "";
-            top5.forEach(row => {
+            top5.forEach(item => {
+                const row = item.row;
                 const dateStr = new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
                 newHTML += `
                 <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
@@ -579,7 +588,7 @@
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
                     newHTML += `
-                    <div class="card" id="card_${rowNum}" style="border-left: 4px solid var(--danger); transition: opacity 0.3s ease, transform 0.3s ease;">
+                    <div class="card" style="border-left: 4px solid var(--danger);">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
                             <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
@@ -629,44 +638,40 @@
             window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
         }
 
-        // --- NEW: OPTIMISTIC UI FOR LEDGER ---
         function submitPaymentUpdate(rowNum) {
             const isConfirmed = confirm("Are you sure you want to clear this balance?");
             if (!isConfirmed) return; 
             
-            const card = document.getElementById('card_' + rowNum);
             const status = document.getElementById('payStatus_' + rowNum); 
-            
-            // Instantly clear the UI before Google even responds
-            card.style.opacity = "0.4";
-            card.style.transform = "scale(0.98)";
-            status.style.color = "var(--success)"; 
-            status.innerText = "✓ Cleared"; 
+            status.style.color = "var(--primary)"; 
+            status.innerText = "Updating ledger...";
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
-                    syncWithDatabase(); // Silently pull new data in background
+                    status.style.color = "var(--success)"; 
+                    status.innerText = "✓ Cleared"; 
+                    
+                    // INSTANT LOCAL UPDATE
+                    if (allSheetData[rowNum - 1]) {
+                        allSheetData[rowNum - 1][5] = document.getElementById('payAmt_' + rowNum).value;
+                        allSheetData[rowNum - 1][4] = document.getElementById('payType_' + rowNum).value;
+                    }
+                    syncWithDatabase(); 
                 } else { 
-                    // Revert UI if it failed
-                    card.style.opacity = "1";
-                    card.style.transform = "scale(1)";
                     status.style.color = "var(--danger)"; 
-                    status.innerText = "Error syncing."; 
+                    status.innerText = "Error"; 
                 }
             }).catch(e => {
-                // Revert UI if offline
-                card.style.opacity = "1";
-                card.style.transform = "scale(1)";
                 status.style.color = "var(--danger)"; 
                 status.innerText = "Connection error."; 
             });
         }
 
-        // --- NEW: OPTIMISTIC UI FOR NEW VISIT ---
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn'); 
+            const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
+            btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
             
             let rawName = document.getElementById('name').value.trim();
             let cleanName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -680,26 +685,24 @@
                 notes: document.getElementById('notes').value, month: "" 
             };
             
-            // Instantly clear form and show success
-            document.getElementById('entryForm').reset(); 
-            document.getElementById('date').valueAsDate = new Date(); 
-            
-            btn.innerText = "✓ Saved Successfully";
-            btn.style.backgroundColor = "var(--success)";
-            
-            setTimeout(() => {
-                btn.innerText = "Save Session Record";
-                btn.style.backgroundColor = "var(--primary)";
-            }, 2500);
-            
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
-                    syncWithDatabase(); // Silently pull new data
-                } 
-            });
+                    status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
+                    
+                    // INSTANT LOCAL UPDATE: Inject row directly into array so it shows up in "Recent" without waiting!
+                    allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
+                    
+                    document.getElementById('entryForm').reset(); 
+                    document.getElementById('date').valueAsDate = new Date(); 
+                    document.getElementById('amountPaid').value = "0"; // Reset 0 explicitly
+                    syncWithDatabase(); 
+                } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
+                btn.innerText = "Save Session Record"; btn.disabled = false;
+            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
         });
 
+        // UPGRADED SORTING FOR HISTORY TAB
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
@@ -708,13 +711,19 @@
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { 
                 if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
-                    records.push(allSheetData[i]); 
+                    records.push({row: allSheetData[i], index: i}); 
                 }
             }
-            records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+            records.sort((a, b) => {
+                const dateB = new Date(b.row[1]).getTime();
+                const dateA = new Date(a.row[1]).getTime();
+                if (dateB !== dateA) return dateB - dateA;
+                return b.index - a.index; 
+            });
             
             let newHTML = "";
-            records.forEach(row => {
+            records.forEach(item => {
+                const row = item.row;
                 const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
                 newHTML += `
                 <div class="card" style="border-left: 4px solid var(--primary);">
@@ -866,6 +875,7 @@
             }
         }
 
+        // UPGRADED SORTING FOR ANALYTICS DRILL-DOWN
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
@@ -885,12 +895,20 @@
             let patRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
                 if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === name) {
-                    patRecords.push(allSheetData[i]);
+                    patRecords.push({row: allSheetData[i], index: i});
                 }
             }
-            patRecords.sort((a, b) => new Date(a[1]) - new Date(b[1]));
+            
+            // Sort ascending for chart (Oldest first)
+            patRecords.sort((a, b) => {
+                const dateA = new Date(a.row[1]).getTime();
+                const dateB = new Date(b.row[1]).getTime();
+                if (dateA !== dateB) return dateA - dateB;
+                return a.index - b.index;
+            });
 
-            patRecords.forEach(row => {
+            patRecords.forEach(item => {
+                const row = item.row;
                 sessions++;
                 const paid = parseFloat(row[5]) || 0;
                 const fee = parseFloat(row[6]) || 0;
