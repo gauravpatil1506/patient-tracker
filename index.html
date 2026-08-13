@@ -78,6 +78,7 @@
             font-size: 16px; font-weight: 700; margin-top: 10px; 
             cursor: pointer; box-shadow: 0 4px 6px rgba(0,121,107,0.2);
             display: flex; justify-content: center; align-items: center; gap: 8px;
+            transition: background-color 0.3s ease; /* For smooth success color transition */
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         .btn-secondary { background: #edf2f7; color: var(--primary); border: 1px solid #cbd5e0; }
@@ -354,6 +355,7 @@
         // =======================================================
         
         let allSheetData = []; 
+        let patientLocationMap = {}; 
         
         let cashflowChartInstance = null;
         let paymentChartInstance = null;
@@ -469,7 +471,6 @@
             if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
         }
 
-        // --- NEW: SMART AUTO-FILL ENGINE ---
         document.getElementById('name').addEventListener('input', function(e) {
             const selectedName = e.target.value.trim();
             if (!selectedName) return;
@@ -481,12 +482,10 @@
                 }
             }
 
-            // If patient exists, grab their newest record
             if (patientRecords.length > 0) {
                 patientRecords.sort((a, b) => new Date(b[1]) - new Date(a[1])); 
                 const latestVisit = patientRecords[0];
 
-                // Auto-fill Location, Session Type, and Total Fee based on their last visit
                 document.getElementById('location').value = latestVisit[3] ? latestVisit[3].trim() : "";
                 document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].trim() : "";
                 document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
@@ -580,7 +579,7 @@
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
                     newHTML += `
-                    <div class="card" style="border-left: 4px solid var(--danger);">
+                    <div class="card" id="card_${rowNum}" style="border-left: 4px solid var(--danger); transition: opacity 0.3s ease, transform 0.3s ease;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
                             <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
@@ -630,31 +629,44 @@
             window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
         }
 
+        // --- NEW: OPTIMISTIC UI FOR LEDGER ---
         function submitPaymentUpdate(rowNum) {
             const isConfirmed = confirm("Are you sure you want to clear this balance?");
             if (!isConfirmed) return; 
             
+            const card = document.getElementById('card_' + rowNum);
             const status = document.getElementById('payStatus_' + rowNum); 
-            status.style.color = "var(--primary)"; 
-            status.innerText = "Updating ledger...";
+            
+            // Instantly clear the UI before Google even responds
+            card.style.opacity = "0.4";
+            card.style.transform = "scale(0.98)";
+            status.style.color = "var(--success)"; 
+            status.innerText = "✓ Cleared"; 
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
-                    status.style.color = "var(--success)"; 
-                    status.innerText = "✓ Cleared"; 
-                    syncWithDatabase(); 
+                    syncWithDatabase(); // Silently pull new data in background
                 } else { 
+                    // Revert UI if it failed
+                    card.style.opacity = "1";
+                    card.style.transform = "scale(1)";
                     status.style.color = "var(--danger)"; 
-                    status.innerText = "Error"; 
+                    status.innerText = "Error syncing."; 
                 }
+            }).catch(e => {
+                // Revert UI if offline
+                card.style.opacity = "1";
+                card.style.transform = "scale(1)";
+                status.style.color = "var(--danger)"; 
+                status.innerText = "Connection error."; 
             });
         }
 
+        // --- NEW: OPTIMISTIC UI FOR NEW VISIT ---
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
-            btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
+            const btn = document.getElementById('submitBtn'); 
             
             let rawName = document.getElementById('name').value.trim();
             let cleanName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -668,15 +680,24 @@
                 notes: document.getElementById('notes').value, month: "" 
             };
             
+            // Instantly clear form and show success
+            document.getElementById('entryForm').reset(); 
+            document.getElementById('date').valueAsDate = new Date(); 
+            
+            btn.innerText = "✓ Saved Successfully";
+            btn.style.backgroundColor = "var(--success)";
+            
+            setTimeout(() => {
+                btn.innerText = "Save Session Record";
+                btn.style.backgroundColor = "var(--primary)";
+            }, 2500);
+            
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
-                    status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
-                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
-                    syncWithDatabase(); 
-                } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
-                btn.innerText = "Save Session Record"; btn.disabled = false;
-            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
+                    syncWithDatabase(); // Silently pull new data
+                } 
+            });
         });
 
         function showPatientHistory() {
