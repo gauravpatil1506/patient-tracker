@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dr. Anjali Vishwakarma - Physio Clinic</title>
+    
+    <!-- PWA / Add to Home Screen Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00796b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -26,6 +34,8 @@
             padding: 0;
             padding-bottom: 80px; 
             color: var(--text-main); 
+            /* Prevents pull-to-refresh on mobile apps to make it feel native */
+            overscroll-behavior-y: none;
         }
 
         /* Top App Header */
@@ -875,7 +885,6 @@
             }
         }
 
-        // UPGRADED SORTING FOR ANALYTICS DRILL-DOWN
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
