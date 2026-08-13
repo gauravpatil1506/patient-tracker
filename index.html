@@ -13,8 +13,16 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Instantly apply theme to prevent white flash on load -->
+    <script>
+        const savedTheme = localStorage.getItem('appTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
     <style>
         :root {
+            /* Light Theme Variables */
             --primary: #00796b;      
             --primary-dark: #004d40;
             --secondary: #26a69a;
@@ -22,9 +30,39 @@
             --card-bg: #ffffff;
             --text-main: #2d3748;
             --text-muted: #718096;
+            --border-color: #cbd5e0;
+            --divider-color: #e2e8f0;
+            --input-bg: #f8fafc;
             --danger: #e53e3e;
             --success: #38a169;
+            --danger-bg: #fff5f5;
+            --danger-border: #fed7d7;
+            --success-bg: #f0fff4;
+            --success-border: #c6f6d5;
             --whatsapp: #25D366;
+            color-scheme: light;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Variables */
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: #333333;
+            --divider-color: #2d2d2d;
+            --input-bg: #2d2d2d;
+            --primary-dark: #4fd1c5; /* Brighter for readability on dark */
+            --danger-bg: rgba(229, 62, 62, 0.15);
+            --danger-border: rgba(229, 62, 62, 0.3);
+            --success-bg: rgba(56, 161, 105, 0.15);
+            --success-border: rgba(56, 161, 105, 0.3);
+            color-scheme: dark;
+        }
+
+        /* Smooth Transition for Theme Swapping */
+        body, .card, input, select, textarea, .bottom-nav, .dash-card, .chart-wrapper {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body { 
@@ -34,7 +72,6 @@
             padding: 0;
             padding-bottom: 80px; 
             color: var(--text-main); 
-            /* Prevents pull-to-refresh on mobile apps to make it feel native */
             overscroll-behavior-y: none;
         }
 
@@ -43,25 +80,44 @@
             background: var(--primary);
             color: white;
             padding: 18px 20px;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-size: 1.25rem;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,121,107,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             position: sticky;
             top: 0;
             z-index: 100;
             letter-spacing: 0.5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
-        .sync-indicator {
+        
+        .header-controls {
             position: absolute;
             right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sync-indicator {
             font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
             opacity: 0.9;
+        }
+
+        .theme-toggle-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
 
         /* Main Container */
@@ -75,51 +131,52 @@
         .form-group { margin-bottom: 18px; }
         label { font-weight: 600; display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-main); }
         input, select, textarea { 
-            width: 100%; padding: 14px; border: 1px solid #cbd5e0; 
+            width: 100%; padding: 14px; border: 1px solid var(--border-color); 
             border-radius: 10px; font-size: 16px; box-sizing: border-box; 
-            background: #f8fafc; transition: border 0.2s;
+            background: var(--input-bg); color: var(--text-main);
         }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: #fff; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
         
         /* Buttons */
         .btn-main { 
             width: 100%; padding: 16px; background: var(--primary); 
             color: white; border: none; border-radius: 10px; 
             font-size: 16px; font-weight: 700; margin-top: 10px; 
-            cursor: pointer; box-shadow: 0 4px 6px rgba(0,121,107,0.2);
+            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
-        .btn-secondary { background: #edf2f7; color: var(--primary); border: 1px solid #cbd5e0; }
+        .btn-secondary { background: var(--input-bg); color: var(--primary); border: 1px solid var(--border-color); }
 
         /* Cards */
         .card { 
             background: var(--card-bg); border-radius: 12px; padding: 16px; 
             margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--divider-color);
         }
         .card h4 { margin: 0 0 8px 0; color: var(--primary-dark); font-size: 18px; }
         .card p { margin: 4px 0; font-size: 14px; color: var(--text-muted); }
         
         /* Badges */
         .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
-        .badge-pending { background: #fff5f5; color: var(--danger); border: 1px solid #fed7d7; }
-        .badge-success { background: #f0fff4; color: var(--success); border: 1px solid #c6f6d5; }
+        .badge-pending { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+        .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
 
         /* Dashboard Grid */
         .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .dash-card { background: white; padding: 14px 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .dash-card { background: var(--card-bg); padding: 14px 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color);}
         .dash-card h3 { margin: 0; font-size: 18px; color: var(--primary); white-space: nowrap; }
         .dash-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
         .dash-card.span-2 { grid-column: span 2; }
-        .chart-wrapper { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .chart-wrapper { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
 
         /* Bottom Navigation Bar */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; display: flex; justify-content: space-between;
+            background: var(--card-bg); display: flex; justify-content: space-between;
             padding: 10px 10px 20px 10px; box-sizing: border-box;
             box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 1000;
+            border-top: 1px solid var(--divider-color);
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -132,7 +189,7 @@
         .status-msg { text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px; }
         
         /* Clean Borderless List Styles */
-        .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+        .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--divider-color); padding-bottom: 4px; }
         .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
         .patient-stats { font-weight: 700; color: var(--danger); white-space: nowrap; }
     </style>
@@ -141,8 +198,11 @@
 
     <!-- App Header -->
     <div class="app-header">
-        Dr. Anjali Vishwakarma
-        <span id="syncText" class="sync-indicator"></span>
+        Dr. Anjali
+        <div class="header-controls">
+            <span id="syncText" class="sync-indicator"></span>
+            <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()">☀️</button>
+        </div>
     </div>
 
     <!-- TAB 1: NEW VISIT -->
@@ -261,7 +321,7 @@
     <div id="tab5" class="tab-content container">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
             <h3 style="margin:0; color: var(--primary-dark);">Business Insights</h3>
-            <select id="dashYearFilter" onchange="renderDashboard()" style="width: auto; padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background: white;">
+            <select id="dashYearFilter" onchange="renderDashboard()" style="width: auto; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px; background: var(--input-bg); color: var(--text-main);">
                 <option value="All">All-Time</option>
             </select>
         </div>
@@ -306,7 +366,7 @@
             <select id="analyticsPatientSelect" onchange="showPatientAnalytics()">
                 <option value="">-- Select Patient --</option>
             </select>
-            <div id="patientAnalyticsData" style="display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+            <div id="patientAnalyticsData" style="display: none; margin-top: 15px; border-top: 1px solid var(--divider-color); padding-top: 15px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                     <span style="color: var(--text-muted);">Total Sessions:</span>
                     <strong id="patTotalSessions">0</strong>
@@ -320,7 +380,7 @@
                     <strong id="patTotalPending" style="color: var(--danger);">₹0</strong>
                 </div>
                 <!-- Clinical Pain Chart -->
-                <div style="border-top: 1px solid #eee; padding-top: 15px;">
+                <div style="border-top: 1px solid var(--divider-color); padding-top: 15px;">
                     <canvas id="painChart"></canvas>
                 </div>
             </div>
@@ -376,6 +436,10 @@
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
             
+            // Apply initial theme UI state
+            updateThemeIcon(savedTheme);
+            updateChartColors(savedTheme);
+
             try {
                 const cachedData = localStorage.getItem('clinicData');
                 if (cachedData) {
@@ -390,6 +454,36 @@
 
             syncWithDatabase(); 
         };
+
+        // --- DARK MODE LOGIC ---
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('appTheme', newTheme);
+            
+            updateThemeIcon(newTheme);
+            updateChartColors(newTheme);
+            
+            // Re-render graphs so colors update instantly
+            if (document.getElementById('tab5').classList.contains('active')) {
+                renderDashboard();
+                showPatientAnalytics();
+            }
+        }
+
+        function updateThemeIcon(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            btn.innerText = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        function updateChartColors(theme) {
+            // Native Chart.js global color overrides
+            Chart.defaults.color = theme === 'dark' ? '#a0aec0' : '#718096';
+            Chart.defaults.borderColor = theme === 'dark' ? '#333333' : '#e2e8f0';
+        }
+
 
         function syncWithDatabase(callback) {
             if (isSyncing) return;
@@ -523,7 +617,6 @@
             }
         }
 
-        // UPGRADED SORTING FOR RECENT TAB (Fixes Identical Dates issue)
         function loadRecentPatients() {
             const listDiv = document.getElementById('recentList');
             if(allSheetData.length <= 1) { listDiv.innerHTML = "<p>No recent patients found.</p>"; return; }
@@ -534,7 +627,6 @@
                 records.push({row: allSheetData[i], index: i});
             }
             
-            // Sort by Date DESC, then by Row Index DESC (guarantees newest save is on top)
             records.sort((a, b) => {
                 const dateB = new Date(b.row[1]).getTime();
                 const dateA = new Date(a.row[1]).getTime();
@@ -603,7 +695,7 @@
                             <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
                             <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
                         </div>
-                        <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
+                        <hr style="border:0; border-top:1px solid var(--divider-color); margin: 12px 0;">
                         <div style="display:flex; gap:10px;">
                             <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${balance}"></div>
                             <div style="flex:1"><label>Via</label>
@@ -662,7 +754,6 @@
                     status.style.color = "var(--success)"; 
                     status.innerText = "✓ Cleared"; 
                     
-                    // INSTANT LOCAL UPDATE
                     if (allSheetData[rowNum - 1]) {
                         allSheetData[rowNum - 1][5] = document.getElementById('payAmt_' + rowNum).value;
                         allSheetData[rowNum - 1][4] = document.getElementById('payType_' + rowNum).value;
@@ -700,19 +791,17 @@
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
                     
-                    // INSTANT LOCAL UPDATE: Inject row directly into array so it shows up in "Recent" without waiting!
                     allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
                     
                     document.getElementById('entryForm').reset(); 
                     document.getElementById('date').valueAsDate = new Date(); 
-                    document.getElementById('amountPaid').value = "0"; // Reset 0 explicitly
+                    document.getElementById('amountPaid').value = "0"; 
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
         });
 
-        // UPGRADED SORTING FOR HISTORY TAB
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
@@ -741,9 +830,9 @@
                         <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
                         <span class="badge badge-success">${row[9]||"Session"}</span>
                     </div>
-                    <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
+                    <div style="background: var(--input-bg); padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
                         <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
-                        <div style="color:#cbd5e0; font-size:20px;">&rarr;</div>
+                        <div style="color:var(--text-muted); font-size:20px;">&rarr;</div>
                         <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
                     </div>
                     <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>
@@ -908,7 +997,6 @@
                 }
             }
             
-            // Sort ascending for chart (Oldest first)
             patRecords.sort((a, b) => {
                 const dateA = new Date(a.row[1]).getTime();
                 const dateB = new Date(b.row[1]).getTime();
