@@ -354,7 +354,6 @@
         // =======================================================
         
         let allSheetData = []; 
-        let patientLocationMap = {}; 
         
         let cashflowChartInstance = null;
         let paymentChartInstance = null;
@@ -366,13 +365,11 @@
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
             
-            // --- NEW: INSTANT LOAD FROM LOCALSTORAGE ---
             try {
                 const cachedData = localStorage.getItem('clinicData');
                 if (cachedData) {
                     allSheetData = JSON.parse(cachedData);
                     updateDropdowns();
-                    // Optional: Render active tab immediately
                     const activeTabId = document.querySelector('.tab-content.active').id;
                     renderCurrentTab(activeTabId);
                 }
@@ -383,7 +380,6 @@
             syncWithDatabase(); 
         };
 
-        // --- STABLE ARRAY-BASED SYNC LOGIC ---
         function syncWithDatabase(callback) {
             if (isSyncing) return;
             isSyncing = true;
@@ -399,7 +395,6 @@
                 if(data.status === 'success') {
                     allSheetData = data.data;
                     
-                    // --- NEW: SAVE TO LOCALSTORAGE ---
                     try {
                         localStorage.setItem('clinicData', JSON.stringify(allSheetData));
                     } catch (e) {
@@ -445,7 +440,7 @@
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i];
                 if(!row) continue;
-                if(row[2]) { names.add(row[2].trim()); patientLocationMap[row[2].trim()] = row[3] ? row[3].trim() : ""; }
+                if(row[2]) { names.add(row[2].trim()); }
                 if(row[1]) {
                     const y = new Date(row[1]).getFullYear();
                     if(y && !isNaN(y)) years.add(y);
@@ -474,12 +469,30 @@
             if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
         }
 
+        // --- NEW: SMART AUTO-FILL ENGINE ---
         document.getElementById('name').addEventListener('input', function(e) {
             const selectedName = e.target.value.trim();
-            if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
+            if (!selectedName) return;
+
+            let patientRecords = [];
+            for(let i = 1; i < allSheetData.length; i++) {
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
+                    patientRecords.push(allSheetData[i]);
+                }
+            }
+
+            // If patient exists, grab their newest record
+            if (patientRecords.length > 0) {
+                patientRecords.sort((a, b) => new Date(b[1]) - new Date(a[1])); 
+                const latestVisit = patientRecords[0];
+
+                // Auto-fill Location, Session Type, and Total Fee based on their last visit
+                document.getElementById('location').value = latestVisit[3] ? latestVisit[3].trim() : "";
+                document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].trim() : "";
+                document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
+            }
         });
 
-        // --- PURE LOCAL TAB SWITCHING ---
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -510,7 +523,6 @@
                 if(!allSheetData[i] || !allSheetData[i][1]) continue;
                 records.push(allSheetData[i]);
             }
-            // Strict sort by descending date
             records.sort((a, b) => new Date(b[1]) - new Date(a[1]));
             const top5 = records.slice(0, 5);
 
@@ -644,7 +656,6 @@
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
             
-            // Clean & Title-Case the Name before sending it to the database
             let rawName = document.getElementById('name').value.trim();
             let cleanName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
             
