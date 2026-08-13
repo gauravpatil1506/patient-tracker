@@ -1,0 +1,15 @@
+{
+  "name": "Physio Clinic",
+  "short_name": "Clinic",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#00796b",
+  "theme_color": "#00796b",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2966/2966327.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
