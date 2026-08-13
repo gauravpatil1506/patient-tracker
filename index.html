@@ -28,7 +28,7 @@
             color: var(--text-main); 
         }
 
-        /* Top App Header with Sync Indicator */
+        /* Top App Header */
         .app-header {
             background: var(--primary);
             color: white;
@@ -49,8 +49,9 @@
             position: absolute;
             right: 15px;
             font-size: 10px;
-            font-weight: 500;
-            opacity: 0.8;
+            font-weight: 600;
+            text-transform: uppercase;
+            opacity: 0.9;
         }
 
         /* Main Container */
@@ -131,7 +132,7 @@
     <!-- App Header -->
     <div class="app-header">
         Dr. Anjali Vishwakarma
-        <span id="syncStatus" class="sync-indicator"></span>
+        <span id="syncText" class="sync-indicator"></span>
     </div>
 
     <!-- TAB 1: NEW VISIT -->
@@ -230,9 +231,7 @@
                 <option value="">-- All Patients --</option>
             </select>
         </div>
-
-        <button class="btn-main btn-secondary" onclick="manualSync()" style="margin-bottom: 15px; padding: 12px;">Force Sync</button>
-        <div id="paymentStatus" class="status-msg"></div>
+        
         <div id="pendingList"></div>
     </div>
 
@@ -363,32 +362,21 @@
         
         let currentPendingSessionsForWA = [];
         
-        // --- NEW NETWORK LOCK & THROTTLE VARIABLES ---
-        let lastSyncTime = 0;
         let isSyncing = false;
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
-            syncWithDatabase(() => {}, true); // Force initial sync
+            syncWithDatabase(); // Initial sync on load
         };
 
-        function syncWithDatabase(callback, force = false) {
-            const now = Date.now();
-            
-            // 1. THROTTLING: Ignore background syncs if we synced < 15 seconds ago (unless forced)
-            if (!force && (now - lastSyncTime < 15000)) {
-                if(callback) callback(); 
-                return;
-            }
-            
-            // 2. LOCKING: Prevent multiple simultaneous requests
-            if (isSyncing) {
-                if(callback) callback();
-                return;
-            }
-
+        // --- ACTION-DRIVEN SYNC LOGIC ---
+        function syncWithDatabase(callback) {
+            if (isSyncing) return;
             isSyncing = true;
-            document.getElementById('syncStatus').innerText = "↻ Syncing...";
+            
+            const syncText = document.getElementById('syncText');
+            syncText.innerText = "Syncing...";
+            syncText.style.color = "white";
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json())
@@ -396,32 +384,24 @@
                 isSyncing = false;
                 if(data.status === 'success') {
                     allSheetData = data.data;
-                    lastSyncTime = Date.now(); // Record success time
                     updateDropdowns();
-                    document.getElementById('syncStatus').innerText = "";
+                    syncText.innerText = "";
+                    
+                    const activeTabId = document.querySelector('.tab-content.active').id;
+                    renderCurrentTab(activeTabId);
+                    
                     if(callback) callback(); 
                 }
             }).catch(e => {
                 isSyncing = false;
-                // 3. SILENT FAILURE: Only panic if she has ZERO cached data.
                 if (allSheetData.length <= 1) {
-                    document.getElementById('syncStatus').innerText = "⚠️ Offline";
+                    syncText.innerText = "⚠️ Offline";
+                    syncText.style.color = "var(--danger)";
                 } else {
-                    document.getElementById('syncStatus').innerText = ""; 
+                    syncText.innerText = "";
                 }
                 if(callback) callback();
             });
-        }
-
-        function manualSync() {
-            const status = document.getElementById('paymentStatus');
-            status.style.color = "var(--primary)";
-            status.innerText = "Syncing with database...";
-            // Force true to bypass the 15-second cooldown
-            syncWithDatabase(() => {
-                renderPendingPayments();
-                status.innerText = "";
-            }, true);
         }
 
         function updateDropdowns() {
@@ -476,6 +456,7 @@
             if (patientLocationMap[selectedName]) document.getElementById('location').value = patientLocationMap[selectedName];
         });
 
+        // --- PURE LOCAL TAB SWITCHING (0 SERVER REQUESTS) ---
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -484,12 +465,8 @@
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
             
+            // Instantly render from local memory. NO FETCHING.
             renderCurrentTab(tabId);
-            
-            // Calls standard sync (will hit the 15-second block and skip fetching if recently synced)
-            syncWithDatabase(() => {
-                renderCurrentTab(tabId);
-            });
         }
 
         function renderCurrentTab(tabId) {
@@ -619,14 +596,21 @@
         function submitPaymentUpdate(rowNum) {
             const isConfirmed = confirm("Are you sure you want to clear this balance?");
             if (!isConfirmed) return; 
+            
             const status = document.getElementById('payStatus_' + rowNum); 
-            status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
+            status.style.color = "var(--primary)"; 
+            status.innerText = "Updating ledger...";
+            
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
-                    status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
-                    syncWithDatabase(() => renderPendingPayments(), true); // Force true
-                } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
+                    status.style.color = "var(--success)"; 
+                    status.innerText = "✓ Cleared"; 
+                    syncWithDatabase(); // Auto-sync after action
+                } else { 
+                    status.style.color = "var(--danger)"; 
+                    status.innerText = "Error"; 
+                }
             });
         }
 
@@ -634,6 +618,7 @@
             e.preventDefault();
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
+            
             const payload = {
                 action: "addVisit", date: document.getElementById('date').value, name: document.getElementById('name').value,
                 location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
@@ -642,12 +627,13 @@
                 paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
                 notes: document.getElementById('notes').value, month: "" 
             };
+            
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
                     document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); 
-                    syncWithDatabase(null, true); // Force true
+                    syncWithDatabase(); // Auto-sync after action
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
