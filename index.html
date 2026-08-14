@@ -496,7 +496,6 @@
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
 
-        // --- UPGRADED TAB 2: UPCOMING & RECENT ---
         function loadRecentPatients() {
             const upcomingDiv = document.getElementById('upcomingList');
             const recentDiv = document.getElementById('recentList');
@@ -549,8 +548,8 @@
                 let upcomingHTML = "";
                 upcomingList.forEach(item => {
                     const dateFormatted = formatApptDate(item.date);
-                    // CLEAN TEXT: Emojis removed to fix encoding crashes on specific phones
-                    let msg = `*Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n• *Scheduled Date:* ${dateFormatted}\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day!`;
+                    // RESTORED EMOJIS HERE
+                    let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
                     let encodedMsg = encodeURIComponent(msg);
                     
                     upcomingHTML += `
@@ -661,14 +660,14 @@
 
         function sendWhatsAppReminder() {
             if (currentPendingSessionsForWA.length === 0) return;
-            // CLEAN TEXT: Emojis removed to fix encoding crashes on specific phones
-            let msg = `*Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n*Session Details:*\n`;
+            // RESTORED EMOJIS HERE
+            let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
             let totalAmount = 0;
             currentPendingSessionsForWA.forEach(session => {
-                msg += `• ${session.date}: ₹${session.amount.toLocaleString('en-IN')}\n`;
+                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
                 totalAmount += session.amount;
             });
-            msg += `\n• *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n• *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery!`;
+            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
             const encodedMessage = encodeURIComponent(msg);
             window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
         }
