@@ -385,7 +385,6 @@
             Chart.defaults.borderColor = theme === 'dark' ? '#333333' : '#e2e8f0';
         }
 
-        // --- HELPER FORMATTER: "13-Aug-26 | Thursday" ---
         function formatApptDate(dateObj) {
             if(isNaN(dateObj)) return "";
             const d = dateObj.getDate().toString().padStart(2, '0');
@@ -550,7 +549,8 @@
                 let upcomingHTML = "";
                 upcomingList.forEach(item => {
                     const dateFormatted = formatApptDate(item.date);
-                    let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
+                    // CLEAN TEXT: Emojis removed to fix encoding crashes on specific phones
+                    let msg = `*Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n• *Scheduled Date:* ${dateFormatted}\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day!`;
                     let encodedMsg = encodeURIComponent(msg);
                     
                     upcomingHTML += `
@@ -559,7 +559,7 @@
                             <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${item.name}</h4>
                             <span style="font-size: 13px; font-weight: bold; color: var(--text-main);">${dateFormatted}</span>
                         </div>
-                        <a href="https://wa.me/?text=${encodedMsg}" target="_blank" class="wa-btn" title="Send Reminder">
+                        <a href="https://api.whatsapp.com/send?text=${encodedMsg}" target="_blank" class="wa-btn" title="Send Reminder">
                             <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
                         </a>
                     </div>`;
@@ -661,15 +661,16 @@
 
         function sendWhatsAppReminder() {
             if (currentPendingSessionsForWA.length === 0) return;
-            let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
+            // CLEAN TEXT: Emojis removed to fix encoding crashes on specific phones
+            let msg = `*Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n*Session Details:*\n`;
             let totalAmount = 0;
             currentPendingSessionsForWA.forEach(session => {
-                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
+                msg += `• ${session.date}: ₹${session.amount.toLocaleString('en-IN')}\n`;
                 totalAmount += session.amount;
             });
-            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
+            msg += `\n• *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n• *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery!`;
             const encodedMessage = encodeURIComponent(msg);
-            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
         }
 
         function submitPaymentUpdate(rowNum) {
