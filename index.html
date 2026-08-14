@@ -100,7 +100,6 @@
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         
-        /* FIX: Removed the !important on display so JavaScript can hide/show it properly on the Ledger tab */
         .wa-btn {
             display: flex; justify-content: center; align-items: center;
             width: 36px; height: 36px; border-radius: 50%;
@@ -187,6 +186,10 @@
                 <div class="form-group">
                     <label>Treatment Notes</label>
                     <textarea id="notes" rows="3" placeholder="Enter clinical observations..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Next Appointment (Optional)</label>
+                    <input type="date" id="nextAppt">
                 </div>
             </div>
 
@@ -436,8 +439,8 @@
                 const row = allSheetData[i]; if(!row) continue;
                 if(row[2]) { names.add(row[2].trim()); }
                 if(row[1]) {
-                    const y = new Date(row[1]).getFullYear();
-                    if(y && !isNaN(y)) years.add(y);
+                    const d = new Date(row[1]);
+                    if(!isNaN(d)) years.add(d.getFullYear());
                 }
             }
 
@@ -470,7 +473,7 @@
                 if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) { patientRecords.push(allSheetData[i]); }
             }
             if (patientRecords.length > 0) {
-                patientRecords.sort((a, b) => new Date(b[1]) - new Date(a[1])); 
+                patientRecords.sort((a, b) => (b[1] ? new Date(b[1]).getTime() : 0) - (a[1] ? new Date(a[1]).getTime() : 0)); 
                 const latestVisit = patientRecords[0];
                 document.getElementById('location').value = latestVisit[3] ? latestVisit[3].trim() : "";
                 document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].trim() : "";
@@ -513,14 +516,14 @@
                 if(!row || !row[1] || !row[2]) continue;
                 
                 const name = row[2].trim();
-                const visitDate = new Date(row[1]).getTime();
+                const visitDate = row[1] ? new Date(row[1]).getTime() : 0;
                 
                 allValidRows.push({row: row, index: i});
 
                 if(!latestRecordsMap.has(name)) {
                     latestRecordsMap.set(name, row);
                 } else {
-                    const existingDate = new Date(latestRecordsMap.get(name)[1]).getTime();
+                    const existingDate = latestRecordsMap.get(name)[1] ? new Date(latestRecordsMap.get(name)[1]).getTime() : 0;
                     if (visitDate > existingDate) { latestRecordsMap.set(name, row); }
                 }
             }
@@ -566,8 +569,8 @@
 
             // -- 2. RECENT 5 LIST --
             allValidRows.sort((a, b) => {
-                const dateB = new Date(b.row[1]).getTime();
-                const dateA = new Date(a.row[1]).getTime();
+                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
                 if (dateB !== dateA) return dateB - dateA;
                 return b.index - a.index; 
             });
@@ -579,7 +582,7 @@
                 let recentHTML = "";
                 top5.forEach(item => {
                     const row = item.row;
-                    const dateStr = formatApptDate(new Date(row[1]));
+                    const dateStr = row[1] ? formatApptDate(new Date(row[1])) : "No Date";
                     recentHTML += `
                     <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
                         <div>
@@ -739,8 +742,8 @@
                 }
             }
             records.sort((a, b) => {
-                const dateB = new Date(b.row[1]).getTime();
-                const dateA = new Date(a.row[1]).getTime();
+                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
                 if (dateB !== dateA) return dateB - dateA;
                 return b.index - a.index; 
             });
@@ -792,7 +795,7 @@
                     let latestIndex = -1; let latestDate = 0;
                     for(let i = 1; i < allSheetData.length; i++) {
                         if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === patientName) {
-                            const d = new Date(allSheetData[i][1]).getTime();
+                            const d = allSheetData[i][1] ? new Date(allSheetData[i][1]).getTime() : 0;
                             if (d > latestDate) { latestDate = d; latestIndex = i; }
                         }
                     }
@@ -928,8 +931,8 @@
             }
             
             patRecords.sort((a, b) => {
-                const dateA = new Date(a.row[1]).getTime();
-                const dateB = new Date(b.row[1]).getTime();
+                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                 if (dateA !== dateB) return dateA - dateB;
                 return a.index - b.index;
             });
