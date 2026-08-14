@@ -100,16 +100,16 @@
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         
-        /* STRICT WHATSAPP BUTTON FIX */
+        /* FIX: Removed the !important on display so JavaScript can hide/show it properly on the Ledger tab */
         .wa-btn {
-            display: flex !important; justify-content: center !important; align-items: center !important;
-            width: 36px !important; height: 36px !important; border-radius: 50% !important;
-            background-color: var(--whatsapp) !important; padding: 0 !important; margin: 0 !important;
-            border: none !important; flex-shrink: 0; text-decoration: none; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            width: 36px; height: 36px; border-radius: 50%;
+            background-color: var(--whatsapp); padding: 0; margin: 0;
+            border: none; flex-shrink: 0; text-decoration: none; cursor: pointer;
         }
         .wa-btn svg {
-            width: 20px !important; height: 20px !important; fill: white !important; 
-            display: block !important; margin: 0 !important; padding: 0 !important;
+            width: 20px; height: 20px; fill: white; 
+            display: block; margin: 0; padding: 0;
         }
 
         .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
@@ -501,7 +501,7 @@
             
             if(allSheetData.length <= 1) { 
                 upcomingDiv.innerHTML = "";
-                recentDiv.innerHTML = "<p>No recent patients found.</p>"; 
+                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
                 return; 
             }
 
@@ -547,7 +547,6 @@
                 let upcomingHTML = "";
                 upcomingList.forEach(item => {
                     const dateFormatted = formatApptDate(item.date);
-                    // Updated message per your request
                     let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
                     let encodedMsg = encodeURIComponent(msg);
                     
@@ -659,7 +658,6 @@
 
         function sendWhatsAppReminder() {
             if (currentPendingSessionsForWA.length === 0) return;
-            // Updated message per your request
             let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
             let totalAmount = 0;
             currentPendingSessionsForWA.forEach(session => {
