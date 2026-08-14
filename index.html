@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dr. Anjali Vishwakarma - Physio Clinic</title>
     
-    <!-- PWA / Add to Home Screen Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00796b">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,7 +13,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Instantly apply theme to prevent white flash on load -->
     <script>
         const savedTheme = localStorage.getItem('appTheme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -22,7 +20,6 @@
 
     <style>
         :root {
-            /* Light Theme Variables */
             --primary: #00796b;      
             --primary-dark: #004d40;
             --secondary: #26a69a;
@@ -44,7 +41,6 @@
         }
 
         [data-theme="dark"] {
-            /* Dark Theme Variables */
             --bg-color: #121212;
             --card-bg: #1e1e1e;
             --text-main: #e2e8f0;
@@ -52,7 +48,7 @@
             --border-color: #333333;
             --divider-color: #2d2d2d;
             --input-bg: #2d2d2d;
-            --primary-dark: #4fd1c5; /* Brighter for readability on dark */
+            --primary-dark: #4fd1c5;
             --danger-bg: rgba(229, 62, 62, 0.15);
             --danger-border: rgba(229, 62, 62, 0.3);
             --success-bg: rgba(56, 161, 105, 0.15);
@@ -60,7 +56,6 @@
             color-scheme: dark;
         }
 
-        /* Smooth Transition for Theme Swapping */
         body, .card, input, select, textarea, .bottom-nav, .dash-card, .chart-wrapper {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
@@ -68,66 +63,27 @@
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background-color: var(--bg-color); 
-            margin: 0; 
-            padding: 0;
-            padding-bottom: 80px; 
+            margin: 0; padding: 0; padding-bottom: 80px; 
             color: var(--text-main); 
             overscroll-behavior-y: none;
         }
 
-        /* Top App Header */
         .app-header {
-            background: var(--primary);
-            color: white;
-            padding: 18px 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.25rem;
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            letter-spacing: 0.5px;
+            background: var(--primary); color: white; padding: 18px 20px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.25rem; font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 100;
         }
         
-        .header-controls {
-            position: absolute;
-            right: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .header-controls { position: absolute; right: 15px; display: flex; align-items: center; gap: 12px; }
+        .sync-indicator { font-size: 10px; font-weight: 600; text-transform: uppercase; opacity: 0.9; }
+        .theme-toggle-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; display: flex; line-height: 1; }
 
-        .sync-indicator {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            opacity: 0.9;
-        }
-
-        .theme-toggle-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-
-        /* Main Container */
         .container { padding: 20px; }
-        
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Form Inputs */
         .form-group { margin-bottom: 18px; }
         label { font-weight: 600; display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-main); }
         input, select, textarea { 
@@ -137,66 +93,43 @@
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
         
-        /* Buttons */
         .btn-main { 
-            width: 100%; padding: 16px; background: var(--primary); 
-            color: white; border: none; border-radius: 10px; 
-            font-size: 16px; font-weight: 700; margin-top: 10px; 
-            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; 
+            font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
-        .btn-secondary { background: var(--input-bg); color: var(--primary); border: 1px solid var(--border-color); }
-
-        /* Cards */
-        .card { 
-            background: var(--card-bg); border-radius: 12px; padding: 16px; 
-            margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-            border: 1px solid var(--divider-color);
-        }
+        
+        .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
         .card h4 { margin: 0 0 8px 0; color: var(--primary-dark); font-size: 18px; }
         .card p { margin: 4px 0; font-size: 14px; color: var(--text-muted); }
         
-        /* Badges */
         .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
         .badge-pending { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
         .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
 
-        /* Dashboard Grid */
         .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .dash-card { background: var(--card-bg); padding: 14px 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color);}
+        .dash-card { background: var(--card-bg); padding: 14px 10px; border-radius: 12px; text-align: center; border: 1px solid var(--divider-color);}
         .dash-card h3 { margin: 0; font-size: 18px; color: var(--primary); white-space: nowrap; }
         .dash-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
         .dash-card.span-2 { grid-column: span 2; }
-        .chart-wrapper { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
+        .chart-wrapper { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--divider-color); }
 
-        /* Bottom Navigation Bar */
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: var(--card-bg); display: flex; justify-content: space-between;
-            padding: 10px 10px 20px 10px; box-sizing: border-box;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 1000;
-            border-top: 1px solid var(--divider-color);
+            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); display: flex; justify-content: space-between;
+            padding: 10px 10px 20px 10px; box-sizing: border-box; box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 1000; border-top: 1px solid var(--divider-color);
         }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: var(--text-muted); font-size: 10px; font-weight: 600;
-            cursor: pointer; flex: 1; transition: 0.2s; text-align: center;
-        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; }
         .nav-item.active { color: var(--primary); }
         .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
         
         .status-msg { text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px; }
-        
-        /* Clean Borderless List Styles */
         .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--divider-color); padding-bottom: 4px; }
         .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
-        .patient-stats { font-weight: 700; color: var(--danger); white-space: nowrap; }
     </style>
 </head>
 <body>
 
-    <!-- App Header -->
     <div class="app-header">
         Dr. Anjali
         <div class="header-controls">
@@ -243,10 +176,6 @@
                     <label>Treatment Notes</label>
                     <textarea id="notes" rows="3" placeholder="Enter clinical observations..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Next Appointment</label>
-                    <input type="date" id="nextAppt">
-                </div>
             </div>
 
             <div class="card">
@@ -276,10 +205,12 @@
         </form>
     </div>
 
-    <!-- TAB 2: RECENT (LAST 5 SESSIONS) -->
+    <!-- TAB 2: RECENT & UPCOMING -->
     <div id="tab2" class="tab-content container">
+        <h3 style="margin-top:0; color: var(--primary-dark);">Upcoming Appointments</h3>
+        <div id="upcomingList" style="margin-bottom: 25px;"></div>
+        
         <h3 style="margin-top:0; color: var(--primary-dark);">Last 5 Sessions</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Your most recently recorded patient visits.</p>
         <div id="recentList"></div>
     </div>
 
@@ -314,6 +245,17 @@
                 <option value="">-- Choose a Patient --</option>
             </select>
         </div>
+        
+        <!-- NEW: SCHEDULE APPOINTMENT CARD -->
+        <div class="card" id="scheduleCard" style="display: none; border-left: 4px solid var(--primary);">
+            <h4 style="margin-bottom: 10px;">Schedule Next Visit</h4>
+            <div style="display: flex; gap: 10px;">
+                <input type="date" id="newNextApptDate" style="flex: 1; margin-bottom: 0;">
+                <button class="btn-main" style="margin-top: 0; padding: 10px 20px; width: auto;" onclick="saveNextAppt()">Save</button>
+            </div>
+            <div id="apptStatusMsg" class="status-msg" style="margin-top: 8px; font-size: 12px; text-align: left;"></div>
+        </div>
+
         <div id="historyTimeline"></div>
     </div>
 
@@ -326,40 +268,17 @@
             </select>
         </div>
         
-        <!-- Advanced Metrics Grid -->
         <div class="dash-grid">
-            <div class="dash-card">
-                <h3 id="dashBilled">₹0</h3>
-                <span>Total Billed</span>
-            </div>
-            <div class="dash-card">
-                <h3 id="dashCollected" style="color: var(--success);">₹0</h3>
-                <span>Collected</span>
-            </div>
-            <div class="dash-card">
-                <h3 id="dashPending" style="color: var(--danger);">₹0</h3>
-                <span>Pending</span>
-            </div>
-            <div class="dash-card span-2">
-                <h3 id="dashTopCity">-</h3>
-                <span>Top Location</span>
-            </div>
-            <div class="dash-card">
-                <h3 id="dashARPV">₹0</h3>
-                <span>Avg/Patient</span>
-            </div>
+            <div class="dash-card"><h3 id="dashBilled">₹0</h3><span>Total Billed</span></div>
+            <div class="dash-card"><h3 id="dashCollected" style="color: var(--success);">₹0</h3><span>Collected</span></div>
+            <div class="dash-card"><h3 id="dashPending" style="color: var(--danger);">₹0</h3><span>Pending</span></div>
+            <div class="dash-card span-2"><h3 id="dashTopCity">-</h3><span>Top Location</span></div>
+            <div class="dash-card"><h3 id="dashARPV">₹0</h3><span>Avg/Patient</span></div>
         </div>
 
-        <!-- Stacked Cashflow Matrix -->
-        <div class="chart-wrapper">
-            <canvas id="cashflowChart"></canvas>
-        </div>
-        
-        <div class="chart-wrapper">
-            <canvas id="paymentChart"></canvas>
-        </div>
+        <div class="chart-wrapper"><canvas id="cashflowChart"></canvas></div>
+        <div class="chart-wrapper"><canvas id="paymentChart"></canvas></div>
 
-        <!-- Clinical & Financial Drill-Down -->
         <h3 style="margin-top:25px; color: var(--primary-dark);">Patient Performance</h3>
         <div class="card">
             <label>Select Patient</label>
@@ -367,26 +286,13 @@
                 <option value="">-- Select Patient --</option>
             </select>
             <div id="patientAnalyticsData" style="display: none; margin-top: 15px; border-top: 1px solid var(--divider-color); padding-top: 15px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: var(--text-muted);">Total Sessions:</span>
-                    <strong id="patTotalSessions">0</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: var(--text-muted);">Total Paid:</span>
-                    <strong id="patTotalSpent" style="color: var(--success);">₹0</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <span style="color: var(--text-muted);">Current Pending:</span>
-                    <strong id="patTotalPending" style="color: var(--danger);">₹0</strong>
-                </div>
-                <!-- Clinical Pain Chart -->
-                <div style="border-top: 1px solid var(--divider-color); padding-top: 15px;">
-                    <canvas id="painChart"></canvas>
-                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: var(--text-muted);">Total Sessions:</span><strong id="patTotalSessions">0</strong></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: var(--text-muted);">Total Paid:</span><strong id="patTotalSpent" style="color: var(--success);">₹0</strong></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><span style="color: var(--text-muted);">Current Pending:</span><strong id="patTotalPending" style="color: var(--danger);">₹0</strong></div>
+                <div style="border-top: 1px solid var(--divider-color); padding-top: 15px;"><canvas id="painChart"></canvas></div>
             </div>
         </div>
 
-        <!-- Vanishing Aged Debtors Report -->
         <div id="agedDebtorsContainer" style="margin-top: 25px;">
             <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Pending Balance Breakdown</h3>
             <div id="agedDebtorsList"></div>
@@ -429,16 +335,12 @@
         let cashflowChartInstance = null;
         let paymentChartInstance = null;
         let painChartInstance = null;
-        
         let currentPendingSessionsForWA = [];
         let isSyncing = false;
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
-            
-            // Apply initial theme UI state
-            updateThemeIcon(savedTheme);
-            updateChartColors(savedTheme);
+            updateThemeIcon(savedTheme); updateChartColors(savedTheme);
 
             try {
                 const cachedData = localStorage.getItem('clinicData');
@@ -448,80 +350,57 @@
                     const activeTabId = document.querySelector('.tab-content.active').id;
                     renderCurrentTab(activeTabId);
                 }
-            } catch (e) {
-                console.log("Cache failed to load");
-            }
+            } catch (e) {}
 
             syncWithDatabase(); 
         };
 
-        // --- DARK MODE LOGIC ---
+        // --- THEME ---
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('appTheme', newTheme);
-            
-            updateThemeIcon(newTheme);
-            updateChartColors(newTheme);
-            
-            // Re-render graphs so colors update instantly
-            if (document.getElementById('tab5').classList.contains('active')) {
-                renderDashboard();
-                showPatientAnalytics();
-            }
+            updateThemeIcon(newTheme); updateChartColors(newTheme);
+            if (document.getElementById('tab5').classList.contains('active')) { renderDashboard(); showPatientAnalytics(); }
         }
-
-        function updateThemeIcon(theme) {
-            const btn = document.getElementById('themeToggleBtn');
-            btn.innerText = theme === 'dark' ? '☀️' : '🌙';
-        }
-
+        function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️' : '🌙'; }
         function updateChartColors(theme) {
-            // Native Chart.js global color overrides
             Chart.defaults.color = theme === 'dark' ? '#a0aec0' : '#718096';
             Chart.defaults.borderColor = theme === 'dark' ? '#333333' : '#e2e8f0';
         }
 
+        // --- HELPER FORMATTER: "13-Aug-26 | Thursday" ---
+        function formatApptDate(dateObj) {
+            if(isNaN(dateObj)) return "";
+            const d = dateObj.getDate().toString().padStart(2, '0');
+            const m = dateObj.toLocaleString('en-IN', { month: 'short' });
+            const y = dateObj.getFullYear().toString().slice(-2);
+            const day = dateObj.toLocaleString('en-IN', { weekday: 'long' });
+            return `${d}-${m}-${y} | ${day}`; 
+        }
 
         function syncWithDatabase(callback) {
             if (isSyncing) return;
             isSyncing = true;
             
             const syncText = document.getElementById('syncText');
-            syncText.innerText = "Syncing...";
-            syncText.style.color = "white";
+            syncText.innerText = "Syncing..."; syncText.style.color = "white";
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
-            .then(res => res.json())
-            .then(data => {
+            .then(res => res.json()).then(data => {
                 isSyncing = false;
                 if(data.status === 'success') {
                     allSheetData = data.data;
-                    
-                    try {
-                        localStorage.setItem('clinicData', JSON.stringify(allSheetData));
-                    } catch (e) {
-                        console.log("Cache failed to save");
-                    }
-
-                    updateDropdowns();
-                    syncText.innerText = "";
-                    
-                    const activeTabId = document.querySelector('.tab-content.active').id;
-                    renderCurrentTab(activeTabId);
-                    
+                    try { localStorage.setItem('clinicData', JSON.stringify(allSheetData)); } catch (e) {}
+                    updateDropdowns(); syncText.innerText = "";
+                    renderCurrentTab(document.querySelector('.tab-content.active').id);
                     if(callback) callback(); 
                 }
             }).catch(e => {
                 isSyncing = false;
-                if (allSheetData.length <= 1) {
-                    syncText.innerText = "⚠️ Offline";
-                    syncText.style.color = "var(--danger)";
-                } else {
-                    syncText.innerText = "";
-                }
+                if (allSheetData.length <= 1) { syncText.innerText = "⚠️ Offline"; syncText.style.color = "var(--danger)"; } 
+                else { syncText.innerText = ""; }
                 if(callback) callback();
             });
         }
@@ -539,12 +418,10 @@
             const savedYear = yearFilter.value;
             
             datalist.innerHTML = '';
-            let names = new Set();
-            let years = new Set();
+            let names = new Set(); let years = new Set();
             
             for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i];
-                if(!row) continue;
+                const row = allSheetData[i]; if(!row) continue;
                 if(row[2]) { names.add(row[2].trim()); }
                 if(row[1]) {
                     const y = new Date(row[1]).getFullYear();
@@ -564,9 +441,7 @@
             });
 
             yearFilter.innerHTML = '<option value="All">All-Time</option>';
-            Array.from(years).sort((a,b)=>b-a).forEach(y => {
-                yearFilter.appendChild(new Option(y, y));
-            });
+            Array.from(years).sort((a,b)=>b-a).forEach(y => { yearFilter.appendChild(new Option(y, y)); });
 
             if(savedHistoryPatient) historySelect.value = savedHistoryPatient;
             if(savedAnalyticsPatient) analyticsSelect.value = savedAnalyticsPatient;
@@ -574,22 +449,17 @@
             if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
         }
 
-        // SMART AUTO-FILL ENGINE
         document.getElementById('name').addEventListener('input', function(e) {
             const selectedName = e.target.value.trim();
             if (!selectedName) return;
 
             let patientRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
-                    patientRecords.push(allSheetData[i]);
-                }
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) { patientRecords.push(allSheetData[i]); }
             }
-
             if (patientRecords.length > 0) {
                 patientRecords.sort((a, b) => new Date(b[1]) - new Date(a[1])); 
                 const latestVisit = patientRecords[0];
-
                 document.getElementById('location').value = latestVisit[3] ? latestVisit[3].trim() : "";
                 document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].trim() : "";
                 document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
@@ -600,10 +470,8 @@
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             document.getElementById('nav-' + tabId).classList.add('active');
-            
             renderCurrentTab(tabId);
         }
 
@@ -611,46 +479,107 @@
             if(tabId === 'tab2') loadRecentPatients(); 
             if(tabId === 'tab3') renderPendingPayments(); 
             if(tabId === 'tab4') showPatientHistory();
-            if(tabId === 'tab5') {
-                renderDashboard(); 
-                showPatientAnalytics(); 
-            }
+            if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
 
+        // --- UPGRADED TAB 2: UPCOMING & RECENT ---
         function loadRecentPatients() {
-            const listDiv = document.getElementById('recentList');
-            if(allSheetData.length <= 1) { listDiv.innerHTML = "<p>No recent patients found.</p>"; return; }
-
-            let records = [];
-            for(let i = 1; i < allSheetData.length; i++) {
-                if(!allSheetData[i] || !allSheetData[i][1]) continue;
-                records.push({row: allSheetData[i], index: i});
-            }
+            const upcomingDiv = document.getElementById('upcomingList');
+            const recentDiv = document.getElementById('recentList');
             
-            records.sort((a, b) => {
+            if(allSheetData.length <= 1) { 
+                upcomingDiv.innerHTML = "";
+                recentDiv.innerHTML = "<p>No recent patients found.</p>"; 
+                return; 
+            }
+
+            let latestRecordsMap = new Map();
+            let allValidRows = [];
+            
+            // Collect rows and find the absolute latest row for each patient
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i];
+                if(!row || !row[1] || !row[2]) continue;
+                
+                const name = row[2].trim();
+                const visitDate = new Date(row[1]).getTime();
+                
+                allValidRows.push({row: row, index: i});
+
+                if(!latestRecordsMap.has(name)) {
+                    latestRecordsMap.set(name, row);
+                } else {
+                    const existingDate = new Date(latestRecordsMap.get(name)[1]).getTime();
+                    if (visitDate > existingDate) { latestRecordsMap.set(name, row); }
+                }
+            }
+
+            // -- 1. UPCOMING LIST --
+            let upcomingList = [];
+            let today = new Date();
+            today.setHours(0,0,0,0);
+
+            latestRecordsMap.forEach((row, name) => {
+                if (row[10]) { 
+                    const apptDate = new Date(row[10]);
+                    if (!isNaN(apptDate) && apptDate >= today) {
+                        upcomingList.push({ name: name, date: apptDate, row: row });
+                    }
+                }
+            });
+
+            upcomingList.sort((a, b) => a.date - b.date); // Closest date first
+
+            if (upcomingList.length === 0) {
+                upcomingDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No upcoming appointments.</p></div>";
+            } else {
+                let upcomingHTML = "";
+                upcomingList.forEach(item => {
+                    const dateFormatted = formatApptDate(item.date);
+                    let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma's Clinic.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
+                    let encodedMsg = encodeURIComponent(msg);
+                    
+                    upcomingHTML += `
+                    <div class="card" style="border-left: 4px solid var(--whatsapp); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${item.name}</h4>
+                            <span style="font-size: 13px; font-weight: bold; color: var(--text-main);">${dateFormatted}</span>
+                        </div>
+                        <button class="btn-main" style="margin-top: 0; padding: 0; background: var(--whatsapp); width: 38px; height: 38px; border-radius: 50%; justify-content: center; align-items: center; flex-shrink: 0;" onclick="window.open('https://wa.me/?text=${encodedMsg}', '_blank')" title="Send Reminder">
+                            <svg style="width: 20px; height: 20px; fill: white;" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
+                        </button>
+                    </div>`;
+                });
+                upcomingDiv.innerHTML = upcomingHTML;
+            }
+
+            // -- 2. RECENT 5 LIST --
+            allValidRows.sort((a, b) => {
                 const dateB = new Date(b.row[1]).getTime();
                 const dateA = new Date(a.row[1]).getTime();
                 if (dateB !== dateA) return dateB - dateA;
                 return b.index - a.index; 
             });
-            const top5 = records.slice(0, 5);
+            const top5 = allValidRows.slice(0, 5);
 
-            if(top5.length === 0) { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; return; }
-
-            let newHTML = "";
-            top5.forEach(item => {
-                const row = item.row;
-                const dateStr = new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
-                newHTML += `
-                <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
-                    <div>
-                        <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
-                        <span style="font-size: 12px; color: var(--text-muted);">${row[3] || "No City"}</span>
-                    </div>
-                    <div style="font-weight: bold; color: var(--primary); font-size: 14px;">${dateStr}</div>
-                </div>`;
-            });
-            listDiv.innerHTML = newHTML; 
+            if(top5.length === 0) { 
+                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
+            } else {
+                let recentHTML = "";
+                top5.forEach(item => {
+                    const row = item.row;
+                    const dateStr = formatApptDate(new Date(row[1]));
+                    recentHTML += `
+                    <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] || "Unknown"}</h4>
+                            <span style="font-size: 12px; color: var(--text-muted);">${row[3] || "No City"}</span>
+                        </div>
+                        <div style="font-weight: bold; color: var(--primary); font-size: 13px; text-align: right;">${dateStr.replace(' | ', '<br>')}</div>
+                    </div>`;
+                });
+                recentDiv.innerHTML = recentHTML; 
+            }
         }
 
         function renderPendingPayments() {
@@ -659,18 +588,13 @@
             const summaryBadge = document.getElementById('ledgerSummary');
             const waButton = document.getElementById('waReminderBtn');
             
-            let foundPending = false; 
-            let newHTML = "";
-            let summaryCount = 0;
-            let summaryTotal = 0;
+            let foundPending = false; let newHTML = ""; let summaryCount = 0; let summaryTotal = 0;
             currentPendingSessionsForWA = [];
             
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; 
                 if(!row || !row[1]) continue;
-
-                const dateObj = new Date(row[1]);
-                if(isNaN(dateObj)) continue;
+                const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
                 
                 const displayDate = dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
                 const waDateStr = dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
@@ -682,10 +606,7 @@
                 if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
                     if (filterName && name !== filterName) continue;
 
-                    foundPending = true; 
-                    const balance = totalFee - amountPaid;
-                    const rowNum = i + 1;
-                    
+                    foundPending = true; const balance = totalFee - amountPaid; const rowNum = i + 1;
                     summaryCount++; summaryTotal += balance;
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
@@ -718,55 +639,29 @@
             } else { listDiv.innerHTML = newHTML; }
 
             if (filterName && foundPending) {
-                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`;
-                summaryBadge.style.display = "block";
-                waButton.style.display = "flex"; 
+                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; summaryBadge.style.display = "block"; waButton.style.display = "flex"; 
             } else {
-                summaryBadge.style.display = "none";
-                waButton.style.display = "none"; 
+                summaryBadge.style.display = "none"; waButton.style.display = "none"; 
             }
         }
 
-        function sendWhatsAppReminder() {
-            if (currentPendingSessionsForWA.length === 0) return;
-            let msg = `🌸 *Greetings, this is Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
-            let totalAmount = 0;
-            currentPendingSessionsForWA.forEach(session => {
-                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
-                totalAmount += session.amount;
-            });
-            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
-            const encodedMessage = encodeURIComponent(msg);
-            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
-        }
-
         function submitPaymentUpdate(rowNum) {
-            const isConfirmed = confirm("Are you sure you want to clear this balance?");
-            if (!isConfirmed) return; 
+            if (!confirm("Are you sure you want to clear this balance?")) return; 
             
             const status = document.getElementById('payStatus_' + rowNum); 
-            status.style.color = "var(--primary)"; 
-            status.innerText = "Updating ledger...";
+            status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
-                    status.style.color = "var(--success)"; 
-                    status.innerText = "✓ Cleared"; 
-                    
+                    status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
                     if (allSheetData[rowNum - 1]) {
                         allSheetData[rowNum - 1][5] = document.getElementById('payAmt_' + rowNum).value;
                         allSheetData[rowNum - 1][4] = document.getElementById('payType_' + rowNum).value;
                     }
                     syncWithDatabase(); 
-                } else { 
-                    status.style.color = "var(--danger)"; 
-                    status.innerText = "Error"; 
-                }
-            }).catch(e => {
-                status.style.color = "var(--danger)"; 
-                status.innerText = "Connection error."; 
-            });
+                } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
+            }).catch(e => { status.style.color = "var(--danger)"; status.innerText = "Connection error."; });
         }
 
         document.getElementById('entryForm').addEventListener('submit', function(e) {
@@ -790,23 +685,30 @@
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
-                    
                     allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
-                    
-                    document.getElementById('entryForm').reset(); 
-                    document.getElementById('date').valueAsDate = new Date(); 
-                    document.getElementById('amountPaid').value = "0"; 
+                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
         });
 
+        // --- NEW: SCHEDULING & HISTORY ---
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
-            if(!selectedName) { timeline.innerHTML = ""; return; }
+            const scheduleCard = document.getElementById('scheduleCard');
             
+            if(!selectedName) { 
+                timeline.innerHTML = ""; 
+                scheduleCard.style.display = "none";
+                return; 
+            }
+            
+            scheduleCard.style.display = "block";
+            document.getElementById('apptStatusMsg').innerText = "";
+            document.getElementById('newNextApptDate').value = "";
+
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { 
                 if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
@@ -841,6 +743,46 @@
             timeline.innerHTML = newHTML;
         }
 
+        // Send new appointment date to backend
+        function saveNextAppt() {
+            const patientName = document.getElementById('patientSelect').value;
+            const nextApptDate = document.getElementById('newNextApptDate').value;
+            const statusMsg = document.getElementById('apptStatusMsg');
+            
+            if (!nextApptDate) {
+                statusMsg.style.color = "var(--danger)";
+                statusMsg.innerText = "Please select a date.";
+                return;
+            }
+
+            statusMsg.style.color = "var(--primary)";
+            statusMsg.innerText = "Scheduling...";
+
+            fetch(WEB_APP_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: "updateNextAppt", name: patientName, nextAppt: nextApptDate }) 
+            })
+            .then(res => res.json()).then(data => {
+                if(data.status === 'success') {
+                    statusMsg.style.color = "var(--success)";
+                    statusMsg.innerText = "✓ Appointment scheduled";
+                    
+                    // Local update so the "Upcoming" tab sees it instantly
+                    let latestIndex = -1; let latestDate = 0;
+                    for(let i = 1; i < allSheetData.length; i++) {
+                        if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === patientName) {
+                            const d = new Date(allSheetData[i][1]).getTime();
+                            if (d > latestDate) { latestDate = d; latestIndex = i; }
+                        }
+                    }
+                    if (latestIndex !== -1) { allSheetData[latestIndex][10] = nextApptDate; }
+                    syncWithDatabase();
+                } else {
+                    statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Error scheduling.";
+                }
+            }).catch(err => { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Connection error."; });
+        }
+
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
 
@@ -848,21 +790,14 @@
             
             let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
             let monthDataMap = {}; let methodCounts = { 'Cash': 0, 'Online': 0 };
-            let uniquePatients = new Set();
-            let cityCounts = {};
-            let agedDebtorsObj = {};
+            let uniquePatients = new Set(); let cityCounts = {}; let agedDebtorsObj = {};
 
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            if (yearFilter !== "All") {
-                monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 });
-            }
+            if (yearFilter !== "All") { monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 }); }
 
             for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i];
-                if(!row || !row[1]) continue; 
-                
-                const dateObj = new Date(row[1]);
-                if(isNaN(dateObj)) continue;
+                const row = allSheetData[i]; if(!row || !row[1]) continue; 
+                const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
 
                 const rowYear = dateObj.getFullYear().toString();
                 if(yearFilter !== "All" && rowYear !== yearFilter) continue;
@@ -882,15 +817,12 @@
                 const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
                 const displayMonthYear = `${monthNameFull}-${rowYear}`;
 
-                totalBilled += totalFee;
-                totalCollected += amountPaid;
+                totalBilled += totalFee; totalCollected += amountPaid;
                 if(balance > 0 || paymentType === 'pending') {
                     totalPending += balance;
-                    
                     if(name) {
                         if(!agedDebtorsObj[sortableMonth]) agedDebtorsObj[sortableMonth] = { label: displayMonthYear, patients: {} };
                         if(!agedDebtorsObj[sortableMonth].patients[name]) agedDebtorsObj[sortableMonth].patients[name] = { count: 0, amount: 0 };
-                        
                         agedDebtorsObj[sortableMonth].patients[name].count += 1;
                         agedDebtorsObj[sortableMonth].patients[name].amount += balance;
                     }
@@ -909,9 +841,7 @@
 
             const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
             let topCity = "-"; let maxCityVal = 0;
-            for (const [city, val] of Object.entries(cityCounts)) {
-                if (val > maxCityVal) { maxCityVal = val; topCity = city; }
-            }
+            for (const [city, val] of Object.entries(cityCounts)) { if (val > maxCityVal) { maxCityVal = val; topCity = city; } }
 
             document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
             document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
@@ -928,13 +858,7 @@
             if(cashflowChartInstance) cashflowChartInstance.destroy();
             cashflowChartInstance = new Chart(ctx1, {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Collected (₹)', data: collectedData, backgroundColor: '#38a169', stack: 'Stack 0' },
-                        { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' }
-                    ]
-                },
+                data: { labels: labels, datasets: [ { label: 'Collected (₹)', data: collectedData, backgroundColor: '#38a169', stack: 'Stack 0' }, { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' } ] },
                 options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } }, scales: { x: { stacked: true }, y: { stacked: true } }, animation: { duration: 0 } }
             });
 
@@ -942,10 +866,7 @@
             if(paymentChartInstance) paymentChartInstance.destroy();
             paymentChartInstance = new Chart(ctx2, {
                 type: 'doughnut',
-                data: {
-                    labels: ['Cash', 'Online'],
-                    datasets: [{ data: [methodCounts['Cash'], methodCounts['Online']], backgroundColor: ['#38a169', '#3182ce'], borderWidth: 0 }]
-                },
+                data: { labels: ['Cash', 'Online'], datasets: [{ data: [methodCounts['Cash'], methodCounts['Online']], backgroundColor: ['#38a169', '#3182ce'], borderWidth: 0 }] },
                 options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } }, animation: { duration: 0 } }
             });
             
@@ -960,14 +881,9 @@
                 sortedMonths.forEach(monthKey => {
                     const monthData = agedDebtorsObj[monthKey];
                     listHTML += `<div class="month-header">${monthData.label}</div>`;
-                    
                     Object.keys(monthData.patients).sort().forEach(patName => {
                         const stats = monthData.patients[patName];
-                        listHTML += `
-                        <div class="patient-row">
-                            <span>${patName}</span>
-                            <span class="patient-stats">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span>
-                        </div>`;
+                        listHTML += `<div class="patient-row"><span>${patName}</span><span class="patient-stats">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span></div>`;
                     });
                 });
                 agedDebtorsDiv.innerHTML = listHTML;
@@ -979,12 +895,7 @@
             const container = document.getElementById('patientAnalyticsData');
             const debtorsContainer = document.getElementById('agedDebtorsContainer');
             
-            if(!name) { 
-                container.style.display = 'none'; 
-                debtorsContainer.style.display = 'block'; 
-                return; 
-            }
-            
+            if(!name) { container.style.display = 'none'; debtorsContainer.style.display = 'block'; return; }
             debtorsContainer.style.display = 'none';
 
             let sessions = 0; let spent = 0; let pending = 0;
@@ -992,9 +903,7 @@
             
             let patRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === name) {
-                    patRecords.push({row: allSheetData[i], index: i});
-                }
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === name) { patRecords.push({row: allSheetData[i], index: i}); }
             }
             
             patRecords.sort((a, b) => {
@@ -1006,18 +915,13 @@
 
             patRecords.forEach(item => {
                 const row = item.row;
-                sessions++;
-                const paid = parseFloat(row[5]) || 0;
-                const fee = parseFloat(row[6]) || 0;
-                spent += paid;
-                if(fee > paid) pending += (fee - paid);
-
+                sessions++; const paid = parseFloat(row[5]) || 0; const fee = parseFloat(row[6]) || 0;
+                spent += paid; if(fee > paid) pending += (fee - paid);
                 if(row[1]) {
                     const d = new Date(row[1]);
                     if(!isNaN(d)) chartDates.push(d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}));
                 }
-                painBeforeData.push(parseFloat(row[7]) || null);
-                painAfterData.push(parseFloat(row[8]) || null);
+                painBeforeData.push(parseFloat(row[7]) || null); painAfterData.push(parseFloat(row[8]) || null);
             });
 
             document.getElementById('patTotalSessions').innerText = sessions;
