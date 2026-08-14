@@ -100,6 +100,18 @@
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         
+        /* STRICT WHATSAPP BUTTON FIX */
+        .wa-btn {
+            display: flex !important; justify-content: center !important; align-items: center !important;
+            width: 36px !important; height: 36px !important; border-radius: 50% !important;
+            background-color: var(--whatsapp) !important; padding: 0 !important; margin: 0 !important;
+            border: none !important; flex-shrink: 0; text-decoration: none; cursor: pointer;
+        }
+        .wa-btn svg {
+            width: 20px !important; height: 20px !important; fill: white !important; 
+            display: block !important; margin: 0 !important; padding: 0 !important;
+        }
+
         .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
         .card h4 { margin: 0 0 8px 0; color: var(--primary-dark); font-size: 18px; }
         .card p { margin: 4px 0; font-size: 14px; color: var(--text-muted); }
@@ -220,8 +232,8 @@
             <h3 style="margin:0; color: var(--primary-dark);">Outstanding</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none; white-space: nowrap; line-height: 1;"></div>
-                <button id="waReminderBtn" class="btn-main" style="margin-top: 0; padding: 0; background: var(--whatsapp); display: none; width: 34px; height: 34px; border-radius: 50%; justify-content: center; align-items: center; flex-shrink: 0;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Reminder">
-                    <svg style="width: 18px; height: 18px; fill: white;" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
+                <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Reminder">
+                    <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
                 </button>
             </div>
         </div>
@@ -246,7 +258,7 @@
             </select>
         </div>
         
-        <!-- NEW: SCHEDULE APPOINTMENT CARD -->
+        <!-- SCHEDULE APPOINTMENT CARD -->
         <div class="card" id="scheduleCard" style="display: none; border-left: 4px solid var(--primary);">
             <h4 style="margin-bottom: 10px;">Schedule Next Visit</h4>
             <div style="display: flex; gap: 10px;">
@@ -496,7 +508,6 @@
             let latestRecordsMap = new Map();
             let allValidRows = [];
             
-            // Collect rows and find the absolute latest row for each patient
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i];
                 if(!row || !row[1] || !row[2]) continue;
@@ -528,7 +539,7 @@
                 }
             });
 
-            upcomingList.sort((a, b) => a.date - b.date); // Closest date first
+            upcomingList.sort((a, b) => a.date - b.date); 
 
             if (upcomingList.length === 0) {
                 upcomingDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No upcoming appointments.</p></div>";
@@ -536,7 +547,8 @@
                 let upcomingHTML = "";
                 upcomingList.forEach(item => {
                     const dateFormatted = formatApptDate(item.date);
-                    let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma's Clinic.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
+                    // Updated message per your request
+                    let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
                     let encodedMsg = encodeURIComponent(msg);
                     
                     upcomingHTML += `
@@ -545,9 +557,9 @@
                             <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${item.name}</h4>
                             <span style="font-size: 13px; font-weight: bold; color: var(--text-main);">${dateFormatted}</span>
                         </div>
-                        <button class="btn-main" style="margin-top: 0; padding: 0; background: var(--whatsapp); width: 38px; height: 38px; border-radius: 50%; justify-content: center; align-items: center; flex-shrink: 0;" onclick="window.open('https://wa.me/?text=${encodedMsg}', '_blank')" title="Send Reminder">
-                            <svg style="width: 20px; height: 20px; fill: white;" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
-                        </button>
+                        <a href="https://wa.me/?text=${encodedMsg}" target="_blank" class="wa-btn" title="Send Reminder">
+                            <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
+                        </a>
                     </div>`;
                 });
                 upcomingDiv.innerHTML = upcomingHTML;
@@ -645,6 +657,20 @@
             }
         }
 
+        function sendWhatsAppReminder() {
+            if (currentPendingSessionsForWA.length === 0) return;
+            // Updated message per your request
+            let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
+            let totalAmount = 0;
+            currentPendingSessionsForWA.forEach(session => {
+                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
+                totalAmount += session.amount;
+            });
+            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
+            const encodedMessage = encodeURIComponent(msg);
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        }
+
         function submitPaymentUpdate(rowNum) {
             if (!confirm("Are you sure you want to clear this balance?")) return; 
             
@@ -693,7 +719,6 @@
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
         });
 
-        // --- NEW: SCHEDULING & HISTORY ---
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
@@ -743,7 +768,6 @@
             timeline.innerHTML = newHTML;
         }
 
-        // Send new appointment date to backend
         function saveNextAppt() {
             const patientName = document.getElementById('patientSelect').value;
             const nextApptDate = document.getElementById('newNextApptDate').value;
@@ -767,7 +791,6 @@
                     statusMsg.style.color = "var(--success)";
                     statusMsg.innerText = "✓ Appointment scheduled";
                     
-                    // Local update so the "Upcoming" tab sees it instantly
                     let latestIndex = -1; let latestDate = 0;
                     for(let i = 1; i < allSheetData.length; i++) {
                         if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === patientName) {
