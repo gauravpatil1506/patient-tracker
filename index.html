@@ -100,6 +100,8 @@
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
         
+        .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+        
         .wa-btn {
             display: flex; justify-content: center; align-items: center;
             width: 36px; height: 36px; border-radius: 50%;
@@ -111,12 +113,11 @@
             display: block; margin: 0; padding: 0;
         }
 
-        /* LEDGER TOGGLE UI */
         .ledger-toggle {
-            display: flex; background: var(--input-bg); border-radius: 8px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color);
+            display: flex; background: var(--input-bg); border-radius: 8px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--divider-color);
         }
         .toggle-btn {
-            flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: bold; color: var(--text-muted); cursor: pointer; border-radius: 6px; transition: 0.2s; border: none; background: transparent;
+            flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 6px; color: var(--text-muted); transition: 0.2s; border: none; background: transparent;
         }
         .toggle-btn.active-pending { background: var(--card-bg); color: var(--danger); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .toggle-btn.active-received { background: var(--card-bg); color: var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -239,10 +240,10 @@
         <div id="recentList"></div>
     </div>
 
-    <!-- TAB 3: PAYMENTS (SPLIT LEDGER) -->
+    <!-- TAB 3: PAYMENTS (LEDGER) -->
     <div id="tab3" class="tab-content container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin:0; color: var(--primary-dark);">Finance Ledger</h3>
+            <h3 style="margin:0; color: var(--primary-dark);">Ledger</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none; white-space: nowrap; line-height: 1;"></div>
                 <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Reminder">
@@ -252,13 +253,13 @@
         </div>
 
         <div class="ledger-toggle">
-            <button id="btnPending" class="toggle-btn active-pending" onclick="switchLedgerView('pending')">🔴 Pending Dues</button>
-            <button id="btnReceived" class="toggle-btn" onclick="switchLedgerView('received')">🟢 Payments Received</button>
+            <button id="btnTogglePending" class="toggle-btn active-pending" onclick="switchLedgerView('pending')">🔴 Pending Dues</button>
+            <button id="btnToggleReceived" class="toggle-btn" onclick="switchLedgerView('received')">🟢 Payments Received</button>
         </div>
         
         <div class="card" style="padding: 12px; margin-bottom: 15px;">
             <label style="margin-bottom: 4px;">Filter by Patient</label>
-            <select id="ledgerPatientSelect" onchange="renderLedger()" style="margin-bottom: 0; padding: 10px;">
+            <select id="ledgerPatientSelect" onchange="renderLedgerData()" style="margin-bottom: 0; padding: 10px;">
                 <option value="">-- All Patients --</option>
             </select>
         </div>
@@ -307,7 +308,6 @@
         </div>
 
         <div class="chart-wrapper"><canvas id="cashflowChart"></canvas></div>
-        <div class="chart-wrapper"><canvas id="paymentChart"></canvas></div>
 
         <h3 style="margin-top:25px; color: var(--primary-dark);">Patient Performance</h3>
         <div class="card">
@@ -329,7 +329,7 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
+    <!-- Native App Bottom Navigation -->
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-tab1" onclick="switchTab('tab1')">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
@@ -361,13 +361,15 @@
         
         let allSheetData = []; 
         let patientLocationMap = {}; 
-        let currentLedgerView = 'pending';
         
         let cashflowChartInstance = null;
-        let paymentChartInstance = null;
         let painChartInstance = null;
         let currentPendingSessionsForWA = [];
         let isSyncing = false;
+        
+        // NEW: Load More State Management
+        let currentLedgerFilter = "";
+        let loadedOlderClicks = 0;
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
@@ -506,7 +508,7 @@
 
         function renderCurrentTab(tabId) {
             if(tabId === 'tab2') loadRecentPatients(); 
-            if(tabId === 'tab3') renderLedger(); 
+            if(tabId === 'tab3') renderLedgerData(); 
             if(tabId === 'tab4') showPatientHistory();
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
@@ -607,49 +609,50 @@
             }
         }
 
-        // --- SPLIT LEDGER LOGIC ---
         function switchLedgerView(view) {
-            currentLedgerView = view;
-            const btnP = document.getElementById('btnPending');
-            const btnR = document.getElementById('btnReceived');
-            const listP = document.getElementById('pendingList');
-            const listR = document.getElementById('receivedList');
+            const summaryBadge = document.getElementById('ledgerSummary');
+            const waButton = document.getElementById('waReminderBtn');
+            const filterName = document.getElementById('ledgerPatientSelect').value;
             
             if (view === 'pending') {
-                btnP.classList.add('active-pending');
-                btnR.classList.remove('active-received');
-                listP.style.display = 'block';
-                listR.style.display = 'none';
+                document.getElementById('btnTogglePending').classList.add('active-pending');
+                document.getElementById('btnToggleReceived').classList.remove('active-received');
+                document.getElementById('pendingList').style.display = 'block';
+                document.getElementById('receivedList').style.display = 'none';
+                
+                if (filterName && currentPendingSessionsForWA.length > 0) {
+                    summaryBadge.style.display = 'block'; waButton.style.display = 'flex';
+                }
             } else {
-                btnR.classList.add('active-received');
-                btnP.classList.remove('active-pending');
-                listP.style.display = 'none';
-                listR.style.display = 'block';
-            }
-            renderLedger();
-        }
-
-        function renderLedger() {
-            renderPendingPayments();
-            renderReceivedPayments();
-            
-            const waBtn = document.getElementById('waReminderBtn');
-            const sumBadge = document.getElementById('ledgerSummary');
-            
-            // Hide WhatsApp and Summary Badge if in Received mode to prevent mistakes
-            if (currentLedgerView === 'received') {
-                waBtn.style.display = 'none';
-                sumBadge.style.display = 'none';
+                document.getElementById('btnToggleReceived').classList.add('active-received');
+                document.getElementById('btnTogglePending').classList.remove('active-pending');
+                document.getElementById('pendingList').style.display = 'none';
+                document.getElementById('receivedList').style.display = 'block';
+                
+                summaryBadge.style.display = 'none'; waButton.style.display = 'none';
             }
         }
+        
+        function loadMoreReceived() {
+            loadedOlderClicks++;
+            renderLedgerData();
+        }
 
-        function renderPendingPayments() {
-            const listDiv = document.getElementById('pendingList');
+        function renderLedgerData() {
+            const pendingListDiv = document.getElementById('pendingList');
+            const receivedListDiv = document.getElementById('receivedList');
             const filterName = document.getElementById('ledgerPatientSelect').value;
             const summaryBadge = document.getElementById('ledgerSummary');
             const waButton = document.getElementById('waReminderBtn');
             
-            let foundPending = false; let newHTML = ""; let summaryCount = 0; let summaryTotal = 0;
+            // Reset Load More clicks if the patient filter changes
+            if (filterName !== currentLedgerFilter) {
+                loadedOlderClicks = 0;
+                currentLedgerFilter = filterName;
+            }
+            
+            let foundPending = false; let pendingHTML = ""; let summaryCount = 0; let summaryTotal = 0;
+            let receivedRecords = [];
             currentPendingSessionsForWA = [];
             
             for(let i = 1; i < allSheetData.length; i++) {
@@ -664,14 +667,15 @@
                 const amountPaid = parseFloat(row[5]) || 0; 
                 const totalFee = parseFloat(row[6]) || 0;
                 
-                if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
-                    if (filterName && name !== filterName) continue;
+                if (filterName && name !== filterName) continue;
 
+                // 1. PENDING LOGIC
+                if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
                     foundPending = true; const balance = totalFee - amountPaid; const rowNum = i + 1;
                     summaryCount++; summaryTotal += balance;
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
-                    newHTML += `
+                    pendingHTML += `
                     <div class="card" style="border-left: 4px solid var(--danger); padding: 12px 16px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
                             <h4 style="margin:0; font-size: 16px;">${name}</h4>
@@ -687,71 +691,85 @@
                         <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px; display:none;"></div>
                     </div>`;
                 }
-            }
-            
-            if(!foundPending) {
-                if(filterName) { listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
-                else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
-            } else { listDiv.innerHTML = newHTML; }
 
-            // Ensure controls only show if Pending view is active
-            if (filterName && foundPending && currentLedgerView === 'pending') {
-                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; summaryBadge.style.display = "block"; waButton.style.display = "flex"; 
-            } else {
-                summaryBadge.style.display = "none"; waButton.style.display = "none"; 
-            }
-        }
-
-        function renderReceivedPayments() {
-            const listDiv = document.getElementById('receivedList');
-            const filterName = document.getElementById('ledgerPatientSelect').value;
-            let newHTML = "";
-            let receivedRecords = [];
-            
-            for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i]; 
-                if(!row || !row[1]) continue;
-                const amountPaid = parseFloat(row[5]) || 0; 
-                const name = row[2] ? row[2].trim() : ""; 
-                
+                // 2. RECEIVED PAYMENTS LOGIC
                 if (amountPaid > 0) {
-                    if (filterName && name !== filterName) continue;
-                    receivedRecords.push({row: row, index: i});
+                    receivedRecords.push({
+                        name: name,
+                        dateObj: dateObj,
+                        displayDate: displayDate,
+                        amount: amountPaid,
+                        method: row[4] ? row[4].trim() : "Unknown",
+                        index: i
+                    });
                 }
             }
             
-            receivedRecords.sort((a, b) => {
-                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                if (dateB !== dateA) return dateB - dateA;
-                return b.index - a.index; 
-            });
-            
+            if(!foundPending) {
+                if(filterName) { pendingListDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
+                else { pendingListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
+            } else { pendingListDiv.innerHTML = pendingHTML; }
+
+            // -- NEW LOAD MORE LOGIC FOR RECEIVED PAYMENTS --
             if(receivedRecords.length === 0) {
-                if(filterName) { listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>No payments recorded for ${filterName} yet.</p></div>`; } 
-                else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>"; }
+                receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>";
             } else {
-                receivedRecords.forEach(item => {
-                    const row = item.row;
-                    const dateObj = new Date(row[1]);
-                    const displayDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
-                    const name = row[2] ? row[2].trim() : "Unknown";
-                    const paymentType = String(row[4]).trim();
-                    const amountPaid = parseFloat(row[5]) || 0;
-                    
-                    newHTML += `
-                    <div class="card" style="border-left: 4px solid var(--success); padding: 12px 16px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                            <h4 style="margin:0; font-size: 16px;">${name}</h4>
-                            <strong style="color: var(--success); font-size: 15px;">+ ₹${amountPaid.toLocaleString('en-IN')}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted);">
-                            <div>${displayDate}</div>
-                            <div>✓ Paid via ${paymentType || 'Unknown'}</div>
+                receivedRecords.sort((a, b) => {
+                    if (b.dateObj.getTime() !== a.dateObj.getTime()) return b.dateObj.getTime() - a.dateObj.getTime();
+                    return b.index - a.index;
+                });
+                
+                // Calculate threshold: 1st day of the previous month
+                const today = new Date();
+                const thresholdDate = new Date(today.getFullYear(), today.getMonth() - 1, 1).getTime();
+                
+                let displayRecords = [];
+                let olderRecords = [];
+                
+                receivedRecords.forEach(rec => {
+                    if (rec.dateObj.getTime() >= thresholdDate) {
+                        displayRecords.push(rec);
+                    } else {
+                        olderRecords.push(rec);
+                    }
+                });
+
+                // Add 50 older records for every "Load More" click
+                let olderToDisplay = loadedOlderClicks * 50;
+                if (olderToDisplay > 0) {
+                    displayRecords = displayRecords.concat(olderRecords.slice(0, olderToDisplay));
+                }
+                let remainingOlder = Math.max(0, olderRecords.length - olderToDisplay);
+                
+                let receivedHTML = "";
+                displayRecords.forEach(rec => {
+                    receivedHTML += `
+                    <div class="card" style="border-left: 4px solid var(--success); padding: 12px 16px; margin-bottom: 12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h4 style="margin:0 0 4px 0; font-size: 16px;">${rec.name}</h4>
+                                <span style="font-size:12px; color:var(--text-muted);">${rec.displayDate}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color:var(--success); font-weight:bold; font-size: 16px; margin-bottom: 4px;">+ ₹${rec.amount.toLocaleString('en-IN')}</div>
+                                <span style="font-size:12px; color:var(--text-muted);">✓ ${rec.method}</span>
+                            </div>
                         </div>
                     </div>`;
                 });
-                listDiv.innerHTML = newHTML;
+                
+                if (remainingOlder > 0) {
+                    receivedHTML += `<button class="btn-main btn-secondary" style="margin-bottom: 20px;" onclick="loadMoreReceived()">Load Older Payments (${remainingOlder} remaining)</button>`;
+                }
+                
+                receivedListDiv.innerHTML = receivedHTML;
+            }
+
+            const isPendingView = document.getElementById('btnTogglePending').classList.contains('active-pending');
+            if (filterName && foundPending && isPendingView) {
+                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; summaryBadge.style.display = "block"; waButton.style.display = "flex"; 
+            } else {
+                summaryBadge.style.display = "none"; waButton.style.display = "none"; 
             }
         }
 
@@ -910,7 +928,7 @@
             const yearFilter = document.getElementById('dashYearFilter').value;
             
             let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
-            let monthDataMap = {}; let methodCounts = { 'Cash': 0, 'Online': 0 };
+            let monthDataMap = {}; 
             let uniquePatients = new Set(); let cityCounts = {}; let agedDebtorsObj = {};
 
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -955,9 +973,6 @@
                 if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
                 monthDataMap[chartKey].collected += amountPaid;
                 if(balance > 0) monthDataMap[chartKey].pending += balance;
-
-                if (paymentType === 'online') methodCounts['Online']++;
-                else if (paymentType === 'cash') methodCounts['Cash']++;
             }
 
             const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
@@ -981,14 +996,6 @@
                 type: 'bar',
                 data: { labels: labels, datasets: [ { label: 'Collected (₹)', data: collectedData, backgroundColor: '#38a169', stack: 'Stack 0' }, { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' } ] },
                 options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } }, scales: { x: { stacked: true }, y: { stacked: true } }, animation: { duration: 0 } }
-            });
-
-            const ctx2 = document.getElementById('paymentChart').getContext('2d');
-            if(paymentChartInstance) paymentChartInstance.destroy();
-            paymentChartInstance = new Chart(ctx2, {
-                type: 'doughnut',
-                data: { labels: ['Cash', 'Online'], datasets: [{ data: [methodCounts['Cash'], methodCounts['Online']], backgroundColor: ['#38a169', '#3182ce'], borderWidth: 0 }] },
-                options: { responsive: true, cutout: '70%', plugins: { title: { display: true, text: 'Payment Preference' } }, animation: { duration: 0 } }
             });
             
             const agedDebtorsDiv = document.getElementById('agedDebtorsList');
