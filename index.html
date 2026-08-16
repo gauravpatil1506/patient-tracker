@@ -111,6 +111,16 @@
             display: block; margin: 0; padding: 0;
         }
 
+        /* LEDGER TOGGLE UI */
+        .ledger-toggle {
+            display: flex; background: var(--input-bg); border-radius: 8px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color);
+        }
+        .toggle-btn {
+            flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: bold; color: var(--text-muted); cursor: pointer; border-radius: 6px; transition: 0.2s; border: none; background: transparent;
+        }
+        .toggle-btn.active-pending { background: var(--card-bg); color: var(--danger); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .toggle-btn.active-received { background: var(--card-bg); color: var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
         .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
         .card h4 { margin: 0 0 8px 0; color: var(--primary-dark); font-size: 18px; }
         .card p { margin: 4px 0; font-size: 14px; color: var(--text-muted); }
@@ -229,10 +239,10 @@
         <div id="recentList"></div>
     </div>
 
-    <!-- TAB 3: PAYMENTS (LEDGER) -->
+    <!-- TAB 3: PAYMENTS (SPLIT LEDGER) -->
     <div id="tab3" class="tab-content container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin:0; color: var(--primary-dark);">Outstanding</h3>
+            <h3 style="margin:0; color: var(--primary-dark);">Finance Ledger</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none; white-space: nowrap; line-height: 1;"></div>
                 <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Reminder">
@@ -240,15 +250,21 @@
                 </button>
             </div>
         </div>
+
+        <div class="ledger-toggle">
+            <button id="btnPending" class="toggle-btn active-pending" onclick="switchLedgerView('pending')">🔴 Pending Dues</button>
+            <button id="btnReceived" class="toggle-btn" onclick="switchLedgerView('received')">🟢 Payments Received</button>
+        </div>
         
         <div class="card" style="padding: 12px; margin-bottom: 15px;">
             <label style="margin-bottom: 4px;">Filter by Patient</label>
-            <select id="ledgerPatientSelect" onchange="renderPendingPayments()" style="margin-bottom: 0; padding: 10px;">
+            <select id="ledgerPatientSelect" onchange="renderLedger()" style="margin-bottom: 0; padding: 10px;">
                 <option value="">-- All Patients --</option>
             </select>
         </div>
         
         <div id="pendingList"></div>
+        <div id="receivedList" style="display: none;"></div>
     </div>
 
     <!-- TAB 4: HISTORY (RECORDS) -->
@@ -261,7 +277,6 @@
             </select>
         </div>
         
-        <!-- SCHEDULE APPOINTMENT CARD -->
         <div class="card" id="scheduleCard" style="display: none; border-left: 4px solid var(--primary);">
             <h4 style="margin-bottom: 10px;">Schedule Next Visit</h4>
             <div style="display: flex; gap: 10px;">
@@ -314,7 +329,7 @@
         </div>
     </div>
 
-    <!-- Native App Bottom Navigation -->
+    <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-tab1" onclick="switchTab('tab1')">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
@@ -346,6 +361,7 @@
         
         let allSheetData = []; 
         let patientLocationMap = {}; 
+        let currentLedgerView = 'pending';
         
         let cashflowChartInstance = null;
         let paymentChartInstance = null;
@@ -490,7 +506,7 @@
 
         function renderCurrentTab(tabId) {
             if(tabId === 'tab2') loadRecentPatients(); 
-            if(tabId === 'tab3') renderPendingPayments(); 
+            if(tabId === 'tab3') renderLedger(); 
             if(tabId === 'tab4') showPatientHistory();
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
@@ -591,6 +607,42 @@
             }
         }
 
+        // --- SPLIT LEDGER LOGIC ---
+        function switchLedgerView(view) {
+            currentLedgerView = view;
+            const btnP = document.getElementById('btnPending');
+            const btnR = document.getElementById('btnReceived');
+            const listP = document.getElementById('pendingList');
+            const listR = document.getElementById('receivedList');
+            
+            if (view === 'pending') {
+                btnP.classList.add('active-pending');
+                btnR.classList.remove('active-received');
+                listP.style.display = 'block';
+                listR.style.display = 'none';
+            } else {
+                btnR.classList.add('active-received');
+                btnP.classList.remove('active-pending');
+                listP.style.display = 'none';
+                listR.style.display = 'block';
+            }
+            renderLedger();
+        }
+
+        function renderLedger() {
+            renderPendingPayments();
+            renderReceivedPayments();
+            
+            const waBtn = document.getElementById('waReminderBtn');
+            const sumBadge = document.getElementById('ledgerSummary');
+            
+            // Hide WhatsApp and Summary Badge if in Received mode to prevent mistakes
+            if (currentLedgerView === 'received') {
+                waBtn.style.display = 'none';
+                sumBadge.style.display = 'none';
+            }
+        }
+
         function renderPendingPayments() {
             const listDiv = document.getElementById('pendingList');
             const filterName = document.getElementById('ledgerPatientSelect').value;
@@ -642,10 +694,64 @@
                 else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
             } else { listDiv.innerHTML = newHTML; }
 
-            if (filterName && foundPending) {
+            // Ensure controls only show if Pending view is active
+            if (filterName && foundPending && currentLedgerView === 'pending') {
                 summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; summaryBadge.style.display = "block"; waButton.style.display = "flex"; 
             } else {
                 summaryBadge.style.display = "none"; waButton.style.display = "none"; 
+            }
+        }
+
+        function renderReceivedPayments() {
+            const listDiv = document.getElementById('receivedList');
+            const filterName = document.getElementById('ledgerPatientSelect').value;
+            let newHTML = "";
+            let receivedRecords = [];
+            
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i]; 
+                if(!row || !row[1]) continue;
+                const amountPaid = parseFloat(row[5]) || 0; 
+                const name = row[2] ? row[2].trim() : ""; 
+                
+                if (amountPaid > 0) {
+                    if (filterName && name !== filterName) continue;
+                    receivedRecords.push({row: row, index: i});
+                }
+            }
+            
+            receivedRecords.sort((a, b) => {
+                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                if (dateB !== dateA) return dateB - dateA;
+                return b.index - a.index; 
+            });
+            
+            if(receivedRecords.length === 0) {
+                if(filterName) { listDiv.innerHTML = `<div class='card' style='text-align:center;'><p>No payments recorded for ${filterName} yet.</p></div>`; } 
+                else { listDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>"; }
+            } else {
+                receivedRecords.forEach(item => {
+                    const row = item.row;
+                    const dateObj = new Date(row[1]);
+                    const displayDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                    const name = row[2] ? row[2].trim() : "Unknown";
+                    const paymentType = String(row[4]).trim();
+                    const amountPaid = parseFloat(row[5]) || 0;
+                    
+                    newHTML += `
+                    <div class="card" style="border-left: 4px solid var(--success); padding: 12px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                            <h4 style="margin:0; font-size: 16px;">${name}</h4>
+                            <strong style="color: var(--success); font-size: 15px;">+ ₹${amountPaid.toLocaleString('en-IN')}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted);">
+                            <div>${displayDate}</div>
+                            <div>✓ Paid via ${paymentType || 'Unknown'}</div>
+                        </div>
+                    </div>`;
+                });
+                listDiv.innerHTML = newHTML;
             }
         }
 
