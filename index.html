@@ -370,7 +370,6 @@
             syncWithDatabase(); 
         };
 
-        // --- THEME ---
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -526,7 +525,6 @@
                 }
             }
 
-            // -- 1. UPCOMING LIST --
             let upcomingList = [];
             let today = new Date();
             today.setHours(0,0,0,0);
@@ -548,7 +546,6 @@
                 let upcomingHTML = "";
                 upcomingList.forEach(item => {
                     const dateFormatted = formatApptDate(item.date);
-                    // RESTORED EMOJIS HERE
                     let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
                     let encodedMsg = encodeURIComponent(msg);
                     
@@ -566,7 +563,6 @@
                 upcomingDiv.innerHTML = upcomingHTML;
             }
 
-            // -- 2. RECENT 5 LIST --
             allValidRows.sort((a, b) => {
                 const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                 const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
@@ -595,6 +591,7 @@
             }
         }
 
+        // --- NEW COMPACT LEDGER UI ---
         function renderPendingPayments() {
             const listDiv = document.getElementById('pendingList');
             const filterName = document.getElementById('ledgerPatientSelect').value;
@@ -623,25 +620,21 @@
                     summaryCount++; summaryTotal += balance;
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
+                    // ULTRA-COMPACT 1-TAP LAYOUT
                     newHTML += `
-                    <div class="card" style="border-left: 4px solid var(--danger);">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <div><h4 style="margin-bottom:4px;">${name}</h4><span class="badge badge-pending">Due: ₹${balance}</span></div>
-                            <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
+                    <div class="card" style="border-left: 4px solid var(--danger); padding: 12px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                            <h4 style="margin:0; font-size: 16px;">${name}</h4>
+                            <span class="badge badge-pending" style="font-size: 13px;">Due: ₹${balance}</span>
                         </div>
-                        <hr style="border:0; border-top:1px solid var(--divider-color); margin: 12px 0;">
-                        <div style="display:flex; gap:10px;">
-                            <div style="flex:1"><label>Pay Amount</label><input type="number" id="payAmt_${rowNum}" value="${balance}"></div>
-                            <div style="flex:1"><label>Via</label>
-                                <select id="payType_${rowNum}">
-                                    <option value="Cash" ${paymentType==='cash'?'selected':''}>Cash</option>
-                                    <option value="Online" ${paymentType==='online'?'selected':''}>Online</option>
-                                    <option value="Closed">Closed</option>
-                                </select>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn-main" style="margin:0; padding: 6px 12px; font-size: 13px; width: auto; background: var(--success);" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵 Cash</button>
+                                <button class="btn-main" style="margin:0; padding: 6px 12px; font-size: 13px; width: auto; background: #3182ce;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱 Online</button>
                             </div>
                         </div>
-                        <button class="btn-main" style="padding: 10px;" onclick="submitPaymentUpdate(${rowNum})">Clear Balance</button>
-                        <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px;"></div>
+                        <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px; display:none;"></div>
                     </div>`;
                 }
             }
@@ -660,7 +653,6 @@
 
         function sendWhatsAppReminder() {
             if (currentPendingSessionsForWA.length === 0) return;
-            // RESTORED EMOJIS HERE
             let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
             let totalAmount = 0;
             currentPendingSessionsForWA.forEach(session => {
@@ -672,19 +664,20 @@
             window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
         }
 
-        function submitPaymentUpdate(rowNum) {
-            if (!confirm("Are you sure you want to clear this balance?")) return; 
+        function submitPaymentUpdate(rowNum, paymentMethod, fullAmount) {
+            if (!confirm(`Are you sure you want to clear this ₹${fullAmount} balance via ${paymentMethod}?`)) return; 
             
             const status = document.getElementById('payStatus_' + rowNum); 
+            status.style.display = "block";
             status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
             
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: document.getElementById('payAmt_' + rowNum).value, newPaymentType: document.getElementById('payType_' + rowNum).value }) })
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: fullAmount, newPaymentType: paymentMethod }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
                     status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
                     if (allSheetData[rowNum - 1]) {
-                        allSheetData[rowNum - 1][5] = document.getElementById('payAmt_' + rowNum).value;
-                        allSheetData[rowNum - 1][4] = document.getElementById('payType_' + rowNum).value;
+                        allSheetData[rowNum - 1][5] = fullAmount;
+                        allSheetData[rowNum - 1][4] = paymentMethod;
                     }
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
