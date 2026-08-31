@@ -12,7 +12,6 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Offline Dynamic QR Code Generator Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <script>
@@ -150,7 +149,6 @@
         .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--divider-color); padding-bottom: 4px; }
         .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
 
-        /* MODAL STYLES FOR UPI QR */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
@@ -281,7 +279,6 @@
             </select>
         </div>
         
-        <!-- Grouped Action Bar (Appears when Patient Filter is Active) -->
         <div id="groupedActionBar" style="display: none; margin-bottom: 15px;">
             <button id="groupedQrBtn" class="btn-main" style="background: #2b6cb0; margin-top: 0; padding: 12px;">📷 Show Grouped UPI QR</button>
         </div>
@@ -394,7 +391,7 @@
         // 🚨 CONFIGURE YOUR PARAMETERS BELOW
         // =======================================================
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
-        const CLINIC_UPI_ID = "dranjalivish@axl"; // Must match Code.gs
+        const CLINIC_UPI_ID = "dranjalivish@axl"; 
         const CLINIC_PAYEE_NAME = "Anjali Vishwakarma";
         // =======================================================
         
@@ -759,7 +756,6 @@
                 pendingListDiv.innerHTML = pendingHTML; 
             }
 
-            // Received Payments Render
             if(receivedRecords.length === 0) {
                 receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>";
             } else {
@@ -827,7 +823,6 @@
             }
         }
 
-        // --- DYNAMIC QR GENERATOR FUNCTIONS ---
         function showSingleQR(patientName, amount, dateStr) {
             openQRModal(patientName, amount, `Session: ${dateStr}`);
         }
@@ -842,7 +837,7 @@
             document.getElementById('qrModalAmount').innerText = `₹${amount.toLocaleString('en-IN')}`;
             
             const qrContainer = document.getElementById('qrCanvasContainer');
-            qrContainer.innerHTML = ""; // Clear existing QR
+            qrContainer.innerHTML = ""; 
 
             const upiString = `upi://pay?pa=${CLINIC_UPI_ID}&pn=${encodeURIComponent(CLINIC_PAYEE_NAME)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Physio - ' + patientName)}`;
             
@@ -862,7 +857,6 @@
             document.getElementById('qrModal').style.display = 'none';
         }
 
-        // --- SMART WHATSAPP INVOICE GENERATOR ---
         function sendWhatsAppReminder() {
             const filterName = document.getElementById('ledgerPatientSelect').value;
             if (currentPendingSessionsForWA.length === 0 || !filterName) return;
@@ -874,8 +868,9 @@
                 totalAmount += session.amount;
             });
 
-            // Live Web Payment Portal Link generated from your Google Script
-            const paymentPortalUrl = `${WEB_APP_URL}?patient=${encodeURIComponent(filterName)}`;
+            // BASE64 URL PRIVACY SCRAMBLE
+            const token = btoa(unescape(encodeURIComponent(filterName)));
+            const paymentPortalUrl = `${WEB_APP_URL}?token=${token}`;
 
             let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your physiotherapy sessions.\n\n📅 *Session Breakdown:*\n${sessionLines}\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Amount Due:* *₹${totalAmount.toLocaleString('en-IN')}*\n\n👉 *View Invoice & Pay Online:*\n${paymentPortalUrl}\n\nKindly clear the dues at your earliest convenience. Wishing you a speedy and healthy recovery! 🌟`;
             
