@@ -12,6 +12,8 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Offline Dynamic QR Code Generator Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <script>
         const savedTheme = localStorage.getItem('appTheme') || 'light';
@@ -99,7 +101,6 @@
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
-        
         .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
         
         .wa-btn {
@@ -148,6 +149,22 @@
         .status-msg { text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px; }
         .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--divider-color); padding-bottom: 4px; }
         .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
+
+        /* MODAL STYLES FOR UPI QR */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box;
+        }
+        .modal-card {
+            background: var(--card-bg); border-radius: 20px; padding: 24px; max-width: 340px; width: 100%;
+            text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease;
+        }
+        #qrCanvasContainer {
+            background: white; padding: 12px; border-radius: 12px; display: inline-block; margin: 15px 0;
+            border: 1px solid var(--divider-color);
+        }
+        #qrCanvasContainer img { display: block; margin: 0 auto; }
     </style>
 </head>
 <body>
@@ -246,7 +263,7 @@
             <h3 style="margin:0; color: var(--primary-dark);">Ledger</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none; white-space: nowrap; line-height: 1;"></div>
-                <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Reminder">
+                <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Invoice">
                     <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
                 </button>
             </div>
@@ -264,6 +281,11 @@
             </select>
         </div>
         
+        <!-- Grouped Action Bar (Appears when Patient Filter is Active) -->
+        <div id="groupedActionBar" style="display: none; margin-bottom: 15px;">
+            <button id="groupedQrBtn" class="btn-main" style="background: #2b6cb0; margin-top: 0; padding: 12px;">📷 Show Grouped UPI QR</button>
+        </div>
+
         <div id="pendingList"></div>
         <div id="receivedList" style="display: none;"></div>
     </div>
@@ -329,6 +351,20 @@
         </div>
     </div>
 
+    <!-- IN-APP UPI QR MODAL -->
+    <div id="qrModal" class="modal-overlay" onclick="closeQRModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h3 style="margin: 0; color: var(--primary-dark);" id="qrModalTitle">Scan & Pay</h3>
+            <div id="qrModalSub" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Dr. Anjali Vishwakarma</div>
+            <div id="qrModalAmount" style="font-size: 26px; font-weight: 800; color: var(--primary); margin-top: 10px;">₹0</div>
+            
+            <div id="qrCanvasContainer"></div>
+            
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Scan using Google Pay, PhonePe, Paytm, or BHIM</div>
+            <button class="btn-main" style="margin-top: 0; padding: 12px; background: var(--text-muted);" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
+        </div>
+    </div>
+
     <!-- Native App Bottom Navigation -->
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-tab1" onclick="switchTab('tab1')">
@@ -355,8 +391,11 @@
 
     <script>
         // =======================================================
-        // 🚨 PASTE YOUR GOOGLE SCRIPT URL BELOW THIS LINE 🚨
+        // 🚨 CONFIGURE YOUR PARAMETERS BELOW
+        // =======================================================
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
+        const CLINIC_UPI_ID = "dranjalivish@axl"; // Must match Code.gs
+        const CLINIC_PAYEE_NAME = "Anjali Vishwakarma";
         // =======================================================
         
         let allSheetData = []; 
@@ -367,9 +406,9 @@
         let currentPendingSessionsForWA = [];
         let isSyncing = false;
         
-        // NEW: Load More State Management
         let currentLedgerFilter = "";
         let loadedOlderClicks = 0;
+        let qrCodeInstance = null;
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
@@ -613,6 +652,7 @@
             const summaryBadge = document.getElementById('ledgerSummary');
             const waButton = document.getElementById('waReminderBtn');
             const filterName = document.getElementById('ledgerPatientSelect').value;
+            const groupedBar = document.getElementById('groupedActionBar');
             
             if (view === 'pending') {
                 document.getElementById('btnTogglePending').classList.add('active-pending');
@@ -621,7 +661,9 @@
                 document.getElementById('receivedList').style.display = 'none';
                 
                 if (filterName && currentPendingSessionsForWA.length > 0) {
-                    summaryBadge.style.display = 'block'; waButton.style.display = 'flex';
+                    summaryBadge.style.display = 'block'; 
+                    waButton.style.display = 'flex';
+                    groupedBar.style.display = 'block';
                 }
             } else {
                 document.getElementById('btnToggleReceived').classList.add('active-received');
@@ -629,7 +671,9 @@
                 document.getElementById('pendingList').style.display = 'none';
                 document.getElementById('receivedList').style.display = 'block';
                 
-                summaryBadge.style.display = 'none'; waButton.style.display = 'none';
+                summaryBadge.style.display = 'none'; 
+                waButton.style.display = 'none';
+                groupedBar.style.display = 'none';
             }
         }
         
@@ -644,8 +688,9 @@
             const filterName = document.getElementById('ledgerPatientSelect').value;
             const summaryBadge = document.getElementById('ledgerSummary');
             const waButton = document.getElementById('waReminderBtn');
+            const groupedBar = document.getElementById('groupedActionBar');
+            const groupedQrBtn = document.getElementById('groupedQrBtn');
             
-            // Reset Load More clicks if the patient filter changes
             if (filterName !== currentLedgerFilter) {
                 loadedOlderClicks = 0;
                 currentLedgerFilter = filterName;
@@ -683,9 +728,10 @@
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
-                            <div style="display:flex; gap: 10px;">
-                                <button class="btn-main" style="margin:0; padding: 10px 16px; font-size: 14px; font-weight: bold; width: auto; background: var(--success);" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵 Cash</button>
-                                <button class="btn-main" style="margin:0; padding: 10px 16px; font-size: 14px; font-weight: bold; width: auto; background: #3182ce;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱 Online</button>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn-main" style="margin:0; padding: 10px 12px; font-size: 14px; font-weight: bold; width: auto; background: #2b6cb0;" onclick="showSingleQR('${name}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
+                                <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; font-weight: bold; width: auto; background: var(--success);" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵 Cash</button>
+                                <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; font-weight: bold; width: auto; background: #3182ce;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱 Online</button>
                             </div>
                         </div>
                         <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px; display:none;"></div>
@@ -708,9 +754,12 @@
             if(!foundPending) {
                 if(filterName) { pendingListDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
                 else { pendingListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
-            } else { pendingListDiv.innerHTML = pendingHTML; }
+                groupedBar.style.display = "none";
+            } else { 
+                pendingListDiv.innerHTML = pendingHTML; 
+            }
 
-            // -- NEW LOAD MORE LOGIC FOR RECEIVED PAYMENTS --
+            // Received Payments Render
             if(receivedRecords.length === 0) {
                 receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>";
             } else {
@@ -719,7 +768,6 @@
                     return b.index - a.index;
                 });
                 
-                // Calculate threshold: 1st day of the previous month
                 const today = new Date();
                 const thresholdDate = new Date(today.getFullYear(), today.getMonth() - 1, 1).getTime();
                 
@@ -734,7 +782,6 @@
                     }
                 });
 
-                // Add 50 older records for every "Load More" click
                 let olderToDisplay = loadedOlderClicks * 50;
                 if (olderToDisplay > 0) {
                     displayRecords = displayRecords.concat(olderRecords.slice(0, olderToDisplay));
@@ -767,21 +814,71 @@
 
             const isPendingView = document.getElementById('btnTogglePending').classList.contains('active-pending');
             if (filterName && foundPending && isPendingView) {
-                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; summaryBadge.style.display = "block"; waButton.style.display = "flex"; 
+                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; 
+                summaryBadge.style.display = "block"; 
+                waButton.style.display = "flex"; 
+                groupedBar.style.display = "block";
+                groupedQrBtn.innerText = `📷 Show Grouped QR (₹${summaryTotal})`;
+                groupedQrBtn.onclick = function() { showGroupedQR(filterName, summaryTotal, summaryCount); };
             } else {
-                summaryBadge.style.display = "none"; waButton.style.display = "none"; 
+                summaryBadge.style.display = "none"; 
+                waButton.style.display = "none"; 
+                groupedBar.style.display = "none";
             }
         }
 
+        // --- DYNAMIC QR GENERATOR FUNCTIONS ---
+        function showSingleQR(patientName, amount, dateStr) {
+            openQRModal(patientName, amount, `Session: ${dateStr}`);
+        }
+
+        function showGroupedQR(patientName, amount, sessionCount) {
+            openQRModal(patientName, amount, `Combined (${sessionCount} Sessions)`);
+        }
+
+        function openQRModal(patientName, amount, subText) {
+            document.getElementById('qrModalTitle').innerText = patientName;
+            document.getElementById('qrModalSub').innerText = subText;
+            document.getElementById('qrModalAmount').innerText = `₹${amount.toLocaleString('en-IN')}`;
+            
+            const qrContainer = document.getElementById('qrCanvasContainer');
+            qrContainer.innerHTML = ""; // Clear existing QR
+
+            const upiString = `upi://pay?pa=${CLINIC_UPI_ID}&pn=${encodeURIComponent(CLINIC_PAYEE_NAME)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Physio - ' + patientName)}`;
+            
+            new QRCode(qrContainer, {
+                text: upiString,
+                width: 180,
+                height: 180,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            document.getElementById('qrModal').style.display = 'flex';
+        }
+
+        function closeQRModal(e) {
+            document.getElementById('qrModal').style.display = 'none';
+        }
+
+        // --- SMART WHATSAPP INVOICE GENERATOR ---
         function sendWhatsAppReminder() {
-            if (currentPendingSessionsForWA.length === 0) return;
-            let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your recent physiotherapy sessions.\n\n📅 *Session Details:*\n`;
+            const filterName = document.getElementById('ledgerPatientSelect').value;
+            if (currentPendingSessionsForWA.length === 0 || !filterName) return;
+
             let totalAmount = 0;
+            let sessionLines = "";
             currentPendingSessionsForWA.forEach(session => {
-                msg += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
+                sessionLines += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
                 totalAmount += session.amount;
             });
-            msg += `\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Outstanding Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n\nKindly clear the dues at your earliest convenience. Please let me know once the payment is processed. Wishing you a speedy and healthy recovery! 🌟`;
+
+            // Live Web Payment Portal Link generated from your Google Script
+            const paymentPortalUrl = `${WEB_APP_URL}?patient=${encodeURIComponent(filterName)}`;
+
+            let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your physiotherapy sessions.\n\n📅 *Session Breakdown:*\n${sessionLines}\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Amount Due:* *₹${totalAmount.toLocaleString('en-IN')}*\n\n👉 *View Invoice & Pay Online:*\n${paymentPortalUrl}\n\nKindly clear the dues at your earliest convenience. Wishing you a speedy and healthy recovery! 🌟`;
+            
             const encodedMessage = encodeURIComponent(msg);
             window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
         }
