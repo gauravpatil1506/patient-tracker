@@ -94,7 +94,6 @@
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
         
-        /* Slide-Up Modal Button Trigger Style */
         .patient-select-btn {
             width: 100%; padding: 14px; border: 1px solid var(--border-color); 
             border-radius: 10px; font-size: 16px; text-align: left; 
@@ -151,17 +150,11 @@
         .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--divider-color); padding-bottom: 4px; }
         .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
 
-        /* UPI QR Modal */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
-            padding: 20px; box-sizing: border-box;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-card { background: var(--card-bg); border-radius: 20px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease; }
         #qrCanvasContainer { background: white; padding: 12px; border-radius: 12px; display: inline-block; margin: 15px 0; border: 1px solid var(--divider-color); }
         #qrCanvasContainer img { display: block; margin: 0 auto; }
 
-        /* Unified Slide-Up Patient Search Modal */
         .sheet-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; align-items: flex-end; }
         .sheet { background: var(--bg-color); width: 100%; height: 80vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 -5px 25px rgba(0,0,0,0.1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -367,9 +360,7 @@
             <div class="sheet-search-wrap">
                 <input type="text" id="modalSearchInput" placeholder="🔍 Search name..." onkeyup="renderModalList(this.value)" autocomplete="off">
             </div>
-            <div class="sheet-list" id="modalPatientList">
-                <!-- Data populated dynamically via JS -->
-            </div>
+            <div class="sheet-list" id="modalPatientList"></div>
         </div>
     </div>
 
@@ -419,7 +410,7 @@
         // =======================================================
         
         let allSheetData = []; 
-        let globalPatientList = []; // Centralized Data Array for the Modal
+        let globalPatientList = []; 
         let currentModalContext = ''; 
         
         let cashflowChartInstance = null;
@@ -495,14 +486,13 @@
             });
         }
 
-        // Populates the master array in memory instead of heavy DOM nodes
         function updateGlobalPatientList() {
             let names = new Set(); 
             let years = new Set();
             
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; if(!row) continue;
-                if(row[2]) { names.add(row[2].trim()); }
+                if(row[2]) { names.add(row[2].toString().trim()); }
                 if(row[1]) {
                     const d = new Date(row[1]);
                     if(!isNaN(d)) years.add(d.getFullYear());
@@ -510,7 +500,6 @@
             }
             globalPatientList = Array.from(names).sort();
 
-            // Setup Year Filter natively (as it's just a few tiny numbers)
             const yearFilter = document.getElementById('dashYearFilter');
             const savedYear = yearFilter.value;
             yearFilter.innerHTML = '<option value="All">All-Time</option>';
@@ -518,7 +507,6 @@
             if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
         }
 
-        // --- UNIFIED SLIDE-UP MODAL ENGINE ---
         function openPatientModal(contextTabId) {
             currentModalContext = contextTabId;
             document.getElementById('patientSearchModal').style.display = 'flex';
@@ -527,7 +515,7 @@
             searchInput.value = '';
             renderModalList('');
             
-            setTimeout(() => { searchInput.focus(); }, 100); // Auto-focus keyboard
+            setTimeout(() => { searchInput.focus(); }, 100); 
         }
 
         function closePatientModal() {
@@ -541,7 +529,6 @@
             const safeQuery = query.trim().toLowerCase();
             const filteredNames = globalPatientList.filter(name => name.toLowerCase().includes(safeQuery));
 
-            // Context Rules
             if (currentModalContext === 'tab3') {
                 html += `<div class="sheet-item" onclick="selectFromModal('All Patients')"><strong>📋 Show All Patients</strong></div>`;
             }
@@ -549,7 +536,7 @@
             if (currentModalContext === 'tab1' && safeQuery !== '') {
                 const exactMatch = filteredNames.find(n => n.toLowerCase() === safeQuery);
                 if (!exactMatch) {
-                    html += `<div class="sheet-item add-new" onclick="selectFromModal('${query.trim()}')">
+                    html += `<div class="sheet-item add-new" onclick="selectFromModal('${query.trim().replace(/'/g, "\\'")}')">
                                 + Add "${query.trim()}" as New Patient
                              </div>`;
                 }
@@ -592,27 +579,32 @@
             }
         }
 
-        // Logic for auto-filling Location and Fees when patient selected in Tab 1
         function handleTab1PatientChange(selectedName) {
             let patientRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) { patientRecords.push(allSheetData[i]); }
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) { 
+                    patientRecords.push(allSheetData[i]); 
+                }
             }
             if (patientRecords.length > 0) {
-                patientRecords.sort((a, b) => (b[1] ? new Date(b[1]).getTime() : 0) - (a[1] ? new Date(a[1]).getTime() : 0)); 
+                patientRecords.sort((a, b) => {
+                    let dateB = b[1] ? new Date(b[1]).getTime() : 0;
+                    let dateA = a[1] ? new Date(a[1]).getTime() : 0;
+                    if(isNaN(dateB)) dateB = 0;
+                    if(isNaN(dateA)) dateA = 0;
+                    return dateB - dateA; 
+                }); 
                 const latestVisit = patientRecords[0];
-                document.getElementById('location').value = latestVisit[3] ? latestVisit[3].trim() : "";
-                document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].trim() : "";
+                document.getElementById('location').value = latestVisit[3] ? latestVisit[3].toString().trim() : "";
+                document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].toString().trim() : "";
                 document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
             } else {
-                // New patient, reset auto-fills
                 document.getElementById('location').value = "";
                 document.getElementById('sessionType').value = "";
                 document.getElementById('totalFee').value = "";
             }
         }
 
-        // Main Tab Switcher
         function switchTab(tabId) {
             window.scrollTo(0, 0);
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -629,6 +621,9 @@
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
 
+        // ==========================================
+        // 🚨 CRASH-PROOF RECENT TAB LOGIC
+        // ==========================================
         function loadRecentPatients() {
             const upcomingDiv = document.getElementById('upcomingList');
             const recentDiv = document.getElementById('recentList');
@@ -646,15 +641,18 @@
                 const row = allSheetData[i];
                 if(!row || !row[1] || !row[2]) continue;
                 
-                const name = row[2].trim();
-                const visitDate = row[1] ? new Date(row[1]).getTime() : 0;
+                // Bulletproof: Force to string before trimming to prevent crash on purely numeric data
+                const name = row[2].toString().trim();
+                let visitDate = row[1] ? new Date(row[1]).getTime() : 0;
+                if(isNaN(visitDate)) visitDate = 0; // Prevent NaN crash
                 
                 allValidRows.push({row: row, index: i});
 
                 if(!latestRecordsMap.has(name)) {
                     latestRecordsMap.set(name, row);
                 } else {
-                    const existingDate = latestRecordsMap.get(name)[1] ? new Date(latestRecordsMap.get(name)[1]).getTime() : 0;
+                    let existingDate = latestRecordsMap.get(name)[1] ? new Date(latestRecordsMap.get(name)[1]).getTime() : 0;
+                    if(isNaN(existingDate)) existingDate = 0;
                     if (visitDate > existingDate) { latestRecordsMap.set(name, row); }
                 }
             }
@@ -672,7 +670,14 @@
                 }
             });
 
-            upcomingList.sort((a, b) => a.date - b.date); 
+            // Bulletproof Sorting: explicitly handle NaN values
+            upcomingList.sort((a, b) => {
+                let dateA = a.date ? a.date.getTime() : 0;
+                let dateB = b.date ? b.date.getTime() : 0;
+                if(isNaN(dateA)) dateA = 0;
+                if(isNaN(dateB)) dateB = 0;
+                return dateA - dateB; 
+            }); 
 
             if (upcomingList.length === 0) {
                 upcomingDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No upcoming appointments.</p></div>";
@@ -694,6 +699,40 @@
                         </a>
                     </div>`;
                 });
+                upcomingDiv.innerHTML = upcomingHTML;
+            }
+
+            // Bulletproof Sorting: Guaranteed to return a valid number, preventing app crash
+            allValidRows.sort((a, b) => {
+                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                
+                if (isNaN(dateB)) dateB = 0;
+                if (isNaN(dateA)) dateA = 0;
+                
+                if (dateB !== dateA) return dateB - dateA;
+                return b.index - a.index; 
+            });
+
+            const top5 = allValidRows.slice(0, 5);
+
+            if(top5.length === 0) { 
+                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
+            } else {
+                let recentHTML = "";
+                top5.forEach(item => {
+                    const row = item.row;
+                    const dateObj = row[1] ? new Date(row[1]) : null;
+                    const dateStr = (dateObj && !isNaN(dateObj)) ? formatApptDate(dateObj) : "No Date";
+                    recentHTML += `
+                    <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] ? row[2].toString().trim() : "Unknown"}</h4>
+                            <span style="font-size: 12px; color: var(--text-muted);">${row[3] ? row[3].toString().trim() : "No City"}</span>
+                        </div>
+                        <div style="font-weight: bold; color: var(--primary); font-size: 13px; text-align: right;">${dateStr.replace(' | ', '<br>')}</div>
+                    </div>`;
+                });
                 recentDiv.innerHTML = recentHTML; 
             }
         }
@@ -711,9 +750,7 @@
                 document.getElementById('receivedList').style.display = 'none';
                 
                 if (filterName && currentPendingSessionsForWA.length > 0) {
-                    summaryBadge.style.display = 'block'; 
-                    waButton.style.display = 'flex';
-                    groupedBar.style.display = 'block';
+                    summaryBadge.style.display = 'block'; waButton.style.display = 'flex'; groupedBar.style.display = 'block';
                 }
             } else {
                 document.getElementById('btnToggleReceived').classList.add('active-received');
@@ -721,9 +758,7 @@
                 document.getElementById('pendingList').style.display = 'none';
                 document.getElementById('receivedList').style.display = 'block';
                 
-                summaryBadge.style.display = 'none'; 
-                waButton.style.display = 'none';
-                groupedBar.style.display = 'none';
+                summaryBadge.style.display = 'none'; waButton.style.display = 'none'; groupedBar.style.display = 'none';
             }
         }
         
@@ -742,22 +777,19 @@
             const groupedQrBtn = document.getElementById('groupedQrBtn');
             
             if (filterName !== currentLedgerFilter) {
-                loadedOlderClicks = 0;
-                currentLedgerFilter = filterName;
+                loadedOlderClicks = 0; currentLedgerFilter = filterName;
             }
             
             let foundPending = false; let pendingHTML = ""; let summaryCount = 0; let summaryTotal = 0;
-            let receivedRecords = [];
-            currentPendingSessionsForWA = [];
+            let receivedRecords = []; currentPendingSessionsForWA = [];
             
             for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i]; 
-                if(!row || !row[1]) continue;
+                const row = allSheetData[i]; if(!row || !row[1]) continue;
                 const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
                 
                 const displayDate = dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
                 const waDateStr = dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
-                const name = row[2] ? row[2].trim() : ""; 
+                const name = row[2] ? row[2].toString().trim() : ""; 
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0; 
                 const totalFee = parseFloat(row[6]) || 0;
@@ -778,7 +810,7 @@
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
                             <div style="display:flex; gap: 8px;">
-                                <button class="btn-main" style="margin:0; padding: 10px 12px; font-size: 14px; font-weight: bold; width: auto; background: #2b6cb0;" onclick="showSingleQR('${name}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
+                                <button class="btn-main" style="margin:0; padding: 10px 12px; font-size: 14px; font-weight: bold; width: auto; background: #2b6cb0;" onclick="showSingleQR('${name.replace(/'/g, "\\'")}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
                                 <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; font-weight: bold; width: auto; background: var(--success);" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵</button>
                                 <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; font-weight: bold; width: auto; background: #3182ce;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱</button>
                             </div>
@@ -788,10 +820,7 @@
                 }
 
                 if (amountPaid > 0) {
-                    receivedRecords.push({
-                        name: name, dateObj: dateObj, displayDate: displayDate,
-                        amount: amountPaid, method: row[4] ? row[4].trim() : "Unknown", index: i
-                    });
+                    receivedRecords.push({ name: name, dateObj: dateObj, displayDate: displayDate, amount: amountPaid, method: row[4] ? row[4].toString().trim() : "Unknown", index: i });
                 }
             }
             
@@ -799,15 +828,15 @@
                 if(filterName) { pendingListDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
                 else { pendingListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
                 groupedBar.style.display = "none";
-            } else { 
-                pendingListDiv.innerHTML = pendingHTML; 
-            }
+            } else { pendingListDiv.innerHTML = pendingHTML; }
 
             if(receivedRecords.length === 0) {
                 receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>";
             } else {
                 receivedRecords.sort((a, b) => {
-                    if (b.dateObj.getTime() !== a.dateObj.getTime()) return b.dateObj.getTime() - a.dateObj.getTime();
+                    let dateB = b.dateObj.getTime(); let dateA = a.dateObj.getTime();
+                    if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
+                    if (dateB !== dateA) return dateB - dateA;
                     return b.index - a.index;
                 });
                 
@@ -858,13 +887,8 @@
             }
         }
 
-        function showSingleQR(patientName, amount, dateStr) {
-            openQRModal(patientName, amount, `Session: ${dateStr}`);
-        }
-
-        function showGroupedQR(patientName, amount, sessionCount) {
-            openQRModal(patientName, amount, `Combined (${sessionCount} Sessions)`);
-        }
+        function showSingleQR(patientName, amount, dateStr) { openQRModal(patientName, amount, `Session: ${dateStr}`); }
+        function showGroupedQR(patientName, amount, sessionCount) { openQRModal(patientName, amount, `Combined (${sessionCount} Sessions)`); }
 
         function openQRModal(patientName, amount, subText) {
             document.getElementById('qrModalTitle').innerText = patientName;
@@ -876,10 +900,7 @@
 
             const upiString = `upi://pay?pa=${CLINIC_UPI_ID}&pn=${encodeURIComponent(CLINIC_PAYEE_NAME)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Physio - ' + patientName)}`;
             
-            new QRCode(qrContainer, {
-                text: upiString, width: 180, height: 180,
-                colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
-            });
+            new QRCode(qrContainer, { text: upiString, width: 180, height: 180, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
             document.getElementById('qrModal').style.display = 'flex';
         }
 
@@ -906,7 +927,6 @@
 
         function submitPaymentUpdate(rowNum, paymentMethod, fullAmount) {
             if (!confirm(`Are you sure you want to clear this ₹${fullAmount} balance via ${paymentMethod}?`)) return; 
-            
             const status = document.getElementById('payStatus_' + rowNum); 
             status.style.display = "block"; status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
             
@@ -925,13 +945,8 @@
 
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // New validation for hidden input modal
             let rawName = document.getElementById('name').value.trim();
-            if (!rawName) {
-                alert("Please select or enter a Patient Name.");
-                return;
-            }
+            if (!rawName) { alert("Please select or enter a Patient Name."); return; }
 
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
@@ -952,28 +967,21 @@
                 if(data.status === 'success') {
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
                     allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
-                    document.getElementById('entryForm').reset(); 
-                    document.getElementById('date').valueAsDate = new Date(); 
-                    document.getElementById('amountPaid').value = "0"; 
-                    
-                    // Reset New Tab 1 Modal Button
-                    document.getElementById('name').value = "";
-                    document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
-                    
+                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
+                    document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
         });
 
+        // Bulletproof History Sorting
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
             const scheduleCard = document.getElementById('scheduleCard');
             
-            if(!selectedName) { 
-                timeline.innerHTML = ""; scheduleCard.style.display = "none"; return; 
-            }
+            if(!selectedName) { timeline.innerHTML = ""; scheduleCard.style.display = "none"; return; }
             
             scheduleCard.style.display = "block";
             document.getElementById('apptStatusMsg').innerText = "";
@@ -981,13 +989,14 @@
 
             let records = [];
             for(let i = 1; i < allSheetData.length; i++) { 
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === selectedName) {
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) {
                     records.push({row: allSheetData[i], index: i}); 
                 }
             }
             records.sort((a, b) => {
-                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
                 if (dateB !== dateA) return dateB - dateA;
                 return b.index - a.index; 
             });
@@ -995,19 +1004,20 @@
             let newHTML = "";
             records.forEach(item => {
                 const row = item.row;
-                const date = row[1] ? new Date(row[1]).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                const dateObj = row[1] ? new Date(row[1]) : null;
+                const date = (dateObj && !isNaN(dateObj)) ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
                 newHTML += `
                 <div class="card" style="border-left: 4px solid var(--primary);">
                     <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
                         <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
-                        <span class="badge badge-success">${row[9]||"Session"}</span>
+                        <span class="badge badge-success">${row[9] ? row[9].toString().trim() : "Session"}</span>
                     </div>
                     <div style="background: var(--input-bg); padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
                         <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
                         <div style="color:var(--text-muted); font-size:20px;">&rarr;</div>
                         <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
                     </div>
-                    <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11]||"No clinical notes recorded."}</p>
+                    <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11] ? row[11].toString().trim() : "No clinical notes recorded."}</p>
                 </div>`;
             });
             timeline.innerHTML = newHTML;
@@ -1027,8 +1037,9 @@
                     statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Appointment scheduled";
                     let latestIndex = -1; let latestDate = 0;
                     for(let i = 1; i < allSheetData.length; i++) {
-                        if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === patientName) {
-                            const d = allSheetData[i][1] ? new Date(allSheetData[i][1]).getTime() : 0;
+                        if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === patientName) {
+                            let d = allSheetData[i][1] ? new Date(allSheetData[i][1]).getTime() : 0;
+                            if(isNaN(d)) d = 0;
                             if (d > latestDate) { latestDate = d; latestIndex = i; }
                         }
                     }
@@ -1060,8 +1071,8 @@
                 const amountPaid = parseFloat(row[5]) || 0;
                 const totalFee = parseFloat(row[6]) || 0;
                 const balance = totalFee - amountPaid;
-                const name = row[2] ? row[2].trim() : "";
-                const city = row[3] ? row[3].trim() : "";
+                const name = row[2] ? row[2].toString().trim() : "";
+                const city = row[3] ? row[3].toString().trim() : "";
                 
                 const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
                 const monthNameShort = monthNames[dateObj.getMonth()];
@@ -1133,6 +1144,7 @@
             }
         }
 
+        // Bulletproof Analytics Sorting
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
@@ -1146,12 +1158,13 @@
             let patRecords = [];
             
             for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].trim() === name) { patRecords.push({row: allSheetData[i], index: i}); }
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === name) { patRecords.push({row: allSheetData[i], index: i}); }
             }
             
             patRecords.sort((a, b) => {
-                const dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                const dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0;
                 if (dateA !== dateB) return dateA - dateB;
                 return a.index - b.index;
             });
