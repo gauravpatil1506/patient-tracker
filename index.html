@@ -81,14 +81,9 @@
         .theme-toggle-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; display: flex; line-height: 1; }
 
         .container { padding: 20px; }
-        
-        /* SWIPE ANIMATION CSS */
-        .tab-content { display: none; opacity: 0; transform: translateX(15px); transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .tab-content.active { display: block; opacity: 1; transform: translateX(0); }
-        .tab-content.slide-left { animation: slideLeft 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .tab-content.slide-right { animation: slideRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .form-group { margin-bottom: 18px; }
         label { font-weight: 600; display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-main); }
@@ -99,10 +94,6 @@
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
         
-        /* GRID UTILITIES FOR TAB 1 */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-
         .patient-select-btn {
             width: 100%; padding: 14px; border: 1px solid var(--border-color); 
             border-radius: 10px; font-size: 16px; text-align: left; 
@@ -188,72 +179,69 @@
         </div>
     </div>
 
-    <!-- TAB 1: NEW VISIT (Comfortable Grid Layout) -->
+    <!-- TAB 1: NEW VISIT -->
     <div id="tab1" class="tab-content active container">
         <form id="entryForm">
             <div class="card">
+                <div class="form-group">
+                    <label>Date of Visit</label>
+                    <input type="date" id="date" required>
+                </div>
                 <div class="form-group">
                     <label>Patient Name</label>
                     <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="openPatientModal('tab1')">🔍 Search or enter new...</button>
                     <input type="hidden" id="name" required>
                 </div>
-                
-                <div class="grid-2" style="margin-bottom: 18px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Date of Visit</label>
-                        <input type="date" id="date" required>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Location (City)</label>
-                        <input type="text" id="location" required>
-                    </div>
+                <div class="form-group">
+                    <label>Location (City)</label>
+                    <input type="text" id="location" required>
                 </div>
+            </div>
 
-                <div class="grid-2" style="margin-bottom: 18px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Session Type</label>
-                        <input type="text" id="sessionType" required placeholder="e.g., Manual...">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Next Appt (Opt)</label>
-                        <input type="date" id="nextAppt">
-                    </div>
+            <div class="card">
+                <div class="form-group">
+                    <label>Session Type</label>
+                    <input type="text" id="sessionType" required placeholder="e.g., Manual Therapy, Assessment...">
                 </div>
-
-                <div class="grid-2" style="margin-bottom: 18px;">
-                    <div class="form-group" style="margin-bottom: 0;">
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
                         <label>Pain Before (1-10)</label>
                         <input type="number" id="painBefore" min="1" max="10">
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group" style="flex: 1;">
                         <label>Pain After (1-10)</label>
                         <input type="number" id="painAfter" min="1" max="10">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Treatment Notes</label>
+                    <textarea id="notes" rows="3" placeholder="Enter clinical observations..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Next Appointment (Optional)</label>
+                    <input type="date" id="nextAppt">
+                </div>
+            </div>
 
-                <div class="grid-3" style="margin-bottom: 18px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Total (₹)</label>
+            <div class="card">
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Total Fee (₹)</label>
                         <input type="number" id="totalFee" required>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Paid (₹)</label>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Amount Paid (₹)</label>
                         <input type="number" id="amountPaid" value="0" required>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Method</label>
-                        <select id="paymentType" style="padding: 13px 8px;">
-                            <option value="Cash">Cash</option>
-                            <option value="Online">Online</option>
-                            <option value="Pending">Unpaid</option>
-                            <option value="Closed">Closed</option>
-                        </select>
-                    </div>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Treatment Notes</label>
-                    <textarea id="notes" rows="2" placeholder="Enter clinical observations..."></textarea>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="paymentType">
+                        <option value="Cash">Cash</option>
+                        <option value="Online">Online</option>
+                        <option value="Pending">Pending (Unpaid)</option>
+                        <option value="Closed">Closed</option>
+                    </select>
                 </div>
             </div>
 
@@ -432,8 +420,6 @@
         
         let currentLedgerFilter = "";
         let loadedOlderClicks = 0;
-        
-        const tabOrder = ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
@@ -450,7 +436,6 @@
             } catch (e) {}
 
             syncWithDatabase(); 
-            initSwipeGestures();
         };
 
         function toggleTheme() {
@@ -472,51 +457,8 @@
             const d = dateObj.getDate().toString().padStart(2, '0');
             const m = dateObj.toLocaleString('en-IN', { month: 'short' });
             const y = dateObj.getFullYear().toString().slice(-2);
-            const day = dateObj.toLocaleString('en-IN', { weekday: 'long' });
+            const day = dateObj.toLocaleString('en-IN', { weekday: 'short' });
             return `${d}-${m}-${y} | ${day}`; 
-        }
-
-        // --- SWIPE ENGINE ---
-        function initSwipeGestures() {
-            let touchStartX = 0; let touchStartY = 0;
-            document.addEventListener('touchstart', e => { 
-                touchStartX = e.changedTouches[0].screenX; 
-                touchStartY = e.changedTouches[0].screenY; 
-            }, {passive: true});
-            
-            document.addEventListener('touchend', e => {
-                if(document.getElementById('patientSearchModal').style.display === 'flex' || document.getElementById('qrModal').style.display === 'flex') return;
-                
-                const touchEndX = e.changedTouches[0].screenX; 
-                const touchEndY = e.changedTouches[0].screenY;
-                const xDiff = touchStartX - touchEndX; 
-                const yDiff = Math.abs(touchStartY - touchEndY);
-                
-                if (yDiff > Math.abs(xDiff) || Math.abs(xDiff) < 60) return;
-                
-                const activeTabId = document.querySelector('.tab-content.active').id;
-                let currentIndex = tabOrder.indexOf(activeTabId);
-                
-                if (xDiff > 0 && currentIndex < tabOrder.length - 1) { switchTab(tabOrder[currentIndex + 1], 'right'); } 
-                else if (xDiff < 0 && currentIndex > 0) { switchTab(tabOrder[currentIndex - 1], 'left'); }
-            }, {passive: true});
-        }
-
-        function switchTab(tabId, direction = 'fade') {
-            window.scrollTo(0, 0);
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active', 'slide-left', 'slide-right');
-            });
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            
-            const newTab = document.getElementById(tabId);
-            newTab.classList.add('active');
-            
-            if (direction === 'left') newTab.classList.add('slide-left');
-            if (direction === 'right') newTab.classList.add('slide-right');
-            
-            document.getElementById('nav-' + tabId).classList.add('active');
-            renderCurrentTab(tabId);
         }
 
         function syncWithDatabase(callback) {
@@ -663,6 +605,15 @@
             }
         }
 
+        function switchTab(tabId) {
+            window.scrollTo(0, 0);
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('nav-' + tabId).classList.add('active');
+            renderCurrentTab(tabId);
+        }
+
         function renderCurrentTab(tabId) {
             if(tabId === 'tab2') loadRecentPatients(); 
             if(tabId === 'tab3') renderLedgerData(); 
@@ -670,6 +621,9 @@
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
 
+        // ==========================================
+        // 🚨 CRASH-PROOF RECENT TAB LOGIC
+        // ==========================================
         function loadRecentPatients() {
             const upcomingDiv = document.getElementById('upcomingList');
             const recentDiv = document.getElementById('recentList');
@@ -687,9 +641,10 @@
                 const row = allSheetData[i];
                 if(!row || !row[1] || !row[2]) continue;
                 
+                // Bulletproof: Force to string before trimming to prevent crash on purely numeric data
                 const name = row[2].toString().trim();
                 let visitDate = row[1] ? new Date(row[1]).getTime() : 0;
-                if(isNaN(visitDate)) visitDate = 0; 
+                if(isNaN(visitDate)) visitDate = 0; // Prevent NaN crash
                 
                 allValidRows.push({row: row, index: i});
 
@@ -715,6 +670,7 @@
                 }
             });
 
+            // Bulletproof Sorting: explicitly handle NaN values
             upcomingList.sort((a, b) => {
                 let dateA = a.date ? a.date.getTime() : 0;
                 let dateB = b.date ? b.date.getTime() : 0;
@@ -746,11 +702,14 @@
                 upcomingDiv.innerHTML = upcomingHTML;
             }
 
+            // Bulletproof Sorting: Guaranteed to return a valid number, preventing app crash
             allValidRows.sort((a, b) => {
                 let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                 let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                
                 if (isNaN(dateB)) dateB = 0;
                 if (isNaN(dateA)) dateA = 0;
+                
                 if (dateB !== dateA) return dateB - dateA;
                 return b.index - a.index; 
             });
@@ -808,6 +767,9 @@
             renderLedgerData();
         }
 
+        // ==========================================
+        // 🚨 HIGH-DENSITY "SPLIT-ROW" LEDGER LAYOUT
+        // ==========================================
         function renderLedgerData() {
             const pendingListDiv = document.getElementById('pendingList');
             const receivedListDiv = document.getElementById('receivedList');
@@ -842,18 +804,21 @@
                     summaryCount++; summaryTotal += balance;
                     currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
+                    // COMPACT PENDING CARD LAYOUT
                     pendingHTML += `
-                    <div class="card" style="border-left: 4px solid var(--danger); padding: 12px 16px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-                            <h4 style="margin:0; font-size: 16px;">${name}</h4>
-                            <span class="badge badge-pending" style="font-size: 13px;">Due: ₹${balance}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
-                            <div style="display:flex; gap: 8px;">
-                                <button class="btn-main" style="margin:0; padding: 10px 12px; font-size: 14px; font-weight: bold; width: auto; background: #2b6cb0;" onclick="showSingleQR('${name.replace(/'/g, "\\'")}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
-                                <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; font-weight: bold; width: auto; background: var(--success);" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵</button>
-                                <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; font-weight: bold; width: auto; background: #3182ce;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱</button>
+                    <div class="card" style="border-left: 4px solid var(--danger); padding: 10px 14px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; padding-right: 8px;">
+                                <h4 style="margin: 0 0 4px 0; font-size: 16px; line-height: 1.2; word-break: break-word;">${name}</h4>
+                                <div style="font-size:12px; color:var(--text-muted); font-weight: 500;">${displayDate}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="color:var(--danger); font-weight:800; font-size: 16px;">₹${balance}</div>
+                                <div style="display:flex; gap: 6px;">
+                                    <button class="btn-main" style="margin:0; width: 38px; height: 38px; padding: 0; font-size: 16px; background: #2b6cb0; border-radius: 8px;" onclick="showSingleQR('${name.replace(/'/g, "\\'")}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
+                                    <button class="btn-main" style="margin:0; width: 38px; height: 38px; padding: 0; font-size: 16px; background: var(--success); border-radius: 8px;" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵</button>
+                                    <button class="btn-main" style="margin:0; width: 38px; height: 38px; padding: 0; font-size: 16px; background: #3182ce; border-radius: 8px;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱</button>
+                                </div>
                             </div>
                         </div>
                         <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px; display:none;"></div>
@@ -896,16 +861,17 @@
                 
                 let receivedHTML = "";
                 displayRecords.forEach(rec => {
+                    // COMPACT RECEIVED CARD LAYOUT
                     receivedHTML += `
-                    <div class="card" style="border-left: 4px solid var(--success); padding: 12px 16px; margin-bottom: 12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <h4 style="margin:0 0 4px 0; font-size: 16px;">${rec.name}</h4>
-                                <span style="font-size:12px; color:var(--text-muted);">${rec.displayDate}</span>
+                    <div class="card" style="border-left: 4px solid var(--success); padding: 10px 14px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; padding-right: 8px;">
+                                <h4 style="margin: 0 0 4px 0; font-size: 16px; line-height: 1.2; word-break: break-word;">${rec.name}</h4>
+                                <div style="font-size:12px; color:var(--text-muted); font-weight: 500;">${rec.displayDate}</div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="color:var(--success); font-weight:bold; font-size: 16px; margin-bottom: 4px;">+ ₹${rec.amount.toLocaleString('en-IN')}</div>
-                                <span style="font-size:12px; color:var(--text-muted);">✓ ${rec.method}</span>
+                                <div style="color:var(--success); font-weight:bold; font-size: 16px; margin-bottom: 2px;">+ ₹${rec.amount.toLocaleString('en-IN')}</div>
+                                <div style="font-size:11px; color:var(--text-muted); font-weight: 600;">✓ ${rec.method}</div>
                             </div>
                         </div>
                     </div>`;
