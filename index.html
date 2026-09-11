@@ -90,30 +90,29 @@
         @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* TAB 1 SPECIFIC OPTIMIZATIONS (Perfect fit without scrolling) */
-        .form-group { margin-bottom: 12px; }
-        label { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13px; color: var(--text-main); }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: 600; display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-main); }
         input, select, textarea { 
-            width: 100%; padding: 12px; border: 1px solid var(--border-color); 
-            border-radius: 8px; font-size: 15px; box-sizing: border-box; 
+            width: 100%; padding: 15px; border: 1px solid var(--border-color); 
+            border-radius: 10px; font-size: 16px; box-sizing: border-box; 
             background: var(--input-bg); color: var(--text-main);
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
         .patient-select-btn {
-            width: 100%; padding: 12px; border: 1px solid var(--border-color); 
-            border-radius: 8px; font-size: 15px; text-align: left; 
+            width: 100%; padding: 15px; border: 1px solid var(--border-color); 
+            border-radius: 10px; font-size: 16px; text-align: left; 
             background: var(--input-bg); color: var(--text-main); cursor: pointer;
             display: flex; justify-content: space-between; align-items: center;
         }
         .patient-select-btn:after { content: "▼"; font-size: 12px; color: var(--text-muted); }
 
         .btn-main { 
-            width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; 
-            font-size: 16px; font-weight: 700; margin-top: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; 
+            font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
@@ -188,7 +187,7 @@
         </div>
     </div>
 
-    <!-- TAB 1: NEW VISIT (Perfect Fit Single Card Layout) -->
+    <!-- TAB 1: NEW VISIT (Stretched Grid Layout) -->
     <div id="tab1" class="tab-content active container">
         <form id="entryForm">
             <div class="card" style="padding: 16px;">
@@ -242,7 +241,7 @@
                     </div>
                     <div class="form-group">
                         <label>Method</label>
-                        <select id="paymentType" style="padding: 11px 8px;">
+                        <select id="paymentType" style="padding: 14px 8px;">
                             <option value="Cash">Cash</option>
                             <option value="Online">Online</option>
                             <option value="Pending">Unpaid</option>
@@ -253,7 +252,7 @@
 
                 <div class="form-group" style="margin-bottom: 8px;">
                     <label>Treatment Notes</label>
-                    <textarea id="notes" rows="2" placeholder="Enter clinical observations..."></textarea>
+                    <textarea id="notes" rows="4" placeholder="Enter clinical observations..."></textarea>
                 </div>
             </div>
 
@@ -271,7 +270,7 @@
         <div id="recentList"></div>
     </div>
 
-    <!-- TAB 3: PAYMENTS (LEDGER - Split Row Layout) -->
+    <!-- TAB 3: PAYMENTS (LEDGER) -->
     <div id="tab3" class="tab-content container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin:0; color: var(--primary-dark);">Ledger</h3>
