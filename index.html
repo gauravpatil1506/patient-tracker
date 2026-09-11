@@ -6,7 +6,7 @@
     <title>Dr. Anjali Vishwakarma - Physio Clinic</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#00796b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
@@ -20,282 +20,263 @@
     </script>
 
     <style>
-        /* PREMIUM DESIGN SYSTEM (iOS HIG + Material 3) */
+        /* ORIGINAL TEAL PALETTE + SLEEK ARCHITECTURE */
         :root {
-            --primary: #0F766E;      
-            --primary-dark: #115E59;
-            --primary-light: #CCFBF1;
-            --bg-color: #F2F2F7; /* iOS System Gray 6 */
-            --card-bg: #FFFFFF;
-            --text-main: #1C1C1E;
-            --text-muted: #8E8E93;
-            --border-color: rgba(0,0,0,0.05);
-            --divider-color: rgba(60,60,67,0.1);
-            --input-bg: #F2F2F7;
-            --danger: #FF3B30;
-            --success: #34C759;
-            --danger-bg: #FFE5E5;
-            --success-bg: #E5FBEB;
+            --primary: #00796b;      
+            --primary-dark: #004d40;
+            --primary-light: #e0f2f1;
+            --secondary: #26a69a;
+            --bg-color: #f0f4f8; 
+            --card-bg: #ffffff;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --divider-color: #edf2f7;
+            --input-bg: #f8fafc;
+            --danger: #e53e3e;
+            --success: #38a169;
+            --danger-bg: #fff5f5;
+            --success-bg: #f0fff4;
             --whatsapp: #25D366;
-            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-bg: rgba(255, 255, 255, 0.9);
             color-scheme: light;
         }
 
         [data-theme="dark"] {
-            --bg-color: #000000;
-            --card-bg: #1C1C1E;
-            --text-main: #F2F2F7;
-            --text-muted: #8E8E93;
-            --border-color: rgba(255,255,255,0.05);
-            --divider-color: rgba(84,84,88,0.65);
-            --input-bg: #2C2C2E;
-            --primary: #30D158; /* Switch to iOS Dark Success Green for pop */
-            --primary-dark: #24A146;
-            --primary-light: rgba(48, 209, 88, 0.15);
-            --danger: #FF453A;
-            --success: #32D74B;
-            --danger-bg: rgba(255, 69, 58, 0.15);
-            --success-bg: rgba(50, 215, 75, 0.15);
-            --glass-bg: rgba(28, 28, 30, 0.85);
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: #333333;
+            --divider-color: #2d2d2d;
+            --input-bg: #2d2d2d;
+            --primary: #26a69a; 
+            --primary-dark: #00796b;
+            --primary-light: rgba(38, 166, 154, 0.15);
+            --danger: #fc8181;
+            --success: #68d391;
+            --danger-bg: rgba(229, 62, 62, 0.15);
+            --success-bg: rgba(56, 161, 105, 0.15);
+            --glass-bg: rgba(30, 30, 30, 0.9);
             color-scheme: dark;
         }
 
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background-color: var(--bg-color); 
-            margin: 0; padding: 0; padding-bottom: 90px; padding-top: 70px;
+            margin: 0; padding: 0; padding-bottom: 90px; padding-top: 65px;
             color: var(--text-main); 
             overscroll-behavior-y: none;
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Glassmorphism Header */
+        /* Sleek Header */
         .app-header {
             background: var(--glass-bg); 
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            color: var(--text-main); 
-            padding: 16px 20px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.5px;
-            border-bottom: 1px solid var(--divider-color);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            color: var(--primary-dark); 
+            padding: 16px 20px; display: flex; justify-content: center; align-items: center;
+            font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;
+            border-bottom: 1px solid var(--border-color);
             position: fixed; top: 0; left: 0; width: 100%; z-index: 100; box-sizing: border-box;
-            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
         }
-        
         .header-controls { position: absolute; right: 20px; display: flex; align-items: center; gap: 12px; }
-        .sync-indicator { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-        .theme-toggle-btn { background: none; border: none; color: var(--text-main); font-size: 22px; cursor: pointer; padding: 0; }
+        .sync-indicator { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--primary); }
+        .theme-toggle-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 0; }
 
         .container { padding: 16px; }
         
-        /* Smooth Tab Transitions */
-        .tab-content { display: none; opacity: 0; transform: translateX(10px); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        /* Swipe Animations */
+        .tab-content { display: none; opacity: 0; transform: translateX(15px); transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .tab-content.active { display: block; opacity: 1; transform: translateX(0); }
-        .tab-content.slide-left { animation: slideLeft 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
-        .tab-content.slide-right { animation: slideRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
-        
+        .tab-content.slide-left { animation: slideLeft 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .tab-content.slide-right { animation: slideRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes slideLeft { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slideRight { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* Premium Form Elements */
-        .form-group { margin-bottom: 16px; }
-        label { font-weight: 600; display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        /* Floating Label Grid Form (Zero-Scroll Magic) */
+        .grid-form { background: var(--card-bg); padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color); display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; margin-bottom: 16px; }
+        .span-2 { grid-column: span 2; }
+        .span-3-container { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         
-        input, select, textarea, .patient-select-btn { 
-            width: 100%; padding: 16px; border: none; 
-            border-radius: 14px; font-size: 16px; box-sizing: border-box; 
-            background: var(--input-bg); color: var(--text-main);
-            font-family: inherit; transition: all 0.2s ease;
+        .input-wrap { position: relative; width: 100%; }
+        .input-wrap label { position: absolute; top: 6px; left: 12px; font-size: 9px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; z-index: 2; }
+        .input-wrap input, .input-wrap select, .input-wrap textarea, .patient-select-btn {
+            width: 100%; padding: 22px 12px 6px 12px; border: 1px solid var(--divider-color); 
+            border-radius: 10px; font-size: 15px; font-weight: 500; background: var(--input-bg); 
+            color: var(--text-main); box-sizing: border-box; outline: none; font-family: inherit;
+            transition: border-color 0.2s, background 0.2s;
         }
-        input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px var(--primary); background: var(--card-bg); }
-        
-        .patient-select-btn { text-align: left; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+        .input-wrap input:focus, .input-wrap select:focus, .input-wrap textarea:focus { border-color: var(--primary); background: var(--card-bg); box-shadow: 0 0 0 3px var(--primary-light); }
+        .patient-select-btn { padding: 14px 12px; height: 50px; text-align: left; display: flex; justify-content: space-between; align-items: center; font-weight: 600; cursor: pointer; }
         .patient-select-btn:after { content: "▼"; font-size: 10px; color: var(--text-muted); }
 
-        .btn-main { 
-            width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; 
-            font-size: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
-            transition: transform 0.1s ease, background 0.2s ease;
-        }
-        .btn-main:active { transform: scale(0.96); opacity: 0.9; }
-        .btn-secondary { background: var(--primary-light); color: var(--primary-dark); }
-        
-        .wa-btn { display: flex; justify-content: center; align-items: center; width: 38px; height: 38px; border-radius: 50%; background-color: var(--whatsapp); border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
-        .wa-btn svg { width: 20px; height: 20px; fill: white; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: transform 0.1s, background 0.2s; box-shadow: 0 4px 12px rgba(0,121,107,0.2); }
+        .btn-main:active { transform: scale(0.97); }
 
-        /* HIG Style Toggle */
-        .ledger-toggle { display: flex; background: var(--input-bg); border-radius: 10px; padding: 3px; margin-bottom: 20px; }
-        .toggle-btn { flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; color: var(--text-muted); border: none; background: transparent; transition: all 0.2s ease; }
-        .toggle-btn.active-pending { background: var(--card-bg); color: var(--danger); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .toggle-btn.active-received { background: var(--card-bg); color: var(--success); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        /* Medical Timeline UI */
+        .timeline-container { position: relative; margin-left: 8px; padding-left: 20px; border-left: 2px dashed var(--primary-light); margin-bottom: 24px; }
+        .timeline-node { position: relative; margin-bottom: 20px; }
+        .timeline-node::before { content: ""; position: absolute; left: -27px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 3px solid var(--bg-color); box-shadow: 0 0 0 1px var(--primary); z-index: 2; }
+        .timeline-card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
 
-        /* Modern Cards */
-        .card { 
-            background: var(--card-bg); border-radius: 18px; padding: 20px; margin-bottom: 16px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border-color); 
-            transition: background 0.3s ease;
-        }
-        .card h4 { margin: 0 0 6px 0; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
-        .card p { margin: 4px 0; font-size: 14px; color: var(--text-muted); line-height: 1.4; }
-        
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+        /* High Density Ledger Action Icons */
+        .ledger-card { display: flex; flex-direction: column; background: var(--card-bg); border-radius: 14px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 10px rgba(0,0,0,0.02); border-left: 4px solid var(--danger); }
+        .ledger-card.success-border { border-left: 4px solid var(--success); }
+        .action-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--divider-color); }
+        .btn-sq { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: none; cursor: pointer; color: white; transition: 0.1s; }
+        .btn-sq:active { transform: scale(0.92); }
+
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; }
         .badge-pending { background: var(--danger-bg); color: var(--danger); }
         .badge-success { background: var(--success-bg); color: var(--success); }
 
-        /* Dashboard Grid */
-        .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-        .dash-card { background: var(--card-bg); padding: 16px 12px; border-radius: 16px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid var(--border-color);}
-        .dash-card h3 { margin: 0 0 4px 0; font-size: 20px; color: var(--text-main); font-weight: 800; letter-spacing: -0.5px; }
-        .dash-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .dash-card.span-2 { grid-column: span 2; }
-        .chart-wrapper { background: var(--card-bg); padding: 16px; border-radius: 18px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border-color); }
+        /* FinTech Dashboard */
+        .dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .fintech-card { background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 16px; padding: 18px 14px; color: white; box-shadow: 0 8px 20px rgba(0, 121, 107, 0.25); position: relative; overflow: hidden; }
+        .fintech-card h3 { margin: 0 0 4px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; z-index: 2; position: relative; }
+        .fintech-card span { font-size: 11px; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; z-index: 2; position: relative; }
+        
+        .dash-stat { background: var(--card-bg); border-radius: 16px; padding: 16px; text-align: center; border: 1px solid var(--border-color); }
+        .dash-stat h3 { margin: 0 0 4px 0; font-size: 20px; font-weight: 800; color: var(--text-main); }
+        .dash-stat span { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        
+        .chart-wrapper { background: var(--card-bg); padding: 16px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color); }
 
-        /* Glassmorphism Bottom Nav */
+        /* Toggle & Bottom Nav */
+        .ledger-toggle { display: flex; background: var(--input-bg); border-radius: 10px; padding: 4px; margin-bottom: 16px; border: 1px solid var(--border-color); }
+        .toggle-btn { flex: 1; text-align: center; padding: 10px 0; font-size: 13px; font-weight: 700; cursor: pointer; border-radius: 8px; color: var(--text-muted); border: none; background: transparent; transition: all 0.2s; }
+        .toggle-btn.active-pending { background: var(--card-bg); color: var(--danger); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .toggle-btn.active-received { background: var(--card-bg); color: var(--success); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: var(--glass-bg); 
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            display: flex; justify-content: space-between;
-            padding: 12px 10px 24px 10px; box-sizing: border-box; 
-            border-top: 1px solid var(--divider-color); z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: flex; justify-content: space-between; padding: 12px 10px 24px 10px; box-sizing: border-box; border-top: 1px solid var(--border-color); z-index: 1000;
         }
-        .nav-item { 
-            display: flex; flex-direction: column; align-items: center; color: var(--text-muted); 
-            font-size: 10px; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s ease; 
-        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 700; cursor: pointer; flex: 1; transition: 0.2s ease; }
         .nav-item.active { color: var(--primary); transform: scale(1.05); }
-        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; transition: 0.2s ease; }
-
-        .status-msg { text-align: center; font-weight: 600; margin-top: 15px; font-size: 14px; }
-        .month-header { font-weight: 700; font-size: 18px; letter-spacing: -0.3px; margin-top: 24px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--divider-color); }
-        .patient-row { display: flex; justify-content: space-between; padding: 10px 0 10px 10px; font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--border-color); }
-        .patient-row:last-child { border-bottom: none; }
+        .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
+        
+        .status-msg { text-align: center; font-weight: 700; font-size: 13px; margin-top: 8px; }
 
         /* Modals */
-        .modal-overlay, .sheet-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; align-items: flex-end; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+        .modal-overlay, .sheet-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; align-items: flex-end; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
         .modal-overlay { align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-card { background: var(--card-bg); border-radius: 20px; padding: 24px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        .modal-card { background: var(--card-bg); border-radius: 24px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes scaleUp { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
-        .sheet { background: var(--bg-color); width: 100%; height: 85vh; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
+        .sheet { background: var(--bg-color); width: 100%; height: 80vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
-        .sheet-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-radius: 24px 24px 0 0; border-bottom: 1px solid var(--border-color); }
-        .sheet-header h3 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-        .sheet-close { font-size: 28px; color: var(--text-muted); background: none; border: none; cursor: pointer; line-height: 1; padding: 0; font-weight: 300; }
-        
-        .sheet-search-wrap { padding: 16px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
-        .sheet-search-wrap input { width: 100%; padding: 14px 16px; border: none; border-radius: 12px; font-size: 16px; background: var(--input-bg); color: var(--text-main); outline: none; }
-        
+        .sheet-header { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-radius: 20px 20px 0 0; border-bottom: 1px solid var(--border-color); }
+        .sheet-header h3 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+        .sheet-close { font-size: 26px; color: var(--text-muted); background: none; border: none; cursor: pointer; line-height: 1; padding: 0; }
+        .sheet-search-wrap { padding: 14px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+        .sheet-search-wrap input { width: 100%; padding: 14px; border: 2px solid var(--primary-light); border-radius: 10px; font-size: 15px; background: var(--input-bg); color: var(--text-main); outline: none; transition: border 0.2s; }
+        .sheet-search-wrap input:focus { border-color: var(--primary); }
         .sheet-list { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; background: var(--card-bg); }
-        .sheet-item { padding: 18px 0; border-bottom: 1px solid var(--divider-color); font-size: 16px; font-weight: 500; cursor: pointer; display: flex; justify-content: space-between; }
-        .sheet-item:last-child { border-bottom: none; }
-        .sheet-item.add-new { color: var(--primary); font-weight: 600; }
+        .sheet-item { padding: 16px 0; border-bottom: 1px solid var(--divider-color); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .sheet-item.add-new { color: var(--primary); }
         
-        #qrCanvasContainer { background: white; padding: 16px; border-radius: 16px; display: inline-block; margin: 20px 0; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #qrCanvasContainer { background: white; padding: 16px; border-radius: 12px; display: inline-block; margin: 16px 0; border: 1px solid var(--border-color); }
         #qrCanvasContainer img { display: block; margin: 0 auto; }
+        .wa-btn { display: flex; justify-content: center; align-items: center; width: 36px; height: 36px; border-radius: 50%; background-color: var(--whatsapp); border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+        .wa-btn svg { width: 18px; height: 18px; fill: white; }
     </style>
 </head>
 <body>
 
     <div class="app-header">
-        Dr. Anjali
+        Dr. Anjali Clinic
         <div class="header-controls">
             <span id="syncText" class="sync-indicator"></span>
             <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()">☀️</button>
         </div>
     </div>
 
-    <!-- TAB 1: NEW VISIT -->
+    <!-- TAB 1: NEW VISIT (Zero Scroll Grid) -->
     <div id="tab1" class="tab-content active container">
         <form id="entryForm">
-            <div class="card">
-                <div class="form-group">
-                    <label>Date of Visit</label>
-                    <input type="date" id="date" required>
-                </div>
-                <div class="form-group">
-                    <label>Patient Name</label>
-                    <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="openPatientModal('tab1')">🔍 Search or enter new...</button>
+            <div class="grid-form">
+                <!-- Row 1 -->
+                <div class="input-wrap span-2">
+                    <label>👤 Patient Name</label>
+                    <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="openPatientModal('tab1')">Search or enter new...</button>
                     <input type="hidden" id="name" required>
                 </div>
-                <div class="form-group">
-                    <label>Location (City)</label>
-                    <input type="text" id="location" required>
+                <!-- Row 2 -->
+                <div class="input-wrap">
+                    <label>📅 Visit Date</label>
+                    <input type="date" id="date" required>
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="form-group">
-                    <label>Session Type</label>
-                    <input type="text" id="sessionType" required placeholder="e.g., Manual Therapy, Assessment...">
-                </div>
-                <div style="display: flex; gap: 12px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Pain Before (1-10)</label>
-                        <input type="number" id="painBefore" min="1" max="10">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>Pain After (1-10)</label>
-                        <input type="number" id="painAfter" min="1" max="10">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Treatment Notes</label>
-                    <textarea id="notes" rows="3" placeholder="Enter clinical observations..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Next Appt (Optional)</label>
+                <div class="input-wrap">
+                    <label>🗓️ Next Appt</label>
                     <input type="date" id="nextAppt">
                 </div>
-            </div>
-
-            <div class="card">
-                <div style="display: flex; gap: 12px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Total Fee (₹)</label>
-                        <input type="number" id="totalFee" required>
+                <!-- Row 3 -->
+                <div class="input-wrap">
+                    <label>📍 Location</label>
+                    <input type="text" id="location" required placeholder="e.g. Badlapur">
+                </div>
+                <div class="input-wrap">
+                    <label>🩺 Session</label>
+                    <input type="text" id="sessionType" required placeholder="Manual Therapy">
+                </div>
+                <!-- Row 4 -->
+                <div class="input-wrap">
+                    <label>🔴 Pain Before</label>
+                    <input type="number" id="painBefore" min="1" max="10" placeholder="1-10">
+                </div>
+                <div class="input-wrap">
+                    <label>🟢 Pain After</label>
+                    <input type="number" id="painAfter" min="1" max="10" placeholder="1-10">
+                </div>
+                <!-- Row 5 (Financial) -->
+                <div class="span-3-container">
+                    <div class="input-wrap">
+                        <label>💰 Total</label>
+                        <input type="number" id="totalFee" required placeholder="₹">
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>Amount Paid (₹)</label>
-                        <input type="number" id="amountPaid" value="0" required>
+                    <div class="input-wrap">
+                        <label>💸 Paid</label>
+                        <input type="number" id="amountPaid" value="0" required placeholder="₹">
+                    </div>
+                    <div class="input-wrap">
+                        <label>💳 Method</label>
+                        <select id="paymentType" style="padding-top:20px; font-weight:700;">
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                            <option value="Pending">Unpaid</option>
+                        </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Payment Method</label>
-                    <select id="paymentType">
-                        <option value="Cash">Cash</option>
-                        <option value="Online">Online</option>
-                        <option value="Pending">Pending (Unpaid)</option>
-                        <option value="Closed">Closed</option>
-                    </select>
+                <!-- Row 6 -->
+                <div class="input-wrap span-2">
+                    <label>📝 Clinical Notes</label>
+                    <textarea id="notes" rows="2" placeholder="Observations..."></textarea>
                 </div>
+                <!-- Submit -->
+                <button type="submit" class="btn-main span-2" id="submitBtn">Save Session</button>
+                <div id="statusMsg" class="status-msg span-2"></div>
             </div>
-
-            <button type="submit" class="btn-main" id="submitBtn">Save Session Record</button>
-            <div id="statusMsg" class="status-msg"></div>
         </form>
     </div>
 
-    <!-- TAB 2: RECENT & UPCOMING -->
+    <!-- TAB 2: RECENT (Timeline) -->
     <div id="tab2" class="tab-content container">
-        <h3 style="margin-top:0; margin-bottom: 16px; font-weight: 800; letter-spacing:-0.5px;">Upcoming</h3>
-        <div id="upcomingList" style="margin-bottom: 30px;"></div>
+        <h3 style="margin-top:0; font-weight: 800; letter-spacing:-0.5px;">Upcoming</h3>
+        <div id="upcomingList" style="margin-bottom: 24px;"></div>
         
-        <h3 style="margin-top:0; margin-bottom: 16px; font-weight: 800; letter-spacing:-0.5px;">Recent Sessions</h3>
-        <div id="recentList"></div>
+        <h3 style="margin-top:0; font-weight: 800; letter-spacing:-0.5px;">Recent Sessions</h3>
+        <div id="recentList" class="timeline-container"></div>
     </div>
 
-    <!-- TAB 3: PAYMENTS (LEDGER) -->
+    <!-- TAB 3: LEDGER (High Density) -->
     <div id="tab3" class="tab-content container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="margin:0; font-weight: 800; letter-spacing:-0.5px;">Ledger</h3>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <div id="ledgerSummary" style="background: var(--danger-bg); color: var(--danger); padding: 8px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; display: none; line-height: 1;"></div>
-                <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Invoice">
+                <div id="ledgerSummary" style="background: var(--danger-bg); color: var(--danger); padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 13px; display: none;"></div>
+                <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send Invoice">
                     <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
                 </button>
             </div>
@@ -306,76 +287,85 @@
             <button id="btnToggleReceived" class="toggle-btn" onclick="switchLedgerView('received')">🟢 Received</button>
         </div>
         
-        <div class="card" style="padding: 14px; margin-bottom: 16px;">
-            <label style="margin-bottom: 6px;">Filter by Patient</label>
-            <button type="button" class="patient-select-btn" id="btnTab3Patient" onclick="openPatientModal('tab3')">📋 All Patients</button>
+        <div style="background:var(--card-bg); padding:10px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border-color);">
+            <button type="button" class="patient-select-btn" id="btnTab3Patient" onclick="openPatientModal('tab3')" style="border:none; background:var(--input-bg);">📋 Filter: All Patients</button>
             <input type="hidden" id="ledgerPatientSelect" value="">
         </div>
         
         <div id="groupedActionBar" style="display: none; margin-bottom: 16px;">
-            <button id="groupedQrBtn" class="btn-main" style="background: var(--text-main); margin-top: 0; border-radius: 14px;">📷 Show Grouped QR</button>
+            <button id="groupedQrBtn" class="btn-main" style="background: var(--text-main); margin-top: 0;">📷 Show Grouped QR</button>
         </div>
 
         <div id="pendingList"></div>
         <div id="receivedList" style="display: none;"></div>
     </div>
 
-    <!-- TAB 4: HISTORY (RECORDS) -->
+    <!-- TAB 4: HISTORY (Timeline) -->
     <div id="tab4" class="tab-content container">
-        <h3 style="margin-top:0; margin-bottom: 16px; font-weight: 800; letter-spacing:-0.5px;">Clinical Records</h3>
-        <div class="card">
-            <label>Select Patient</label>
-            <button type="button" class="patient-select-btn" id="btnTab4Patient" onclick="openPatientModal('tab4')">👤 Choose a Patient...</button>
+        <h3 style="margin-top:0; font-weight: 800; letter-spacing:-0.5px;">Clinical Records</h3>
+        <div style="background:var(--card-bg); padding:10px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border-color);">
+            <button type="button" class="patient-select-btn" id="btnTab4Patient" onclick="openPatientModal('tab4')" style="border:none; background:var(--input-bg);">👤 Choose a Patient...</button>
             <input type="hidden" id="patientSelect" value="">
         </div>
         
-        <div class="card" id="scheduleCard" style="display: none; border: 2px solid var(--primary-light);">
-            <h4 style="margin-bottom: 12px; color: var(--primary);">Schedule Next Visit</h4>
-            <div style="display: flex; gap: 10px;">
-                <input type="date" id="newNextApptDate" style="flex: 1; margin-bottom: 0;">
-                <button class="btn-main" style="margin-top: 0; padding: 10px 20px; width: auto; border-radius: 12px;" onclick="saveNextAppt()">Save</button>
+        <div class="grid-form" id="scheduleCard" style="display: none; padding: 12px; border: 2px solid var(--primary-light);">
+            <div class="input-wrap span-2">
+                <label>Next Visit Date</label>
+                <input type="date" id="newNextApptDate">
             </div>
-            <div id="apptStatusMsg" class="status-msg" style="margin-top: 8px; font-size: 12px; text-align: left;"></div>
+            <button class="btn-main span-2" style="margin-top: 0;" onclick="saveNextAppt()">Schedule Next Visit</button>
+            <div id="apptStatusMsg" class="status-msg span-2" style="margin-top: 0; font-size: 11px;"></div>
         </div>
 
-        <div id="historyTimeline"></div>
+        <div id="historyTimeline" class="timeline-container"></div>
     </div>
 
-    <!-- TAB 5: INSIGHTS DASHBOARD -->
+    <!-- TAB 5: FINTECH DASHBOARD -->
     <div id="tab5" class="tab-content container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
             <h3 style="margin:0; font-weight: 800; letter-spacing:-0.5px;">Insights</h3>
-            <select id="dashYearFilter" onchange="renderDashboard()" style="width: auto; padding: 8px 12px; border-radius: 10px; font-size: 14px; background: var(--card-bg); font-weight: 600;">
+            <select id="dashYearFilter" onchange="renderDashboard()" style="width: auto; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; background: var(--card-bg); border:1px solid var(--border-color);">
                 <option value="All">All-Time</option>
             </select>
         </div>
         
         <div class="dash-grid">
-            <div class="dash-card"><h3 id="dashBilled">₹0</h3><span>Billed</span></div>
-            <div class="dash-card"><h3 id="dashCollected" style="color: var(--success);">₹0</h3><span>Collected</span></div>
-            <div class="dash-card"><h3 id="dashPending" style="color: var(--danger);">₹0</h3><span>Pending</span></div>
-            <div class="dash-card span-2"><h3 id="dashTopCity">-</h3><span>Top Location</span></div>
-            <div class="dash-card"><h3 id="dashARPV">₹0</h3><span>Avg/Patient</span></div>
+            <div class="fintech-card">
+                <h3>₹0</h3><span id="dashBilled">Billed</span>
+            </div>
+            <div class="fintech-card" style="background: linear-gradient(135deg, var(--success), #2f855a);">
+                <h3 id="dashCollected">₹0</h3><span>Collected</span>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+            <div class="dash-stat">
+                <h3 id="dashPending" style="color:var(--danger); font-size:16px;">₹0</h3><span>Pending</span>
+            </div>
+            <div class="dash-stat">
+                <h3 id="dashTopCity" style="font-size:16px;">-</h3><span>Top Area</span>
+            </div>
+            <div class="dash-stat">
+                <h3 id="dashARPV" style="font-size:16px;">₹0</h3><span>Avg/Pat</span>
+            </div>
         </div>
 
         <div class="chart-wrapper"><canvas id="cashflowChart"></canvas></div>
 
-        <h3 style="margin-top:30px; margin-bottom: 16px; font-weight: 800; letter-spacing:-0.5px;">Patient Analytics</h3>
-        <div class="card">
-            <label>Select Patient</label>
-            <button type="button" class="patient-select-btn" id="btnTab5Patient" onclick="openPatientModal('tab5')">👤 Select Patient...</button>
+        <h3 style="margin-top:24px; font-weight: 800; letter-spacing:-0.5px;">Analytics</h3>
+        <div style="background:var(--card-bg); padding:10px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border-color);">
+            <button type="button" class="patient-select-btn" id="btnTab5Patient" onclick="openPatientModal('tab5')" style="border:none; background:var(--input-bg);">👤 Select Patient...</button>
             <input type="hidden" id="analyticsPatientSelect" value="">
             
-            <div id="patientAnalyticsData" style="display: none; margin-top: 20px; border-top: 1px solid var(--divider-color); padding-top: 20px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 500;"><span style="color: var(--text-muted);">Total Sessions:</span><strong id="patTotalSessions">0</strong></div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 500;"><span style="color: var(--text-muted);">Total Paid:</span><strong id="patTotalSpent" style="color: var(--success);">₹0</strong></div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: 500;"><span style="color: var(--text-muted);">Current Pending:</span><strong id="patTotalPending" style="color: var(--danger);">₹0</strong></div>
-                <div style="border-top: 1px solid var(--divider-color); padding-top: 20px;"><canvas id="painChart"></canvas></div>
+            <div id="patientAnalyticsData" style="display: none; margin-top: 16px; border-top: 1px dashed var(--divider-color); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size:13px; font-weight:700;"><span style="color: var(--text-muted);">Total Sessions:</span><span id="patTotalSessions">0</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size:13px; font-weight:700;"><span style="color: var(--text-muted);">Total Paid:</span><span id="patTotalSpent" style="color: var(--success);">₹0</span></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size:13px; font-weight:700;"><span style="color: var(--text-muted);">Pending:</span><span id="patTotalPending" style="color: var(--danger);">₹0</span></div>
+                <div><canvas id="painChart"></canvas></div>
             </div>
         </div>
 
-        <div id="agedDebtorsContainer" style="margin-top: 30px;">
-            <h3 style="margin-bottom: 16px; font-weight: 800; letter-spacing:-0.5px;">Pending Breakdown</h3>
+        <div id="agedDebtorsContainer" style="margin-top: 24px;">
+            <h3 style="font-weight: 800; letter-spacing:-0.5px; margin-bottom: 12px;">Pending Breakdown</h3>
             <div id="agedDebtorsList"></div>
         </div>
     </div>
@@ -398,10 +388,10 @@
     <div id="qrModal" class="modal-overlay" onclick="closeQRModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h3 style="margin: 0; font-weight: 800; letter-spacing:-0.5px;" id="qrModalTitle">Scan & Pay</h3>
-            <div id="qrModalSub" style="font-size: 14px; font-weight: 500; color: var(--text-muted); margin-top: 4px;">Dr. Anjali Vishwakarma</div>
-            <div id="qrModalAmount" style="font-size: 32px; font-weight: 800; color: var(--text-main); margin-top: 12px; letter-spacing:-1px;">₹0</div>
+            <div id="qrModalSub" style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">Dr. Anjali Vishwakarma</div>
+            <div id="qrModalAmount" style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 8px; letter-spacing:-1px;">₹0</div>
             <div id="qrCanvasContainer"></div>
-            <div style="font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 20px;">Google Pay • PhonePe • Paytm</div>
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 16px;">GPay • PhonePe • Paytm</div>
             <button class="btn-main" style="margin-top: 0; background: var(--input-bg); color: var(--text-main); font-weight: 700;" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
         </div>
     </div>
@@ -450,8 +440,6 @@
         
         let currentLedgerFilter = "";
         let loadedOlderClicks = 0;
-        
-        // Tab Order for Swipe Engine
         const tabOrder = ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
 
         window.onload = function() { 
@@ -482,7 +470,7 @@
         }
         function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️' : '🌙'; }
         function updateChartColors(theme) {
-            Chart.defaults.color = theme === 'dark' ? '#8E8E93' : '#8E8E93';
+            Chart.defaults.color = theme === 'dark' ? '#a0aec0' : '#718096';
             Chart.defaults.borderColor = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
         }
 
@@ -491,76 +479,41 @@
             const d = dateObj.getDate().toString().padStart(2, '0');
             const m = dateObj.toLocaleString('en-IN', { month: 'short' });
             const y = dateObj.getFullYear().toString().slice(-2);
-            const day = dateObj.toLocaleString('en-IN', { weekday: 'short' });
-            return `${d}-${m}-${y} • ${day}`; 
+            return `${d}-${m}-${y}`; 
         }
 
-        // ==========================================
-        // SMART GESTURE SWIPE ENGINE
-        // ==========================================
+        // --- SWIPE ENGINE ---
         function initSwipeGestures() {
-            let touchStartX = 0;
-            let touchStartY = 0;
-            
-            document.addEventListener('touchstart', e => {
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
-            }, {passive: true});
-
+            let touchStartX = 0; let touchStartY = 0;
+            document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, {passive: true});
             document.addEventListener('touchend', e => {
-                // Prevent swiping if a modal is open
-                if(document.getElementById('patientSearchModal').style.display === 'flex' || 
-                   document.getElementById('qrModal').style.display === 'flex') return;
-
-                const touchEndX = e.changedTouches[0].screenX;
-                const touchEndY = e.changedTouches[0].screenY;
-                
-                const xDiff = touchStartX - touchEndX;
-                const yDiff = Math.abs(touchStartY - touchEndY);
-                
-                // Anti-scroll lock: If vertical scroll is larger than horizontal swipe, ignore it
+                if(document.getElementById('patientSearchModal').style.display === 'flex' || document.getElementById('qrModal').style.display === 'flex') return;
+                const touchEndX = e.changedTouches[0].screenX; const touchEndY = e.changedTouches[0].screenY;
+                const xDiff = touchStartX - touchEndX; const yDiff = Math.abs(touchStartY - touchEndY);
                 if (yDiff > Math.abs(xDiff) || Math.abs(xDiff) < 60) return;
                 
                 const activeTabId = document.querySelector('.tab-content.active').id;
                 let currentIndex = tabOrder.indexOf(activeTabId);
-                
-                if (xDiff > 0 && currentIndex < tabOrder.length - 1) {
-                    // Swiped Left -> Go to Next Tab
-                    switchTab(tabOrder[currentIndex + 1], 'right');
-                } else if (xDiff < 0 && currentIndex > 0) {
-                    // Swiped Right -> Go to Prev Tab
-                    switchTab(tabOrder[currentIndex - 1], 'left');
-                }
+                if (xDiff > 0 && currentIndex < tabOrder.length - 1) { switchTab(tabOrder[currentIndex + 1], 'right'); } 
+                else if (xDiff < 0 && currentIndex > 0) { switchTab(tabOrder[currentIndex - 1], 'left'); }
             }, {passive: true});
         }
 
-        // Main Tab Switcher with Directional Animations
         function switchTab(tabId, direction = 'fade') {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active', 'slide-left', 'slide-right');
-            });
+            document.querySelectorAll('.tab-content').forEach(tab => { tab.classList.remove('active', 'slide-left', 'slide-right'); });
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            
             const newTab = document.getElementById(tabId);
             newTab.classList.add('active');
-            
-            // Add directional animation class
             if (direction === 'left') newTab.classList.add('slide-left');
             if (direction === 'right') newTab.classList.add('slide-right');
-            
             document.getElementById('nav-' + tabId).classList.add('active');
             renderCurrentTab(tabId);
         }
 
         function syncWithDatabase(callback) {
-            if (isSyncing) return;
-            isSyncing = true;
-            
-            const syncText = document.getElementById('syncText');
-            syncText.innerText = "Syncing..."; 
-            
+            if (isSyncing) return; isSyncing = true;
+            const syncText = document.getElementById('syncText'); syncText.innerText = "Syncing..."; 
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json()).then(data => {
                 isSyncing = false;
@@ -573,28 +526,20 @@
                 }
             }).catch(e => {
                 isSyncing = false;
-                if (allSheetData.length <= 1) { syncText.innerText = "⚠️ Offline"; syncText.style.color = "var(--danger)"; } 
-                else { syncText.innerText = ""; }
+                if (allSheetData.length <= 1) { syncText.innerText = "⚠️ Offline"; syncText.style.color = "var(--danger)"; } else { syncText.innerText = ""; }
                 if(callback) callback();
             });
         }
 
         function updateGlobalPatientList() {
-            let names = new Set(); 
-            let years = new Set();
-            
+            let names = new Set(); let years = new Set();
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; if(!row) continue;
                 if(row[2]) { names.add(row[2].toString().trim()); }
-                if(row[1]) {
-                    const d = new Date(row[1]);
-                    if(!isNaN(d)) years.add(d.getFullYear());
-                }
+                if(row[1]) { const d = new Date(row[1]); if(!isNaN(d)) years.add(d.getFullYear()); }
             }
             globalPatientList = Array.from(names).sort();
-
-            const yearFilter = document.getElementById('dashYearFilter');
-            const savedYear = yearFilter.value;
+            const yearFilter = document.getElementById('dashYearFilter'); const savedYear = yearFilter.value;
             yearFilter.innerHTML = '<option value="All">All-Time</option>';
             Array.from(years).sort((a,b)=>b-a).forEach(y => { yearFilter.appendChild(new Option(y, y)); });
             if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
@@ -603,71 +548,50 @@
         function openPatientModal(contextTabId) {
             currentModalContext = contextTabId;
             document.getElementById('patientSearchModal').style.display = 'flex';
-            
             const searchInput = document.getElementById('modalSearchInput');
-            searchInput.value = '';
-            renderModalList('');
-            
+            searchInput.value = ''; renderModalList('');
             setTimeout(() => { searchInput.focus(); }, 100); 
         }
 
-        function closePatientModal() {
-            document.getElementById('patientSearchModal').style.display = 'none';
-        }
+        function closePatientModal() { document.getElementById('patientSearchModal').style.display = 'none'; }
 
         function renderModalList(query) {
-            const listDiv = document.getElementById('modalPatientList');
-            let html = '';
-            
+            const listDiv = document.getElementById('modalPatientList'); let html = '';
             const safeQuery = query.trim().toLowerCase();
             const filteredNames = globalPatientList.filter(name => name.toLowerCase().includes(safeQuery));
 
-            if (currentModalContext === 'tab3') {
-                html += `<div class="sheet-item" onclick="selectFromModal('All Patients')" style="color:var(--primary); font-weight:700;">📋 Show All Patients</div>`;
-            }
-            
+            if (currentModalContext === 'tab3') { html += `<div class="sheet-item" onclick="selectFromModal('All Patients')" style="color:var(--primary); font-weight:800;">📋 Show All Patients</div>`; }
             if (currentModalContext === 'tab1' && safeQuery !== '') {
                 const exactMatch = filteredNames.find(n => n.toLowerCase() === safeQuery);
-                if (!exactMatch) {
-                    html += `<div class="sheet-item add-new" onclick="selectFromModal('${query.trim().replace(/'/g, "\\'")}')">
-                                + Add "${query.trim()}" as New Patient
-                             </div>`;
-                }
+                if (!exactMatch) { html += `<div class="sheet-item add-new" onclick="selectFromModal('${query.trim().replace(/'/g, "\\'")}')">+ Add "${query.trim()}" as New Patient</div>`; }
             }
 
-            filteredNames.forEach(name => {
-                html += `<div class="sheet-item" onclick="selectFromModal('${name.replace(/'/g, "\\'")}')">${name}</div>`;
-            });
-
-            if (filteredNames.length === 0 && safeQuery === '' && currentModalContext !== 'tab3') {
-                html += `<div class="sheet-item" style="color:var(--text-muted); justify-content:center; border:none;">Type to search patients...</div>`;
-            }
-
+            filteredNames.forEach(name => { html += `<div class="sheet-item" onclick="selectFromModal('${name.replace(/'/g, "\\'")}')">${name}</div>`; });
+            if (filteredNames.length === 0 && safeQuery === '' && currentModalContext !== 'tab3') { html += `<div class="sheet-item" style="color:var(--text-muted); justify-content:center; border:none;">Type to search patients...</div>`; }
             listDiv.innerHTML = html;
         }
 
         function selectFromModal(selectedName) {
             closePatientModal();
-            
             if (currentModalContext === 'tab1') {
                 document.getElementById('name').value = selectedName;
-                document.getElementById('btnTab1Patient').innerHTML = `<span style="color:var(--primary); font-weight:700;">${selectedName}</span>`;
+                document.getElementById('btnTab1Patient').innerHTML = `<span style="color:var(--primary); font-weight:800;">${selectedName}</span>`;
                 handleTab1PatientChange(selectedName);
             } 
             else if (currentModalContext === 'tab3') {
                 const finalValue = selectedName === 'All Patients' ? '' : selectedName;
                 document.getElementById('ledgerPatientSelect').value = finalValue;
-                document.getElementById('btnTab3Patient').innerHTML = finalValue ? `<span style="color:var(--primary); font-weight:700;">${finalValue}</span>` : '📋 All Patients';
+                document.getElementById('btnTab3Patient').innerHTML = finalValue ? `<span style="color:var(--primary); font-weight:800;">${finalValue}</span>` : '📋 Filter: All Patients';
                 renderLedgerData();
             }
             else if (currentModalContext === 'tab4') {
                 document.getElementById('patientSelect').value = selectedName;
-                document.getElementById('btnTab4Patient').innerHTML = `<span style="color:var(--primary); font-weight:700;">${selectedName}</span>`;
+                document.getElementById('btnTab4Patient').innerHTML = `<span style="color:var(--primary); font-weight:800;">${selectedName}</span>`;
                 showPatientHistory();
             }
             else if (currentModalContext === 'tab5') {
                 document.getElementById('analyticsPatientSelect').value = selectedName;
-                document.getElementById('btnTab5Patient').innerHTML = `<span style="color:var(--primary); font-weight:700;">${selectedName}</span>`;
+                document.getElementById('btnTab5Patient').innerHTML = `<span style="color:var(--primary); font-weight:800;">${selectedName}</span>`;
                 showPatientAnalytics();
             }
         }
@@ -675,14 +599,11 @@
         function handleTab1PatientChange(selectedName) {
             let patientRecords = [];
             for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) { 
-                    patientRecords.push(allSheetData[i]); 
-                }
+                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) { patientRecords.push(allSheetData[i]); }
             }
             if (patientRecords.length > 0) {
                 patientRecords.sort((a, b) => {
-                    let dateB = b[1] ? new Date(b[1]).getTime() : 0;
-                    let dateA = a[1] ? new Date(a[1]).getTime() : 0;
+                    let dateB = b[1] ? new Date(b[1]).getTime() : 0; let dateA = a[1] ? new Date(a[1]).getTime() : 0;
                     if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
                     return dateB - dateA; 
                 }); 
@@ -691,9 +612,7 @@
                 document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].toString().trim() : "";
                 document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
             } else {
-                document.getElementById('location').value = "";
-                document.getElementById('sessionType').value = "";
-                document.getElementById('totalFee').value = "";
+                document.getElementById('location').value = ""; document.getElementById('sessionType').value = ""; document.getElementById('totalFee').value = "";
             }
         }
 
@@ -704,105 +623,87 @@
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
 
+        // --- SMART PAIN DELTA BADGE HELPER ---
+        function getPainBadge(pb, pa) {
+            let painBefore = parseFloat(pb); let painAfter = parseFloat(pa);
+            if(isNaN(painBefore) || isNaN(painAfter)) return "";
+            let drop = painBefore - painAfter;
+            if(painAfter === 0) return `<span class="badge badge-success">✅ Zero Pain</span>`;
+            if(drop > 0) return `<span class="badge badge-success">📉 -${drop} Pain Drop</span>`;
+            if(drop < 0) return `<span class="badge badge-pending">📈 +${Math.abs(drop)} Pain Increase</span>`;
+            return `<span class="badge" style="background:var(--divider-color); color:var(--text-muted);">➖ No Change</span>`;
+        }
+
         function loadRecentPatients() {
-            const upcomingDiv = document.getElementById('upcomingList');
-            const recentDiv = document.getElementById('recentList');
-            
-            if(allSheetData.length <= 1) { 
-                upcomingDiv.innerHTML = "";
-                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
-                return; 
-            }
+            const upcomingDiv = document.getElementById('upcomingList'); const recentDiv = document.getElementById('recentList');
+            if(allSheetData.length <= 1) { upcomingDiv.innerHTML = ""; recentDiv.innerHTML = "<div class='timeline-card' style='text-align:center;'>No visits yet.</div>"; return; }
 
-            let latestRecordsMap = new Map();
-            let allValidRows = [];
-            
+            let latestRecordsMap = new Map(); let allValidRows = [];
             for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i];
-                if(!row || !row[1] || !row[2]) continue;
-                
+                const row = allSheetData[i]; if(!row || !row[1] || !row[2]) continue;
                 const name = row[2].toString().trim();
-                let visitDate = row[1] ? new Date(row[1]).getTime() : 0;
-                if(isNaN(visitDate)) visitDate = 0; 
-                
+                let visitDate = row[1] ? new Date(row[1]).getTime() : 0; if(isNaN(visitDate)) visitDate = 0; 
                 allValidRows.push({row: row, index: i});
-
-                if(!latestRecordsMap.has(name)) {
-                    latestRecordsMap.set(name, row);
-                } else {
+                if(!latestRecordsMap.has(name)) { latestRecordsMap.set(name, row); } else {
                     let existingDate = latestRecordsMap.get(name)[1] ? new Date(latestRecordsMap.get(name)[1]).getTime() : 0;
                     if(isNaN(existingDate)) existingDate = 0;
                     if (visitDate > existingDate) { latestRecordsMap.set(name, row); }
                 }
             }
 
-            let upcomingList = [];
-            let today = new Date();
-            today.setHours(0,0,0,0);
-
+            let upcomingList = []; let today = new Date(); today.setHours(0,0,0,0);
             latestRecordsMap.forEach((row, name) => {
-                if (row[10]) { 
-                    const apptDate = new Date(row[10]);
-                    if (!isNaN(apptDate) && apptDate >= today) {
-                        upcomingList.push({ name: name, date: apptDate, row: row });
-                    }
-                }
+                if (row[10]) { const apptDate = new Date(row[10]); if (!isNaN(apptDate) && apptDate >= today) { upcomingList.push({ name: name, date: apptDate, row: row }); } }
             });
 
             upcomingList.sort((a, b) => {
                 let dateA = a.date ? a.date.getTime() : 0; let dateB = b.date ? b.date.getTime() : 0;
-                if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0;
-                return dateA - dateB; 
+                if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0; return dateA - dateB; 
             }); 
 
-            if (upcomingList.length === 0) {
-                upcomingDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No upcoming appointments.</p></div>";
-            } else {
+            if (upcomingList.length === 0) { upcomingDiv.innerHTML = "<div class='card' style='text-align:center; color:var(--text-muted); font-weight:600; font-size:14px; padding:12px;'>No upcoming appointments.</div>"; } 
+            else {
                 let upcomingHTML = "";
                 upcomingList.forEach(item => {
                     const dateFormatted = formatApptDate(item.date);
                     let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
                     let encodedMsg = encodeURIComponent(msg);
-                    
                     upcomingHTML += `
-                    <div class="card" style="border-left: 4px solid var(--whatsapp); display: flex; justify-content: space-between; align-items: center; padding: 16px;">
-                        <div>
-                            <h4>${item.name}</h4>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--text-muted);">${dateFormatted}</span>
-                        </div>
-                        <a href="https://api.whatsapp.com/send?text=${encodedMsg}" target="_blank" class="wa-btn" title="Send Reminder">
-                            <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
-                        </a>
+                    <div class="card" style="border-left: 4px solid var(--whatsapp); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
+                        <div><h4 style="font-size:16px;">${item.name}</h4><span style="font-size: 13px; font-weight: 700; color: var(--text-muted);">${dateFormatted}</span></div>
+                        <a href="https://api.whatsapp.com/send?text=${encodedMsg}" target="_blank" class="wa-btn"><svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg></a>
                     </div>`;
                 });
                 upcomingDiv.innerHTML = upcomingHTML;
             }
 
             allValidRows.sort((a, b) => {
-                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0; let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
                 if (isNaN(dateB)) dateB = 0; if (isNaN(dateA)) dateA = 0;
-                if (dateB !== dateA) return dateB - dateA;
-                return b.index - a.index; 
+                if (dateB !== dateA) return dateB - dateA; return b.index - a.index; 
             });
 
             const top5 = allValidRows.slice(0, 5);
-
-            if(top5.length === 0) { 
-                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
-            } else {
+            if(top5.length === 0) { recentDiv.innerHTML = "<div class='timeline-card' style='text-align:center;'>No visits yet.</div>"; } 
+            else {
                 let recentHTML = "";
                 top5.forEach(item => {
-                    const row = item.row;
-                    const dateObj = row[1] ? new Date(row[1]) : null;
+                    const row = item.row; const dateObj = row[1] ? new Date(row[1]) : null;
                     const dateStr = (dateObj && !isNaN(dateObj)) ? formatApptDate(dateObj) : "No Date";
+                    const badge = getPainBadge(row[7], row[8]);
+                    
                     recentHTML += `
-                    <div class="card" style="border-left: 4px solid var(--primary-light); display: flex; justify-content: space-between; align-items: center; padding: 16px;">
-                        <div>
-                            <h4>${row[2] ? row[2].toString().trim() : "Unknown"}</h4>
-                            <span style="font-size: 12px; font-weight: 500; color: var(--text-muted);">${row[3] ? row[3].toString().trim() : "No City"}</span>
+                    <div class="timeline-node">
+                        <div class="timeline-card">
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+                                <h4 style="margin:0;">${row[2] ? row[2].toString().trim() : "Unknown"}</h4>
+                                <span style="font-size:12px; font-weight:700; color:var(--primary);">${dateStr}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">📍 ${row[3] ? row[3].toString().trim() : "No City"}</span>
+                                ${badge}
+                            </div>
                         </div>
-                        <div style="font-weight: 700; color: var(--primary); font-size: 13px; text-align: right;">${dateStr.replace(' • ', '<br>')}</div>
                     </div>`;
                 });
                 recentDiv.innerHTML = recentHTML; 
@@ -810,90 +711,61 @@
         }
 
         function switchLedgerView(view) {
-            const summaryBadge = document.getElementById('ledgerSummary');
-            const waButton = document.getElementById('waReminderBtn');
-            const filterName = document.getElementById('ledgerPatientSelect').value;
-            const groupedBar = document.getElementById('groupedActionBar');
+            const summaryBadge = document.getElementById('ledgerSummary'); const waButton = document.getElementById('waReminderBtn');
+            const filterName = document.getElementById('ledgerPatientSelect').value; const groupedBar = document.getElementById('groupedActionBar');
             
             if (view === 'pending') {
-                document.getElementById('btnTogglePending').classList.add('active-pending');
-                document.getElementById('btnToggleReceived').classList.remove('active-received');
-                document.getElementById('pendingList').style.display = 'block';
-                document.getElementById('receivedList').style.display = 'none';
-                
-                if (filterName && currentPendingSessionsForWA.length > 0) {
-                    summaryBadge.style.display = 'block'; waButton.style.display = 'flex'; groupedBar.style.display = 'block';
-                }
+                document.getElementById('btnTogglePending').classList.add('active-pending'); document.getElementById('btnToggleReceived').classList.remove('active-received');
+                document.getElementById('pendingList').style.display = 'block'; document.getElementById('receivedList').style.display = 'none';
+                if (filterName && currentPendingSessionsForWA.length > 0) { summaryBadge.style.display = 'block'; waButton.style.display = 'flex'; groupedBar.style.display = 'block'; }
             } else {
-                document.getElementById('btnToggleReceived').classList.add('active-received');
-                document.getElementById('btnTogglePending').classList.remove('active-pending');
-                document.getElementById('pendingList').style.display = 'none';
-                document.getElementById('receivedList').style.display = 'block';
-                
+                document.getElementById('btnToggleReceived').classList.add('active-received'); document.getElementById('btnTogglePending').classList.remove('active-pending');
+                document.getElementById('pendingList').style.display = 'none'; document.getElementById('receivedList').style.display = 'block';
                 summaryBadge.style.display = 'none'; waButton.style.display = 'none'; groupedBar.style.display = 'none';
             }
         }
         
-        function loadMoreReceived() {
-            loadedOlderClicks++;
-            renderLedgerData();
-        }
+        function loadMoreReceived() { loadedOlderClicks++; renderLedgerData(); }
 
         function renderLedgerData() {
-            const pendingListDiv = document.getElementById('pendingList');
-            const receivedListDiv = document.getElementById('receivedList');
-            const filterName = document.getElementById('ledgerPatientSelect').value;
-            const summaryBadge = document.getElementById('ledgerSummary');
-            const waButton = document.getElementById('waReminderBtn');
-            const groupedBar = document.getElementById('groupedActionBar');
+            const pendingListDiv = document.getElementById('pendingList'); const receivedListDiv = document.getElementById('receivedList');
+            const filterName = document.getElementById('ledgerPatientSelect').value; const summaryBadge = document.getElementById('ledgerSummary');
+            const waButton = document.getElementById('waReminderBtn'); const groupedBar = document.getElementById('groupedActionBar');
             const groupedQrBtn = document.getElementById('groupedQrBtn');
             
-            if (filterName !== currentLedgerFilter) {
-                loadedOlderClicks = 0; currentLedgerFilter = filterName;
-            }
-            
+            if (filterName !== currentLedgerFilter) { loadedOlderClicks = 0; currentLedgerFilter = filterName; }
             let foundPending = false; let pendingHTML = ""; let summaryCount = 0; let summaryTotal = 0;
             let receivedRecords = []; currentPendingSessionsForWA = [];
             
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; if(!row || !row[1]) continue;
                 const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
-                
                 const displayDate = dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
                 const waDateStr = dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
-                const name = row[2] ? row[2].toString().trim() : ""; 
-                const paymentType = String(row[4]).toLowerCase().trim();
-                const amountPaid = parseFloat(row[5]) || 0; 
-                const totalFee = parseFloat(row[6]) || 0;
+                const name = row[2] ? row[2].toString().trim() : ""; const paymentType = String(row[4]).toLowerCase().trim();
+                const amountPaid = parseFloat(row[5]) || 0; const totalFee = parseFloat(row[6]) || 0;
                 
                 if (filterName && name !== filterName) continue;
 
                 if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
                     foundPending = true; const balance = totalFee - amountPaid; const rowNum = i + 1;
-                    summaryCount++; summaryTotal += balance;
-                    currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
+                    summaryCount++; summaryTotal += balance; currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
                     
                     pendingHTML += `
-                    <div class="card" style="border-left: 4px solid var(--danger); padding: 16px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
-                            <h4>${name}</h4>
-                            <span class="badge badge-pending">Due: ₹${balance}</span>
-                        </div>
+                    <div class="ledger-card">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="font-size:12px; font-weight:600; color:var(--text-muted);">${displayDate}</div>
-                            <div style="display:flex; gap: 8px;">
-                                <button class="btn-main" style="margin:0; padding: 10px 12px; font-size: 14px; background: var(--text-main); border-radius:10px;" onclick="showSingleQR('${name.replace(/'/g, "\\'")}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
-                                <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; background: var(--success); border-radius:10px;" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵</button>
-                                <button class="btn-main" style="margin:0; padding: 10px 14px; font-size: 14px; background: #007AFF; border-radius:10px;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱</button>
-                            </div>
+                            <div><h4 style="margin:0; font-size:16px;">${name}</h4><div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-top:2px;">${displayDate}</div></div>
+                            <div style="text-align:right;"><div style="color:var(--danger); font-weight:800; font-size:16px;">₹${balance}</div><div style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Due</div></div>
                         </div>
-                        <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px; display:none;"></div>
+                        <div class="action-row">
+                            <button class="btn-sq" style="background:var(--text-muted);" onclick="showSingleQR('${name.replace(/'/g, "\\'")}', ${balance}, '${displayDate}')" title="Show QR">📷</button>
+                            <button class="btn-sq" style="background:var(--success);" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})" title="Clear with Cash">💵</button>
+                            <button class="btn-sq" style="background:var(--primary);" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})" title="Clear Online">📱</button>
+                        </div>
+                        <div id="payStatus_${rowNum}" class="status-msg" style="display:none;"></div>
                     </div>`;
                 }
-
-                if (amountPaid > 0) {
-                    receivedRecords.push({ name: name, dateObj: dateObj, displayDate: displayDate, amount: amountPaid, method: row[4] ? row[4].toString().trim() : "Unknown", index: i });
-                }
+                if (amountPaid > 0) { receivedRecords.push({ name: name, dateObj: dateObj, displayDate: displayDate, amount: amountPaid, method: row[4] ? row[4].toString().trim() : "Unknown", index: i }); }
             }
             
             if(!foundPending) {
@@ -902,25 +774,16 @@
                 groupedBar.style.display = "none";
             } else { pendingListDiv.innerHTML = pendingHTML; }
 
-            if(receivedRecords.length === 0) {
-                receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>";
-            } else {
+            if(receivedRecords.length === 0) { receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>"; } 
+            else {
                 receivedRecords.sort((a, b) => {
                     let dateB = b.dateObj.getTime(); let dateA = a.dateObj.getTime();
                     if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
-                    if (dateB !== dateA) return dateB - dateA;
-                    return b.index - a.index;
+                    if (dateB !== dateA) return dateB - dateA; return b.index - a.index;
                 });
-                
-                const today = new Date();
-                const thresholdDate = new Date(today.getFullYear(), today.getMonth() - 1, 1).getTime();
+                const thresholdDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getTime();
                 let displayRecords = []; let olderRecords = [];
-                
-                receivedRecords.forEach(rec => {
-                    if (rec.dateObj.getTime() >= thresholdDate) { displayRecords.push(rec); } 
-                    else { olderRecords.push(rec); }
-                });
-
+                receivedRecords.forEach(rec => { if (rec.dateObj.getTime() >= thresholdDate) { displayRecords.push(rec); } else { olderRecords.push(rec); } });
                 let olderToDisplay = loadedOlderClicks * 50;
                 if (olderToDisplay > 0) { displayRecords = displayRecords.concat(olderRecords.slice(0, olderToDisplay)); }
                 let remainingOlder = Math.max(0, olderRecords.length - olderToDisplay);
@@ -928,88 +791,55 @@
                 let receivedHTML = "";
                 displayRecords.forEach(rec => {
                     receivedHTML += `
-                    <div class="card" style="border-left: 4px solid var(--success); padding: 16px; margin-bottom: 12px;">
+                    <div class="ledger-card success-border">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <h4>${rec.name}</h4>
-                                <span style="font-size:12px; font-weight:600; color:var(--text-muted);">${rec.displayDate}</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color:var(--success); font-weight:800; font-size: 16px; margin-bottom: 4px;">+ ₹${rec.amount.toLocaleString('en-IN')}</div>
-                                <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">✓ ${rec.method}</span>
-                            </div>
+                            <div><h4 style="margin:0; font-size:16px;">${rec.name}</h4><div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-top:2px;">${rec.displayDate}</div></div>
+                            <div style="text-align:right;"><div style="color:var(--success); font-weight:800; font-size:16px;">+ ₹${rec.amount.toLocaleString('en-IN')}</div><div style="font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">✓ ${rec.method}</div></div>
                         </div>
                     </div>`;
                 });
-                
-                if (remainingOlder > 0) {
-                    receivedHTML += `<button class="btn-main btn-secondary" style="margin-bottom: 20px;" onclick="loadMoreReceived()">Load Older Payments (${remainingOlder} remaining)</button>`;
-                }
+                if (remainingOlder > 0) { receivedHTML += `<button class="btn-main btn-secondary" style="margin-bottom: 20px;" onclick="loadMoreReceived()">Load Older Payments (${remainingOlder} remaining)</button>`; }
                 receivedListDiv.innerHTML = receivedHTML;
             }
 
             const isPendingView = document.getElementById('btnTogglePending').classList.contains('active-pending');
             if (filterName && foundPending && isPendingView) {
-                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; 
-                summaryBadge.style.display = "block"; waButton.style.display = "flex"; groupedBar.style.display = "block";
-                groupedQrBtn.innerText = `📷 Show Grouped QR (₹${summaryTotal})`;
-                groupedQrBtn.onclick = function() { showGroupedQR(filterName, summaryTotal, summaryCount); };
-            } else {
-                summaryBadge.style.display = "none"; waButton.style.display = "none"; groupedBar.style.display = "none";
-            }
+                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; summaryBadge.style.display = "block"; waButton.style.display = "flex"; groupedBar.style.display = "block";
+                groupedQrBtn.innerText = `📷 Show Grouped QR (₹${summaryTotal})`; groupedQrBtn.onclick = function() { showGroupedQR(filterName, summaryTotal, summaryCount); };
+            } else { summaryBadge.style.display = "none"; waButton.style.display = "none"; groupedBar.style.display = "none"; }
         }
 
         function showSingleQR(patientName, amount, dateStr) { openQRModal(patientName, amount, `Session: ${dateStr}`); }
         function showGroupedQR(patientName, amount, sessionCount) { openQRModal(patientName, amount, `Combined (${sessionCount} Sessions)`); }
 
         function openQRModal(patientName, amount, subText) {
-            document.getElementById('qrModalTitle').innerText = patientName;
-            document.getElementById('qrModalSub').innerText = subText;
+            document.getElementById('qrModalTitle').innerText = patientName; document.getElementById('qrModalSub').innerText = subText;
             document.getElementById('qrModalAmount').innerText = `₹${amount.toLocaleString('en-IN')}`;
-            
-            const qrContainer = document.getElementById('qrCanvasContainer');
-            qrContainer.innerHTML = ""; 
-
+            const qrContainer = document.getElementById('qrCanvasContainer'); qrContainer.innerHTML = ""; 
             const upiString = `upi://pay?pa=${CLINIC_UPI_ID}&pn=${encodeURIComponent(CLINIC_PAYEE_NAME)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Physio - ' + patientName)}`;
-            
             new QRCode(qrContainer, { text: upiString, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
             document.getElementById('qrModal').style.display = 'flex';
         }
-
         function closeQRModal(e) { document.getElementById('qrModal').style.display = 'none'; }
 
         function sendWhatsAppReminder() {
             const filterName = document.getElementById('ledgerPatientSelect').value;
             if (currentPendingSessionsForWA.length === 0 || !filterName) return;
-
             let totalAmount = 0; let sessionLines = "";
-            currentPendingSessionsForWA.forEach(session => {
-                sessionLines += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
-                totalAmount += session.amount;
-            });
-
-            const token = btoa(unescape(encodeURIComponent(filterName)));
-            const paymentPortalUrl = `${WEB_APP_URL}?token=${token}`;
-
+            currentPendingSessionsForWA.forEach(session => { sessionLines += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`; totalAmount += session.amount; });
+            const token = btoa(unescape(encodeURIComponent(filterName))); const paymentPortalUrl = `${WEB_APP_URL}?token=${token}`;
             let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your physiotherapy sessions.\n\n📅 *Session Breakdown:*\n${sessionLines}\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Amount Due:* *₹${totalAmount.toLocaleString('en-IN')}*\n\n👉 *View Invoice & Pay Online:*\n${paymentPortalUrl}\n\nKindly clear the dues at your earliest convenience. Wishing you a speedy and healthy recovery! 🌟`;
-            
-            const encodedMessage = encodeURIComponent(msg);
-            window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function submitPaymentUpdate(rowNum, paymentMethod, fullAmount) {
             if (!confirm(`Are you sure you want to clear this ₹${fullAmount} balance via ${paymentMethod}?`)) return; 
-            const status = document.getElementById('payStatus_' + rowNum); 
-            status.style.display = "block"; status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
-            
+            const status = document.getElementById('payStatus_' + rowNum); status.style.display = "block"; status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: fullAmount, newPaymentType: paymentMethod }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
                     status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
-                    if (allSheetData[rowNum - 1]) {
-                        allSheetData[rowNum - 1][5] = fullAmount;
-                        allSheetData[rowNum - 1][4] = paymentMethod;
-                    }
+                    if (allSheetData[rowNum - 1]) { allSheetData[rowNum - 1][5] = fullAmount; allSheetData[rowNum - 1][4] = paymentMethod; }
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
             }).catch(e => { status.style.color = "var(--danger)"; status.innerText = "Connection error."; });
@@ -1019,19 +849,12 @@
             e.preventDefault();
             let rawName = document.getElementById('name').value.trim();
             if (!rawName) { alert("Please select or enter a Patient Name."); return; }
-
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
-            
             let cleanName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
             
             const payload = {
-                action: "addVisit", date: document.getElementById('date').value, name: cleanName,
-                location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
-                painBefore: document.getElementById('painBefore').value, painAfter: document.getElementById('painAfter').value,
-                totalFee: document.getElementById('totalFee').value, amountPaid: document.getElementById('amountPaid').value,
-                paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
-                notes: document.getElementById('notes').value, month: "" 
+                action: "addVisit", date: document.getElementById('date').value, name: cleanName, location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value, painBefore: document.getElementById('painBefore').value, painAfter: document.getElementById('painAfter').value, totalFee: document.getElementById('totalFee').value, amountPaid: document.getElementById('amountPaid').value, paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value, notes: document.getElementById('notes').value, month: "" 
             };
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
@@ -1040,78 +863,65 @@
                     status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
                     allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
                     document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
-                    document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
+                    document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "Search or enter new...";
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
-                btn.innerText = "Save Session Record"; btn.disabled = false;
-            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
+                btn.innerText = "Save Session"; btn.disabled = false;
+            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session"; btn.disabled = false; });
         });
 
+        // --- HISTORY TIMELINE ---
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
-            const timeline = document.getElementById('historyTimeline'); 
-            const scheduleCard = document.getElementById('scheduleCard');
-            
+            const timeline = document.getElementById('historyTimeline'); const scheduleCard = document.getElementById('scheduleCard');
             if(!selectedName) { timeline.innerHTML = ""; scheduleCard.style.display = "none"; return; }
-            
-            scheduleCard.style.display = "block";
-            document.getElementById('apptStatusMsg').innerText = "";
-            document.getElementById('newNextApptDate').value = "";
+            scheduleCard.style.display = "grid"; document.getElementById('apptStatusMsg').innerText = ""; document.getElementById('newNextApptDate').value = "";
 
             let records = [];
-            for(let i = 1; i < allSheetData.length; i++) { 
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) {
-                    records.push({row: allSheetData[i], index: i}); 
-                }
-            }
+            for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) { records.push({row: allSheetData[i], index: i}); } }
             records.sort((a, b) => {
-                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0; let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
                 if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
-                if (dateB !== dateA) return dateB - dateA;
-                return b.index - a.index; 
+                if (dateB !== dateA) return dateB - dateA; return b.index - a.index; 
             });
             
             let newHTML = "";
             records.forEach(item => {
-                const row = item.row;
-                const dateObj = row[1] ? new Date(row[1]) : null;
+                const row = item.row; const dateObj = row[1] ? new Date(row[1]) : null;
                 const date = (dateObj && !isNaN(dateObj)) ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
+                const badge = getPainBadge(row[7], row[8]);
+                
                 newHTML += `
-                <div class="card" style="border-left: 4px solid var(--primary);">
-                    <div style="display:flex; justify-content:space-between; margin-bottom: 12px;">
-                        <span style="font-weight:700; font-size: 15px; letter-spacing:-0.3px;">${date}</span>
-                        <span class="badge badge-success">${row[9] ? row[9].toString().trim() : "Session"}</span>
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                            <span style="font-weight:800; font-size: 15px; letter-spacing:-0.3px; color:var(--text-main);">${date}</span>
+                            <span class="badge badge-success" style="background:var(--primary-light); color:var(--primary-dark);">${row[9] ? row[9].toString().trim() : "Session"}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div style="font-size:13px; font-weight:600; color:var(--text-muted);">Pain Level: <strong>${row[7]||"-"} &rarr; ${row[8]||"-"}</strong></div>
+                            ${badge}
+                        </div>
+                        <div style="font-size: 13px; color:var(--text-muted); background:var(--input-bg); padding:10px; border-radius:8px;"><strong>📝 Notes:</strong> ${row[11] ? row[11].toString().trim() : "None"}</div>
                     </div>
-                    <div style="background: var(--input-bg); padding:12px; border-radius:12px; margin-bottom:12px; display:flex; justify-content:space-around; text-align:center;">
-                        <div><div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">PAIN BEFORE</div><strong style="font-size:20px;">${row[7]||"-"}</strong></div>
-                        <div style="color:var(--text-muted); font-size:24px; font-weight:300;">&rarr;</div>
-                        <div><div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">PAIN AFTER</div><strong style="font-size:20px; color:var(--primary);">${row[8]||"-"}</strong></div>
-                    </div>
-                    <p style="font-size: 14px;"><strong>Notes:</strong> ${row[11] ? row[11].toString().trim() : "No clinical notes recorded."}</p>
                 </div>`;
             });
             timeline.innerHTML = newHTML;
         }
 
         function saveNextAppt() {
-            const patientName = document.getElementById('patientSelect').value;
-            const nextApptDate = document.getElementById('newNextApptDate').value;
-            const statusMsg = document.getElementById('apptStatusMsg');
-            
-            if (!nextApptDate) { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Please select a date."; return; }
+            const patientName = document.getElementById('patientSelect').value; const nextApptDate = document.getElementById('newNextApptDate').value; const statusMsg = document.getElementById('apptStatusMsg');
+            if (!nextApptDate) { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Select a date."; return; }
             statusMsg.style.color = "var(--primary)"; statusMsg.innerText = "Scheduling...";
-
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updateNextAppt", name: patientName, nextAppt: nextApptDate }) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
-                    statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Appointment scheduled";
+                    statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Scheduled";
                     let latestIndex = -1; let latestDate = 0;
                     for(let i = 1; i < allSheetData.length; i++) {
                         if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === patientName) {
                             let d = allSheetData[i][1] ? new Date(allSheetData[i][1]).getTime() : 0;
-                            if(isNaN(d)) d = 0;
-                            if (d > latestDate) { latestDate = d; latestIndex = i; }
+                            if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestIndex = i; }
                         }
                     }
                     if (latestIndex !== -1) { allSheetData[latestIndex][10] = nextApptDate; }
@@ -1120,38 +930,24 @@
             }).catch(err => { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Connection error."; });
         }
 
+        // --- FINTECH DASHBOARD ---
         function renderDashboard() {
             if(allSheetData.length <= 1) return; 
-
             const yearFilter = document.getElementById('dashYearFilter').value;
-            
             let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
             let monthDataMap = {}; let uniquePatients = new Set(); let cityCounts = {}; let agedDebtorsObj = {};
-
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             if (yearFilter !== "All") { monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 }); }
 
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; if(!row || !row[1]) continue; 
                 const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
-
-                const rowYear = dateObj.getFullYear().toString();
-                if(yearFilter !== "All" && rowYear !== yearFilter) continue;
-
-                const paymentType = String(row[4]).toLowerCase().trim();
-                const amountPaid = parseFloat(row[5]) || 0;
-                const totalFee = parseFloat(row[6]) || 0;
-                const balance = totalFee - amountPaid;
-                const name = row[2] ? row[2].toString().trim() : "";
-                const city = row[3] ? row[3].toString().trim() : "";
-                
-                const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
-                const monthNameShort = monthNames[dateObj.getMonth()];
-                const allTimeLabelShort = monthNameShort + " '" + rowYear.substr(-2);
-                const chartKey = yearFilter === "All" ? allTimeLabelShort : monthNameShort;
-                
-                const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-                const displayMonthYear = `${monthNameFull}-${rowYear}`;
+                const rowYear = dateObj.getFullYear().toString(); if(yearFilter !== "All" && rowYear !== yearFilter) continue;
+                const paymentType = String(row[4]).toLowerCase().trim(); const amountPaid = parseFloat(row[5]) || 0; const totalFee = parseFloat(row[6]) || 0;
+                const balance = totalFee - amountPaid; const name = row[2] ? row[2].toString().trim() : ""; const city = row[3] ? row[3].toString().trim() : "";
+                const monthNameFull = dateObj.toLocaleString('default', { month: 'long' }); const monthNameShort = monthNames[dateObj.getMonth()];
+                const allTimeLabelShort = monthNameShort + " '" + rowYear.substr(-2); const chartKey = yearFilter === "All" ? allTimeLabelShort : monthNameShort;
+                const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`; const displayMonthYear = `${monthNameFull}-${rowYear}`;
 
                 totalBilled += totalFee; totalCollected += amountPaid;
                 if(balance > 0 || paymentType === 'pending') {
@@ -1159,22 +955,16 @@
                     if(name) {
                         if(!agedDebtorsObj[sortableMonth]) agedDebtorsObj[sortableMonth] = { label: displayMonthYear, patients: {} };
                         if(!agedDebtorsObj[sortableMonth].patients[name]) agedDebtorsObj[sortableMonth].patients[name] = { count: 0, amount: 0 };
-                        agedDebtorsObj[sortableMonth].patients[name].count += 1;
-                        agedDebtorsObj[sortableMonth].patients[name].amount += balance;
+                        agedDebtorsObj[sortableMonth].patients[name].count += 1; agedDebtorsObj[sortableMonth].patients[name].amount += balance;
                     }
                 }
-                
-                if(name) uniquePatients.add(name);
-                if(city) cityCounts[city] = (cityCounts[city] || 0) + totalFee;
-
+                if(name) uniquePatients.add(name); if(city) cityCounts[city] = (cityCounts[city] || 0) + totalFee;
                 if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
-                monthDataMap[chartKey].collected += amountPaid;
-                if(balance > 0) monthDataMap[chartKey].pending += balance;
+                monthDataMap[chartKey].collected += amountPaid; if(balance > 0) monthDataMap[chartKey].pending += balance;
             }
 
             const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
-            let topCity = "-"; let maxCityVal = 0;
-            for (const [city, val] of Object.entries(cityCounts)) { if (val > maxCityVal) { maxCityVal = val; topCity = city; } }
+            let topCity = "-"; let maxCityVal = 0; for (const [city, val] of Object.entries(cityCounts)) { if (val > maxCityVal) { maxCityVal = val; topCity = city; } }
 
             document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
             document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
@@ -1182,33 +972,27 @@
             document.getElementById('dashARPV').innerText = "₹" + arpv.toLocaleString('en-IN');
             document.getElementById('dashTopCity').innerText = topCity;
 
-            let labels = Object.keys(monthDataMap);
-            if(yearFilter === "All") { labels = labels.slice(-6); }
-            const collectedData = labels.map(l => monthDataMap[l].collected);
-            const pendingData = labels.map(l => monthDataMap[l].pending);
+            let labels = Object.keys(monthDataMap); if(yearFilter === "All") { labels = labels.slice(-6); }
+            const collectedData = labels.map(l => monthDataMap[l].collected); const pendingData = labels.map(l => monthDataMap[l].pending);
 
             const ctx1 = document.getElementById('cashflowChart').getContext('2d');
             if(cashflowChartInstance) cashflowChartInstance.destroy();
             cashflowChartInstance = new Chart(ctx1, {
                 type: 'bar',
-                data: { labels: labels, datasets: [ { label: 'Collected (₹)', data: collectedData, backgroundColor: '#34C759', stack: 'Stack 0', borderRadius: 4 }, { label: 'Pending (₹)', data: pendingData, backgroundColor: '#FF3B30', stack: 'Stack 0', borderRadius: 4 } ] },
-                options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' }, legend: { position: 'bottom' } }, scales: { x: { stacked: true, grid: {display: false} }, y: { stacked: true, border: {display: false} } }, animation: { duration: 0 } }
+                data: { labels: labels, datasets: [ { label: 'Collected', data: collectedData, backgroundColor: '#26a69a', stack: 'Stack 0', borderRadius: 4 }, { label: 'Pending', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0', borderRadius: 4 } ] },
+                options: { responsive: true, plugins: { title: { display: false }, legend: { position: 'bottom' } }, scales: { x: { stacked: true, grid: {display: false} }, y: { stacked: true, border: {display: false} } }, animation: { duration: 0 } }
             });
             
-            const agedDebtorsDiv = document.getElementById('agedDebtorsList');
-            agedDebtorsDiv.innerHTML = "";
+            const agedDebtorsDiv = document.getElementById('agedDebtorsList'); agedDebtorsDiv.innerHTML = "";
             const sortedMonths = Object.keys(agedDebtorsObj).sort((a,b) => b.localeCompare(a));
-            
-            if (sortedMonths.length === 0) {
-                agedDebtorsDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 14px;'>No pending balances for the selected timeframe.</p>";
-            } else {
+            if (sortedMonths.length === 0) { agedDebtorsDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 14px;'>No pending balances.</p>"; } 
+            else {
                 let listHTML = "";
                 sortedMonths.forEach(monthKey => {
-                    const monthData = agedDebtorsObj[monthKey];
-                    listHTML += `<div class="month-header">${monthData.label}</div>`;
+                    const monthData = agedDebtorsObj[monthKey]; listHTML += `<div class="month-header">${monthData.label}</div>`;
                     Object.keys(monthData.patients).sort().forEach(patName => {
                         const stats = monthData.patients[patName];
-                        listHTML += `<div class="patient-row"><span>${patName}</span><span class="patient-stats">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span></div>`;
+                        listHTML += `<div class="patient-row"><span>${patName}</span><span style="font-weight:700; color:var(--danger);">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span></div>`;
                     });
                 });
                 agedDebtorsDiv.innerHTML = listHTML;
@@ -1217,42 +1001,26 @@
 
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
-            const container = document.getElementById('patientAnalyticsData');
-            const debtorsContainer = document.getElementById('agedDebtorsContainer');
-            
+            const container = document.getElementById('patientAnalyticsData'); const debtorsContainer = document.getElementById('agedDebtorsContainer');
             if(!name) { container.style.display = 'none'; debtorsContainer.style.display = 'block'; return; }
             debtorsContainer.style.display = 'none';
 
-            let sessions = 0; let spent = 0; let pending = 0;
-            let chartDates = []; let painBeforeData = []; let painAfterData = [];
-            let patRecords = [];
-            
-            for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === name) { patRecords.push({row: allSheetData[i], index: i}); }
-            }
+            let sessions = 0; let spent = 0; let pending = 0; let chartDates = []; let painBeforeData = []; let painAfterData = []; let patRecords = [];
+            for(let i = 1; i < allSheetData.length; i++) { if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === name) { patRecords.push({row: allSheetData[i], index: i}); } }
             
             patRecords.sort((a, b) => {
-                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0;
-                if (dateA !== dateB) return dateA - dateB;
-                return a.index - b.index;
+                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0; let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0; return dateA - dateB;
             });
 
             patRecords.forEach(item => {
-                const row = item.row;
-                sessions++; const paid = parseFloat(row[5]) || 0; const fee = parseFloat(row[6]) || 0;
+                const row = item.row; sessions++; const paid = parseFloat(row[5]) || 0; const fee = parseFloat(row[6]) || 0;
                 spent += paid; if(fee > paid) pending += (fee - paid);
-                if(row[1]) {
-                    const d = new Date(row[1]);
-                    if(!isNaN(d)) chartDates.push(d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}));
-                }
+                if(row[1]) { const d = new Date(row[1]); if(!isNaN(d)) chartDates.push(d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})); }
                 painBeforeData.push(parseFloat(row[7]) || null); painAfterData.push(parseFloat(row[8]) || null);
             });
 
-            document.getElementById('patTotalSessions').innerText = sessions;
-            document.getElementById('patTotalSpent').innerText = "₹" + spent.toLocaleString('en-IN');
-            document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
+            document.getElementById('patTotalSessions').innerText = sessions; document.getElementById('patTotalSpent').innerText = "₹" + spent.toLocaleString('en-IN'); document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
             container.style.display = 'block';
 
             const ctx3 = document.getElementById('painChart').getContext('2d');
@@ -1262,11 +1030,11 @@
                 data: {
                     labels: chartDates,
                     datasets: [
-                        { label: 'Pain Before', data: painBeforeData, borderColor: '#FF3B30', backgroundColor: '#FF3B30', tension: 0.4 },
-                        { label: 'Pain After', data: painAfterData, borderColor: '#34C759', backgroundColor: '#34C759', tension: 0.4 }
+                        { label: 'Pain Before', data: painBeforeData, borderColor: '#e53e3e', backgroundColor: 'transparent', tension: 0.4 },
+                        { label: 'Pain After', data: painAfterData, borderColor: '#00796b', backgroundColor: 'rgba(0, 121, 107, 0.1)', fill: true, tension: 0.4 }
                     ]
                 },
-                options: { responsive: true, plugins: { title: { display: true, text: 'Clinical Progress (Pain Score 1-10)' } }, scales: { y: { min: 0, max: 10, grid:{display:false} }, x:{grid:{display:false}} }, animation: { duration: 0 } }
+                options: { responsive: true, plugins: { title: { display: false } }, scales: { y: { min: 0, max: 10, grid:{display:false} }, x:{grid:{display:false}} }, animation: { duration: 0 } }
             });
         }
     </script>
