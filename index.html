@@ -143,7 +143,6 @@
         .dash-card { background: var(--card-bg); padding: 14px 10px; border-radius: 12px; text-align: center; border: 1px solid var(--divider-color);}
         .dash-card h3 { margin: 0; font-size: 18px; color: var(--primary); white-space: nowrap; }
         .dash-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-        .dash-card.span-2 { grid-column: span 2; }
         .chart-wrapper { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--divider-color); }
 
         .bottom-nav {
@@ -335,8 +334,6 @@
             <div class="dash-card"><h3 id="dashBilled">₹0</h3><span>Total Billed</span></div>
             <div class="dash-card"><h3 id="dashCollected" style="color: var(--success);">₹0</h3><span>Collected</span></div>
             <div class="dash-card"><h3 id="dashPending" style="color: var(--danger);">₹0</h3><span>Pending</span></div>
-            <div class="dash-card span-2"><h3 id="dashTopCity">-</h3><span>Top Location</span></div>
-            <div class="dash-card"><h3 id="dashARPV">₹0</h3><span>Avg/Patient</span></div>
         </div>
 
         <div class="chart-wrapper"><canvas id="cashflowChart"></canvas></div>
@@ -422,7 +419,7 @@
         
         let allSheetData = []; 
         let globalPatientList = []; 
-        let patientIndex = {}; // IDEA 1: In-Memory Index
+        let patientIndex = {}; 
         let currentModalContext = ''; 
         
         let cashflowChartInstance = null;
@@ -453,17 +450,14 @@
             syncWithDatabase(); 
             initSwipeGestures();
             
-            // IDEA 5: Offline Background Sync Listener
             window.addEventListener('online', syncOfflineQueue);
         };
 
-        // IDEA 2: Core Data Sanitizer
         function sanitizeName(rawName) {
             if (!rawName) return "";
             return rawName.trim().replace(/\s+/g, ' ').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
         }
 
-        // IDEA 1: Core Memory Index Builder
         function buildMemoryIndex() {
             patientIndex = {};
             for(let i = 1; i < allSheetData.length; i++) {
@@ -540,7 +534,6 @@
             renderCurrentTab(tabId);
         }
 
-        // IDEA 5: Offline Sync Engine
         function syncOfflineQueue() {
             let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
             if (queue.length === 0) return;
@@ -557,7 +550,7 @@
                         successfulSyncs++;
                         if (successfulSyncs === queue.length) {
                             localStorage.removeItem('offlineQueue');
-                            syncWithDatabase(); // Refresh everything
+                            syncWithDatabase(); 
                         }
                     }
                 }).catch(e => console.log("Offline sync retry failed."));
@@ -583,11 +576,11 @@
                 isSyncing = false;
                 if(data.status === 'success') {
                     allSheetData = data.data;
-                    buildMemoryIndex(); // Update index
+                    buildMemoryIndex(); 
                     try { localStorage.setItem('clinicData', JSON.stringify(allSheetData)); } catch (e) {}
                     updateGlobalPatientList(); syncText.innerText = "";
                     renderCurrentTab(document.querySelector('.tab-content.active').id);
-                    syncOfflineQueue(); // Check if anything needs uploading
+                    syncOfflineQueue(); 
                     if(callback) callback(); 
                 }
             }).catch(e => {
@@ -602,7 +595,6 @@
             let names = new Set(); 
             let years = new Set();
             
-            // IDEA 2: Force Santization globally on load
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; if(!row) continue;
                 if(row[2]) { names.add(sanitizeName(row[2].toString())); }
@@ -692,12 +684,10 @@
             }
         }
 
-        // IDEA 1: Uses the fast patientIndex instead of full table loop
         function handleTab1PatientChange(selectedName) {
             let patientRecords = patientIndex[selectedName] || [];
             
             if (patientRecords.length > 0) {
-                // Clone array to sort without affecting global index
                 let sortedRecords = [...patientRecords].sort((a, b) => {
                     let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                     let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
@@ -1028,7 +1018,6 @@
             const payload = { action: "updatePayment", rowNumber: rowNum, newAmountPaid: fullAmount, newPaymentType: paymentMethod };
             
             if (!navigator.onLine) {
-                // IDEA 5: Offline Queue Logic
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
                 localStorage.setItem('offlineQueue', JSON.stringify(queue));
@@ -1053,7 +1042,6 @@
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
             }).catch(e => { 
-                // Fallback to queue if fetch fails mid-air
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
                 localStorage.setItem('offlineQueue', JSON.stringify(queue));
@@ -1074,7 +1062,6 @@
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving Session..."; btn.disabled = true; status.innerText = "";
             
-            // IDEA 2: Perfect Capitalization and Data Sanitization
             let cleanName = sanitizeName(rawName);
             
             const payload = {
@@ -1087,7 +1074,6 @@
             };
             
             if (!navigator.onLine) {
-                // IDEA 5: Offline Queue Logic
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
                 localStorage.setItem('offlineQueue', JSON.stringify(queue));
@@ -1112,7 +1098,6 @@
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
             }).catch(err => { 
-                // Fallback to offline queue if network drops mid-request
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
                 localStorage.setItem('offlineQueue', JSON.stringify(queue));
@@ -1125,7 +1110,6 @@
             });
         });
 
-        // IDEA 1: Index-Based History Engine
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
@@ -1139,7 +1123,6 @@
 
             let records = patientIndex[selectedName] || [];
             
-            // Sort a copy to protect the index structure
             let sortedRecords = [...records].sort((a, b) => {
                 let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                 let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
@@ -1181,13 +1164,11 @@
             const payload = { action: "updateNextAppt", name: patientName, nextAppt: nextApptDate };
 
             if (!navigator.onLine) {
-                // IDEA 5: Offline Queue Logic
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
                 localStorage.setItem('offlineQueue', JSON.stringify(queue));
                 
                 statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Scheduled Offline";
-                // Optimistic Local Update
                 let pRecords = patientIndex[patientName] || [];
                 let latestDate = 0; let latestItem = null;
                 pRecords.forEach(item => {
@@ -1235,7 +1216,7 @@
             const yearFilter = document.getElementById('dashYearFilter').value;
             
             let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
-            let monthDataMap = {}; let uniquePatients = new Set(); let cityCounts = {}; let agedDebtorsObj = {};
+            let monthDataMap = {}; let agedDebtorsObj = {};
 
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             if (yearFilter !== "All") { monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 }); }
@@ -1252,7 +1233,6 @@
                 const totalFee = parseFloat(row[6]) || 0;
                 const balance = totalFee - amountPaid;
                 const name = row[2] ? sanitizeName(row[2].toString()) : "";
-                const city = row[3] ? row[3].toString().trim() : "";
                 
                 const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
                 const monthNameShort = monthNames[dateObj.getMonth()];
@@ -1272,24 +1252,15 @@
                         agedDebtorsObj[sortableMonth].patients[name].amount += balance;
                     }
                 }
-                
-                if(name) uniquePatients.add(name);
-                if(city) cityCounts[city] = (cityCounts[city] || 0) + totalFee;
 
                 if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
                 monthDataMap[chartKey].collected += amountPaid;
                 if(balance > 0) monthDataMap[chartKey].pending += balance;
             }
 
-            const arpv = uniquePatients.size > 0 ? Math.round(totalCollected / uniquePatients.size) : 0;
-            let topCity = "-"; let maxCityVal = 0;
-            for (const [city, val] of Object.entries(cityCounts)) { if (val > maxCityVal) { maxCityVal = val; topCity = city; } }
-
             document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
             document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
             document.getElementById('dashPending').innerText = "₹" + totalPending.toLocaleString('en-IN');
-            document.getElementById('dashARPV').innerText = "₹" + arpv.toLocaleString('en-IN');
-            document.getElementById('dashTopCity').innerText = topCity;
 
             let labels = Object.keys(monthDataMap);
             if(yearFilter === "All") { labels = labels.slice(-6); }
@@ -1324,7 +1295,6 @@
             }
         }
 
-        // IDEA 1: Index-Based Analytics
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
