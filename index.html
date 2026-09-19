@@ -90,29 +90,29 @@
         @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
 
-        .form-group { margin-bottom: 15px; }
-        label { font-weight: 600; display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-main); }
+        .form-group { margin-bottom: 12px; }
+        label { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13px; color: var(--text-main); }
         input, select, textarea { 
-            width: 100%; padding: 15px; border: 1px solid var(--border-color); 
-            border-radius: 10px; font-size: 16px; box-sizing: border-box; 
+            width: 100%; padding: 12px; border: 1px solid var(--border-color); 
+            border-radius: 8px; font-size: 15px; box-sizing: border-box; 
             background: var(--input-bg); color: var(--text-main);
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
         .patient-select-btn {
-            width: 100%; padding: 15px; border: 1px solid var(--border-color); 
-            border-radius: 10px; font-size: 16px; text-align: left; 
+            width: 100%; padding: 12px; border: 1px solid var(--border-color); 
+            border-radius: 8px; font-size: 15px; text-align: left; 
             background: var(--input-bg); color: var(--text-main); cursor: pointer;
             display: flex; justify-content: space-between; align-items: center;
         }
         .patient-select-btn:after { content: "▼"; font-size: 12px; color: var(--text-muted); }
 
         .btn-main { 
-            width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; 
-            font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; 
+            font-size: 16px; font-weight: 700; margin-top: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
@@ -187,7 +187,7 @@
         </div>
     </div>
 
-    <!-- TAB 1: NEW VISIT (Stretched Grid Layout) -->
+    <!-- TAB 1: NEW VISIT -->
     <div id="tab1" class="tab-content active container">
         <form id="entryForm">
             <div class="card" style="padding: 16px;">
@@ -241,7 +241,7 @@
                     </div>
                     <div class="form-group">
                         <label>Method</label>
-                        <select id="paymentType" style="padding: 14px 8px;">
+                        <select id="paymentType" style="padding: 11px 8px;">
                             <option value="Cash">Cash</option>
                             <option value="Online">Online</option>
                             <option value="Pending">Unpaid</option>
@@ -422,6 +422,7 @@
         
         let allSheetData = []; 
         let globalPatientList = []; 
+        let patientIndex = {}; // IDEA 1: In-Memory Index
         let currentModalContext = ''; 
         
         let cashflowChartInstance = null;
@@ -442,6 +443,7 @@
                 const cachedData = localStorage.getItem('clinicData');
                 if (cachedData) {
                     allSheetData = JSON.parse(cachedData);
+                    buildMemoryIndex();
                     updateGlobalPatientList();
                     const activeTabId = document.querySelector('.tab-content.active').id;
                     renderCurrentTab(activeTabId);
@@ -450,7 +452,28 @@
 
             syncWithDatabase(); 
             initSwipeGestures();
+            
+            // IDEA 5: Offline Background Sync Listener
+            window.addEventListener('online', syncOfflineQueue);
         };
+
+        // IDEA 2: Core Data Sanitizer
+        function sanitizeName(rawName) {
+            if (!rawName) return "";
+            return rawName.trim().replace(/\s+/g, ' ').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+        }
+
+        // IDEA 1: Core Memory Index Builder
+        function buildMemoryIndex() {
+            patientIndex = {};
+            for(let i = 1; i < allSheetData.length; i++) {
+                const row = allSheetData[i];
+                if(!row || !row[2]) continue;
+                const name = sanitizeName(row[2].toString());
+                if(!patientIndex[name]) patientIndex[name] = [];
+                patientIndex[name].push({row: row, index: i});
+            }
+        }
 
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -475,7 +498,6 @@
             return `${d}-${m}-${y} | ${day}`; 
         }
 
-        // --- SWIPE ENGINE ---
         function initSwipeGestures() {
             let touchStartX = 0; let touchStartY = 0;
             document.addEventListener('touchstart', e => { 
@@ -518,21 +540,54 @@
             renderCurrentTab(tabId);
         }
 
+        // IDEA 5: Offline Sync Engine
+        function syncOfflineQueue() {
+            let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            if (queue.length === 0) return;
+            
+            const syncText = document.getElementById('syncText');
+            syncText.innerText = "Syncing queue..."; syncText.style.color = "var(--primary)";
+            
+            let successfulSyncs = 0;
+            
+            queue.forEach((payload, index) => {
+                fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+                .then(res => res.json()).then(data => {
+                    if(data.status === 'success') {
+                        successfulSyncs++;
+                        if (successfulSyncs === queue.length) {
+                            localStorage.removeItem('offlineQueue');
+                            syncWithDatabase(); // Refresh everything
+                        }
+                    }
+                }).catch(e => console.log("Offline sync retry failed."));
+            });
+        }
+
         function syncWithDatabase(callback) {
             if (isSyncing) return;
             isSyncing = true;
             
             const syncText = document.getElementById('syncText');
-            syncText.innerText = "Syncing..."; syncText.style.color = "white";
+            if (!navigator.onLine) {
+                isSyncing = false;
+                syncText.innerText = "⚠️ Offline"; syncText.style.color = "var(--danger)";
+                if(callback) callback();
+                return;
+            }
+            
+            syncText.innerText = "Syncing..."; syncText.style.color = "var(--primary)";
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json()).then(data => {
                 isSyncing = false;
                 if(data.status === 'success') {
                     allSheetData = data.data;
+                    buildMemoryIndex(); // Update index
                     try { localStorage.setItem('clinicData', JSON.stringify(allSheetData)); } catch (e) {}
                     updateGlobalPatientList(); syncText.innerText = "";
                     renderCurrentTab(document.querySelector('.tab-content.active').id);
+                    syncOfflineQueue(); // Check if anything needs uploading
                     if(callback) callback(); 
                 }
             }).catch(e => {
@@ -547,9 +602,10 @@
             let names = new Set(); 
             let years = new Set();
             
+            // IDEA 2: Force Santization globally on load
             for(let i = 1; i < allSheetData.length; i++) {
                 const row = allSheetData[i]; if(!row) continue;
-                if(row[2]) { names.add(row[2].toString().trim()); }
+                if(row[2]) { names.add(sanitizeName(row[2].toString())); }
                 if(row[1]) {
                     const d = new Date(row[1]);
                     if(!isNaN(d)) years.add(d.getFullYear());
@@ -583,18 +639,18 @@
             const listDiv = document.getElementById('modalPatientList');
             let html = '';
             
-            const safeQuery = query.trim().toLowerCase();
-            const filteredNames = globalPatientList.filter(name => name.toLowerCase().includes(safeQuery));
+            const safeQuery = sanitizeName(query);
+            const filteredNames = globalPatientList.filter(name => name.toLowerCase().includes(safeQuery.toLowerCase()));
 
             if (currentModalContext === 'tab3') {
                 html += `<div class="sheet-item" onclick="selectFromModal('All Patients')"><strong>📋 Show All Patients</strong></div>`;
             }
             
             if (currentModalContext === 'tab1' && safeQuery !== '') {
-                const exactMatch = filteredNames.find(n => n.toLowerCase() === safeQuery);
+                const exactMatch = filteredNames.find(n => n.toLowerCase() === safeQuery.toLowerCase());
                 if (!exactMatch) {
-                    html += `<div class="sheet-item add-new" onclick="selectFromModal('${query.trim().replace(/'/g, "\\'")}')">
-                                + Add "${query.trim()}" as New Patient
+                    html += `<div class="sheet-item add-new" onclick="selectFromModal('${safeQuery.replace(/'/g, "\\'")}')">
+                                + Add "${safeQuery}" as New Patient
                              </div>`;
                 }
             }
@@ -636,22 +692,19 @@
             }
         }
 
+        // IDEA 1: Uses the fast patientIndex instead of full table loop
         function handleTab1PatientChange(selectedName) {
-            let patientRecords = [];
-            for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) { 
-                    patientRecords.push(allSheetData[i]); 
-                }
-            }
+            let patientRecords = patientIndex[selectedName] || [];
+            
             if (patientRecords.length > 0) {
-                patientRecords.sort((a, b) => {
-                    let dateB = b[1] ? new Date(b[1]).getTime() : 0;
-                    let dateA = a[1] ? new Date(a[1]).getTime() : 0;
-                    if(isNaN(dateB)) dateB = 0;
-                    if(isNaN(dateA)) dateA = 0;
+                // Clone array to sort without affecting global index
+                let sortedRecords = [...patientRecords].sort((a, b) => {
+                    let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
+                    let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
+                    if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
                     return dateB - dateA; 
                 }); 
-                const latestVisit = patientRecords[0];
+                const latestVisit = sortedRecords[0].row;
                 document.getElementById('location').value = latestVisit[3] ? latestVisit[3].toString().trim() : "";
                 document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].toString().trim() : "";
                 document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
@@ -686,7 +739,7 @@
                 const row = allSheetData[i];
                 if(!row || !row[1] || !row[2]) continue;
                 
-                const name = row[2].toString().trim();
+                const name = sanitizeName(row[2].toString());
                 let visitDate = row[1] ? new Date(row[1]).getTime() : 0;
                 if(isNaN(visitDate)) visitDate = 0; 
                 
@@ -767,7 +820,7 @@
                     recentHTML += `
                     <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
                         <div>
-                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] ? row[2].toString().trim() : "Unknown"}</h4>
+                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] ? sanitizeName(row[2].toString()) : "Unknown"}</h4>
                             <span style="font-size: 12px; color: var(--text-muted);">${row[3] ? row[3].toString().trim() : "No City"}</span>
                         </div>
                         <div style="font-weight: bold; color: var(--primary); font-size: 13px; text-align: right;">${dateStr.replace(' | ', '<br>')}</div>
@@ -807,9 +860,6 @@
             renderLedgerData();
         }
 
-        // ==========================================
-        // 🚨 SPLIT-ROW HIGH-DENSITY LEDGER
-        // ==========================================
         function renderLedgerData() {
             const pendingListDiv = document.getElementById('pendingList');
             const receivedListDiv = document.getElementById('receivedList');
@@ -832,7 +882,7 @@
                 
                 const displayDate = dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
                 const waDateStr = dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
-                const name = row[2] ? row[2].toString().trim() : ""; 
+                const name = row[2] ? sanitizeName(row[2].toString()) : ""; 
                 const paymentType = String(row[4]).toLowerCase().trim();
                 const amountPaid = parseFloat(row[5]) || 0; 
                 const totalFee = parseFloat(row[6]) || 0;
@@ -975,7 +1025,24 @@
             const status = document.getElementById('payStatus_' + rowNum); 
             status.style.display = "block"; status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
             
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updatePayment", rowNumber: rowNum, newAmountPaid: fullAmount, newPaymentType: paymentMethod }) })
+            const payload = { action: "updatePayment", rowNumber: rowNum, newAmountPaid: fullAmount, newPaymentType: paymentMethod };
+            
+            if (!navigator.onLine) {
+                // IDEA 5: Offline Queue Logic
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                
+                status.style.color = "var(--success)"; status.innerText = "✓ Saved Offline"; 
+                if (allSheetData[rowNum - 1]) {
+                    allSheetData[rowNum - 1][5] = fullAmount;
+                    allSheetData[rowNum - 1][4] = paymentMethod;
+                }
+                syncWithDatabase(); 
+                return;
+            }
+            
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') { 
                     status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
@@ -985,7 +1052,18 @@
                     }
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
-            }).catch(e => { status.style.color = "var(--danger)"; status.innerText = "Connection error."; });
+            }).catch(e => { 
+                // Fallback to queue if fetch fails mid-air
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                status.style.color = "var(--success)"; status.innerText = "✓ Queued for Sync"; 
+                if (allSheetData[rowNum - 1]) {
+                    allSheetData[rowNum - 1][5] = fullAmount;
+                    allSheetData[rowNum - 1][4] = paymentMethod;
+                }
+                syncWithDatabase();
+            });
         }
 
         document.getElementById('entryForm').addEventListener('submit', function(e) {
@@ -994,9 +1072,10 @@
             if (!rawName) { alert("Please select or enter a Patient Name."); return; }
 
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
-            btn.innerText = "Saving to Database..."; btn.disabled = true; status.innerText = "";
+            btn.innerText = "Saving Session..."; btn.disabled = true; status.innerText = "";
             
-            let cleanName = rawName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+            // IDEA 2: Perfect Capitalization and Data Sanitization
+            let cleanName = sanitizeName(rawName);
             
             const payload = {
                 action: "addVisit", date: document.getElementById('date').value, name: cleanName,
@@ -1007,6 +1086,21 @@
                 notes: document.getElementById('notes').value, month: "" 
             };
             
+            if (!navigator.onLine) {
+                // IDEA 5: Offline Queue Logic
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                
+                status.style.color = "var(--success)"; status.innerText = "✓ Saved Offline"; 
+                allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
+                document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
+                document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
+                syncWithDatabase(); 
+                btn.innerText = "Save Session Record"; btn.disabled = false;
+                return;
+            }
+
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
@@ -1017,10 +1111,21 @@
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
                 btn.innerText = "Save Session Record"; btn.disabled = false;
-            }).catch(err => { status.style.color = "var(--danger)"; status.innerText = "Connection Error"; btn.innerText = "Save Session Record"; btn.disabled = false; });
+            }).catch(err => { 
+                // Fallback to offline queue if network drops mid-request
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                status.style.color = "var(--success)"; status.innerText = "✓ Saved Offline"; 
+                allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
+                document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
+                document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
+                syncWithDatabase();
+                btn.innerText = "Save Session Record"; btn.disabled = false;
+            });
         });
 
-        // Bulletproof History Sorting
+        // IDEA 1: Index-Based History Engine
         function showPatientHistory() {
             const selectedName = document.getElementById('patientSelect').value;
             const timeline = document.getElementById('historyTimeline'); 
@@ -1032,13 +1137,10 @@
             document.getElementById('apptStatusMsg').innerText = "";
             document.getElementById('newNextApptDate').value = "";
 
-            let records = [];
-            for(let i = 1; i < allSheetData.length; i++) { 
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === selectedName) {
-                    records.push({row: allSheetData[i], index: i}); 
-                }
-            }
-            records.sort((a, b) => {
+            let records = patientIndex[selectedName] || [];
+            
+            // Sort a copy to protect the index structure
+            let sortedRecords = [...records].sort((a, b) => {
                 let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                 let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
                 if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
@@ -1047,7 +1149,7 @@
             });
             
             let newHTML = "";
-            records.forEach(item => {
+            sortedRecords.forEach(item => {
                 const row = item.row;
                 const dateObj = row[1] ? new Date(row[1]) : null;
                 const date = (dateObj && !isNaN(dateObj)) ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
@@ -1075,23 +1177,56 @@
             
             if (!nextApptDate) { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Please select a date."; return; }
             statusMsg.style.color = "var(--primary)"; statusMsg.innerText = "Scheduling...";
+            
+            const payload = { action: "updateNextAppt", name: patientName, nextAppt: nextApptDate };
 
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updateNextAppt", name: patientName, nextAppt: nextApptDate }) })
+            if (!navigator.onLine) {
+                // IDEA 5: Offline Queue Logic
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                
+                statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Scheduled Offline";
+                // Optimistic Local Update
+                let pRecords = patientIndex[patientName] || [];
+                let latestDate = 0; let latestItem = null;
+                pRecords.forEach(item => {
+                    let d = item.row[1] ? new Date(item.row[1]).getTime() : 0;
+                    if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestItem = item; }
+                });
+                if (latestItem) { allSheetData[latestItem.index][10] = nextApptDate; }
+                syncWithDatabase();
+                return;
+            }
+
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json()).then(data => {
                 if(data.status === 'success') {
                     statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Appointment scheduled";
-                    let latestIndex = -1; let latestDate = 0;
-                    for(let i = 1; i < allSheetData.length; i++) {
-                        if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === patientName) {
-                            let d = allSheetData[i][1] ? new Date(allSheetData[i][1]).getTime() : 0;
-                            if(isNaN(d)) d = 0;
-                            if (d > latestDate) { latestDate = d; latestIndex = i; }
-                        }
-                    }
-                    if (latestIndex !== -1) { allSheetData[latestIndex][10] = nextApptDate; }
+                    let pRecords = patientIndex[patientName] || [];
+                    let latestDate = 0; let latestItem = null;
+                    pRecords.forEach(item => {
+                        let d = item.row[1] ? new Date(item.row[1]).getTime() : 0;
+                        if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestItem = item; }
+                    });
+                    if (latestItem) { allSheetData[latestItem.index][10] = nextApptDate; }
                     syncWithDatabase();
                 } else { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Error scheduling."; }
-            }).catch(err => { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Connection error."; });
+            }).catch(err => { 
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Scheduled Offline";
+                
+                let pRecords = patientIndex[patientName] || [];
+                let latestDate = 0; let latestItem = null;
+                pRecords.forEach(item => {
+                    let d = item.row[1] ? new Date(item.row[1]).getTime() : 0;
+                    if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestItem = item; }
+                });
+                if (latestItem) { allSheetData[latestItem.index][10] = nextApptDate; }
+                syncWithDatabase();
+            });
         }
 
         function renderDashboard() {
@@ -1116,7 +1251,7 @@
                 const amountPaid = parseFloat(row[5]) || 0;
                 const totalFee = parseFloat(row[6]) || 0;
                 const balance = totalFee - amountPaid;
-                const name = row[2] ? row[2].toString().trim() : "";
+                const name = row[2] ? sanitizeName(row[2].toString()) : "";
                 const city = row[3] ? row[3].toString().trim() : "";
                 
                 const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
@@ -1189,7 +1324,7 @@
             }
         }
 
-        // Bulletproof Analytics Sorting
+        // IDEA 1: Index-Based Analytics
         function showPatientAnalytics() {
             const name = document.getElementById('analyticsPatientSelect').value;
             const container = document.getElementById('patientAnalyticsData');
@@ -1200,13 +1335,10 @@
 
             let sessions = 0; let spent = 0; let pending = 0;
             let chartDates = []; let painBeforeData = []; let painAfterData = [];
-            let patRecords = [];
             
-            for(let i = 1; i < allSheetData.length; i++) {
-                if(allSheetData[i] && allSheetData[i][2] && allSheetData[i][2].toString().trim() === name) { patRecords.push({row: allSheetData[i], index: i}); }
-            }
+            let patRecords = patientIndex[name] || [];
             
-            patRecords.sort((a, b) => {
+            let sortedRecords = [...patRecords].sort((a, b) => {
                 let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
                 let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
                 if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0;
@@ -1214,7 +1346,7 @@
                 return a.index - b.index;
             });
 
-            patRecords.forEach(item => {
+            sortedRecords.forEach(item => {
                 const row = item.row;
                 sessions++; const paid = parseFloat(row[5]) || 0; const fee = parseFloat(row[6]) || 0;
                 spent += paid; if(fee > paid) pending += (fee - paid);
