@@ -77,8 +77,12 @@
         }
         
         .header-controls { position: absolute; right: 15px; display: flex; align-items: center; gap: 12px; }
-        .sync-indicator { font-size: 10px; font-weight: 600; text-transform: uppercase; opacity: 0.9; }
+        .sync-indicator { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; opacity: 0.9; }
         .theme-toggle-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; display: flex; line-height: 1; }
+
+        /* LOADING SPINNER CSS */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; width: 14px; height: 14px; fill: currentColor; }
 
         .container { padding: 20px; }
         
@@ -431,6 +435,9 @@
         let loadedOlderClicks = 0;
         
         const tabOrder = ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
+        
+        // LOADING SPINNER SVG
+        const loadingIcon = `<svg class="spinner" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>`;
 
         window.onload = function() { 
             document.getElementById('date').valueAsDate = new Date();
@@ -477,7 +484,7 @@
             updateThemeIcon(newTheme); updateChartColors(newTheme);
             if (document.getElementById('tab5').classList.contains('active')) { renderDashboard(); showPatientAnalytics(); }
         }
-        function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️' : '🌙'; }
+        function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️️' : '🌙'; }
         function updateChartColors(theme) {
             Chart.defaults.color = theme === 'dark' ? '#a0aec0' : '#718096';
             Chart.defaults.borderColor = theme === 'dark' ? '#333333' : '#e2e8f0';
@@ -539,7 +546,7 @@
             if (queue.length === 0) return;
             
             const syncText = document.getElementById('syncText');
-            syncText.innerText = "Syncing queue..."; syncText.style.color = "var(--primary)";
+            syncText.innerHTML = loadingIcon + " Syncing queue..."; syncText.style.color = "white";
             
             let successfulSyncs = 0;
             
@@ -569,7 +576,7 @@
                 return;
             }
             
-            syncText.innerText = "Syncing..."; syncText.style.color = "var(--primary)";
+            syncText.innerHTML = loadingIcon + " Syncing..."; syncText.style.color = "white";
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
             .then(res => res.json()).then(data => {
