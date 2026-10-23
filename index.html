@@ -269,7 +269,10 @@
         <h3 style="margin-top:0; color: var(--primary-dark);">Upcoming Appointments</h3>
         <div id="upcomingList" style="margin-bottom: 25px;"></div>
         
-        <h3 style="margin-top:0; color: var(--primary-dark);">Last 5 Sessions</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin:0; color: var(--primary-dark);">Last 5 Sessions</h3>
+            <button id="btnEditRecent" onclick="toggleDeleteMode()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px;">✏️</button>
+        </div>
         <div id="recentList"></div>
     </div>
 
@@ -430,9 +433,11 @@
         let painChartInstance = null;
         let currentPendingSessionsForWA = [];
         let isSyncing = false;
+        let isSubmittingForm = false; // The absolute form lock
         
         let currentLedgerFilter = "";
         let loadedOlderClicks = 0;
+        let deleteMode = false; // Tracks if Tab 2 is in delete state
         
         const tabOrder = ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
         
@@ -484,7 +489,7 @@
             updateThemeIcon(newTheme); updateChartColors(newTheme);
             if (document.getElementById('tab5').classList.contains('active')) { renderDashboard(); showPatientAnalytics(); }
         }
-        function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️️' : '🌙'; }
+        function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️' : '🌙'; }
         function updateChartColors(theme) {
             Chart.defaults.color = theme === 'dark' ? '#a0aec0' : '#718096';
             Chart.defaults.borderColor = theme === 'dark' ? '#333333' : '#e2e8f0';
@@ -719,6 +724,42 @@
             if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
         }
 
+        // Toggles the delete mode for recent sessions
+        function toggleDeleteMode() {
+            const btns = document.querySelectorAll('.delete-btn');
+            if (btns.length === 0) return;
+            
+            deleteMode = !deleteMode;
+            btns.forEach(btn => btn.style.display = deleteMode ? 'block' : 'none');
+            document.getElementById('btnEditRecent').innerText = deleteMode ? '❌' : '✏️';
+        }
+
+        function deleteSession(arrayIndex) {
+            if(!confirm("Are you sure you want to permanently delete this visit? This cannot be undone.")) return;
+            
+            const syncText = document.getElementById('syncText');
+            syncText.innerHTML = loadingIcon + " Deleting...";
+            syncText.style.color = "var(--danger)";
+            
+            // arrayIndex is 0-based index from allSheetData. In GAS, row number is usually index + 1
+            const payload = { action: "deleteVisit", rowNumber: arrayIndex + 1 };
+            
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                if(data.status === 'success') {
+                    deleteMode = false;
+                    document.getElementById('btnEditRecent').innerText = '✏️';
+                    syncWithDatabase(); // Pull fresh data to fix array indices
+                } else {
+                    alert("Error deleting record.");
+                    syncText.innerText = "";
+                }
+            }).catch(e => {
+                alert("Network error. Try again when online.");
+                syncText.innerText = "";
+            });
+        }
+
         function loadRecentPatients() {
             const upcomingDiv = document.getElementById('upcomingList');
             const recentDiv = document.getElementById('recentList');
@@ -726,8 +767,11 @@
             if(allSheetData.length <= 1) { 
                 upcomingDiv.innerHTML = "";
                 recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
+                document.getElementById('btnEditRecent').style.display = 'none';
                 return; 
             }
+            
+            document.getElementById('btnEditRecent').style.display = 'block';
 
             let latestRecordsMap = new Map();
             let allValidRows = [];
@@ -810,17 +854,22 @@
                 recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
             } else {
                 let recentHTML = "";
+                const displayStyle = deleteMode ? 'block' : 'none';
+                
                 top5.forEach(item => {
                     const row = item.row;
                     const dateObj = row[1] ? new Date(row[1]) : null;
                     const dateStr = (dateObj && !isNaN(dateObj)) ? formatApptDate(dateObj) : "No Date";
                     recentHTML += `
-                    <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
+                    <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px; position: relative;">
                         <div>
                             <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] ? sanitizeName(row[2].toString()) : "Unknown"}</h4>
                             <span style="font-size: 12px; color: var(--text-muted);">${row[3] ? row[3].toString().trim() : "No City"}</span>
                         </div>
                         <div style="font-weight: bold; color: var(--primary); font-size: 13px; text-align: right;">${dateStr.replace(' | ', '<br>')}</div>
+                        
+                        <!-- Delete Button (Hidden by default) -->
+                        <button class="delete-btn" style="display: ${displayStyle}; position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 12px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" onclick="deleteSession(${item.index})">🗑️</button>
                     </div>`;
                 });
                 recentDiv.innerHTML = recentHTML; 
@@ -1063,8 +1112,17 @@
 
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // THE STRICT DOUBLE-CLICK LOCK
+            if (isSubmittingForm) return; 
+            isSubmittingForm = true; 
+            
             let rawName = document.getElementById('name').value.trim();
-            if (!rawName) { alert("Please select or enter a Patient Name."); return; }
+            if (!rawName) { 
+                alert("Please select or enter a Patient Name."); 
+                isSubmittingForm = false; 
+                return; 
+            }
 
             const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
             btn.innerText = "Saving Session..."; btn.disabled = true; status.innerText = "";
@@ -1090,7 +1148,9 @@
                 document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
                 document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
                 syncWithDatabase(); 
-                btn.innerText = "Save Session Record"; btn.disabled = false;
+                
+                // Release the lock
+                btn.innerText = "Save Session Record"; btn.disabled = false; isSubmittingForm = false;
                 return;
             }
 
@@ -1103,7 +1163,9 @@
                     document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
                     syncWithDatabase(); 
                 } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
-                btn.innerText = "Save Session Record"; btn.disabled = false;
+                
+                // Release the lock
+                btn.innerText = "Save Session Record"; btn.disabled = false; isSubmittingForm = false;
             }).catch(err => { 
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
@@ -1113,7 +1175,9 @@
                 document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
                 document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
                 syncWithDatabase();
-                btn.innerText = "Save Session Record"; btn.disabled = false;
+                
+                // Release the lock
+                btn.innerText = "Save Session Record"; btn.disabled = false; isSubmittingForm = false;
             });
         });
 
