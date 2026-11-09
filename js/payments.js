@@ -19,7 +19,6 @@ window.PhysioPayments = (function() {
   }
 
   // Official NPCI compliant UPI Intent URI
-  // tn (Transaction Note) MUST be strictly alphanumeric to prevent GPay/PhonePe bank risk flags
   function buildUPIString(payeeVpa, payeeName, amount, cleanAlphanumericNote) {
     const cleanAmount = (parseFloat(amount) || 0).toFixed(2);
     const encodedName = encodeURIComponent(payeeName);
@@ -27,9 +26,23 @@ window.PhysioPayments = (function() {
     return `upi://pay?pa=${payeeVpa}&pn=${encodedName}&am=${cleanAmount}&cu=INR&tn=${note}`;
   }
 
+  // App-Specific UPI URI generators
+  function buildAppUPIString(scheme, payeeVpa, payeeName, amount, cleanAlphanumericNote) {
+    const cleanAmount = (parseFloat(amount) || 0).toFixed(2);
+    const encodedName = encodeURIComponent(payeeName);
+    const note = (cleanAlphanumericNote || 'PhysioClinic').replace(/[^a-zA-Z0-9]/g, '');
+    
+    if (scheme === 'phonepe') {
+      return `phonepe://pay?pa=${payeeVpa}&pn=${encodedName}&am=${cleanAmount}&cu=INR&tn=${note}`;
+    } else if (scheme === 'gpay') {
+      return `tez://upi/pay?pa=${payeeVpa}&pn=${encodedName}&am=${cleanAmount}&cu=INR&tn=${note}`;
+    } else if (scheme === 'paytm') {
+      return `paytmmp://pay?pa=${payeeVpa}&pn=${encodedName}&am=${cleanAmount}&cu=INR&tn=${note}`;
+    }
+    return `upi://pay?pa=${payeeVpa}&pn=${encodedName}&am=${cleanAmount}&cu=INR&tn=${note}`;
+  }
+
   // Self-Contained URL-Safe Invoice Token
-  // Encodes patient name, total amount, and itemized sessions so the patient's phone
-  // renders the invoice instantly in 1ms without needing prior local database cache!
   function encodeInvoicePayload(patientName, totalAmount, pendingSessions) {
     try {
       const payload = {
@@ -58,7 +71,6 @@ window.PhysioPayments = (function() {
         b64 += '=';
       }
       const raw = decodeURIComponent(atob(b64));
-      // If it's a JSON payload
       if (raw.startsWith('{')) {
         const parsed = JSON.parse(raw);
         return {
@@ -67,7 +79,6 @@ window.PhysioPayments = (function() {
           sessions: parsed.s
         };
       }
-      // Fallback for legacy plain name tokens
       return {
         name: raw,
         totalAmount: 0,
@@ -110,7 +121,15 @@ window.PhysioPayments = (function() {
     if (modal) modal.classList.remove('active');
   }
 
-  // WhatsApp Invoice Dispatcher
+  // Single-session shortcut for 1-tap WhatsApp from dues cards
+  function sendSingleSessionWhatsAppInvoice(patientName, sessionDate, amount, sessionType) {
+    const phones = PhysioDB.getPatientPhones();
+    const phone = phones[PhysioDB.sanitizeName(patientName)] || '';
+    const pendingSessions = [{ date: sessionDate, amount: amount }];
+    sendWhatsAppInvoice(patientName, pendingSessions, phone);
+  }
+
+  // Full WhatsApp Invoice Dispatcher
   function sendWhatsAppInvoice(patientName, pendingSessions, optionalPhone) {
     if (!pendingSessions || pendingSessions.length === 0) {
       alert("No pending dues found for " + patientName);
@@ -125,10 +144,12 @@ window.PhysioPayments = (function() {
       totalAmount += session.amount;
     });
 
-    // Generate self-contained token with exact dues
+    if (!optionalPhone) {
+      const phones = PhysioDB.getPatientPhones();
+      optionalPhone = phones[PhysioDB.sanitizeName(patientName)] || '';
+    }
+
     const token = encodeInvoicePayload(patientName, totalAmount, pendingSessions);
-    
-    // Direct link to the app's clean invoice viewer mode
     const baseAppUrl = window.location.origin + window.location.pathname;
     const directInvoiceUrl = `${baseAppUrl}?invoice=${token}`;
 
@@ -136,16 +157,22 @@ window.PhysioPayments = (function() {
 
 Greetings from *${PhysioConfig.CLINIC_NAME}* (${PhysioConfig.CLINIC_TITLE}).
 
-This is a gentle update regarding your physiotherapy treatment sessions:
+This is a gentle update regarding your physiotherapy treatment session dues:
 
 *Outstanding Dues Summary:*
 ${sessionLines}
 *Total Outstanding:* ${formatINR(totalAmount)}
 
-👉 *View Invoice & Pay Online:*
+💳 *Direct UPI Payment Options:*
+• UPI ID: \`${PhysioConfig.CLINIC_UPI_ID}\`
+• Name: ${PhysioConfig.CLINIC_PAYEE_NAME}
+• Amount: ${formatINR(totalAmount)}
+_(Tip: You can copy \`${PhysioConfig.CLINIC_UPI_ID}\` and send directly via GPay / PhonePe / Paytm to bypass browser bank warnings)_
+
+👉 *View Itemized Invoice & Scan QR:*
 ${directInvoiceUrl}
 
-Kindly clear the dues at your convenience. Wishing you a speedy recovery! 🌟`;
+Kindly clear the dues at your convenience. Wishing you a healthy and speedy recovery! 🌟`;
 
     const encodedText = encodeURIComponent(msg);
     let waUrl = `https://wa.me/?text=${encodedText}`;
@@ -167,6 +194,11 @@ Kindly clear the dues at your convenience. Wishing you a speedy recovery! 🌟`;
 
   // WhatsApp Next Appointment Reminder
   function sendAppointmentReminder(patientName, appointmentDate, optionalPhone) {
+    if (!optionalPhone) {
+      const phones = PhysioDB.getPatientPhones();
+      optionalPhone = phones[PhysioDB.sanitizeName(patientName)] || '';
+    }
+
     const msg = `Dear ${patientName},
 
 Greetings from *${PhysioConfig.CLINIC_NAME}*! 🌿
@@ -198,10 +230,12 @@ Please let me know if you need to reschedule. Wishing you a wonderful day! 🌟`
     getWhatsAppIconSVG,
     formatINR,
     buildUPIString,
+    buildAppUPIString,
     encodeInvoicePayload,
     decodeInvoicePayload,
     showQRModal,
     closeQRModal,
+    sendSingleSessionWhatsAppInvoice,
     sendWhatsAppInvoice,
     sendAppointmentReminder
   };

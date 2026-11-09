@@ -1,5 +1,10 @@
-const CACHE_NAME = 'physio-tracker-v3';
-const STATIC_ASSETS = [
+/**
+ * High-Performance Service Worker
+ * Network-First for core app files (guarantees instant updates) with Cache Fallback for 100% offline support
+ */
+
+const CACHE_NAME = 'physio-tracker-v4';
+const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
@@ -23,7 +28,7 @@ const STATIC_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(CORE_ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
@@ -45,28 +50,24 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network-First strategy for core app files to guarantee immediate update visibility
   event.respondWith(
-    caches.match(req).then(cachedResponse => {
-      if (cachedResponse) {
-        fetch(req).then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then(cache => cache.put(req, networkResponse));
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(req).then(networkResponse => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
-        }
+    fetch(req).then(networkResponse => {
+      if (networkResponse && networkResponse.status === 200) {
         const responseToCache = networkResponse.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(req, responseToCache));
-        return networkResponse;
-      });
-    }).catch(() => {
-      if (req.headers.get('accept').includes('text/html')) {
-        return caches.match('./index.html');
       }
+      return networkResponse;
+    }).catch(() => {
+      // Offline fallback to cache
+      return caches.match(req).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        if (req.headers.get('accept') && req.headers.get('accept').includes('text/html')) {
+          return caches.match('./index.html');
+        }
+      });
     })
   );
 });

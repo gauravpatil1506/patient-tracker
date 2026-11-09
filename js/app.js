@@ -356,7 +356,7 @@ window.PhysioApp = (function() {
       showToast("Migration error: " + e.message, "error");
     } finally {
       btn.disabled = false;
-      btn.innerText = "🔥 Migrate to Firestore";
+      btn.innerText = "🔥 Re-Sync to Firestore";
     }
   }
 
@@ -391,7 +391,7 @@ window.PhysioApp = (function() {
     let totalDue = payload.totalAmount || 0;
     let sessions = payload.sessions || [];
 
-    // If payload did not carry itemized sessions, fallback to local DB if available
+    // Fallback if needed
     if (totalDue === 0 && sessions.length === 0) {
       try {
         const visits = await PhysioDB.init();
@@ -435,6 +435,9 @@ window.PhysioApp = (function() {
     });
 
     const upiLink = PhysioPayments.buildUPIString(PhysioConfig.CLINIC_UPI_ID, PhysioConfig.CLINIC_PAYEE_NAME, totalDue, "PhysioClinic");
+    const gpayLink = PhysioPayments.buildAppUPIString('gpay', PhysioConfig.CLINIC_UPI_ID, PhysioConfig.CLINIC_PAYEE_NAME, totalDue, "PhysioClinic");
+    const phonepeLink = PhysioPayments.buildAppUPIString('phonepe', PhysioConfig.CLINIC_UPI_ID, PhysioConfig.CLINIC_PAYEE_NAME, totalDue, "PhysioClinic");
+    const paytmLink = PhysioPayments.buildAppUPIString('paytm', PhysioConfig.CLINIC_UPI_ID, PhysioConfig.CLINIC_PAYEE_NAME, totalDue, "PhysioClinic");
 
     portalMount.innerHTML = `
     <div class="invoice-card">
@@ -455,21 +458,45 @@ window.PhysioApp = (function() {
         ${itemsHtml}
       </div>` : ''}
 
+      <!-- Primary 1-Tap Pay Button -->
       <a href="${upiLink}" class="btn-main invoice-pay-btn">
-        ⚡ Pay ${PhysioPayments.formatINR(totalDue)} via UPI
+        ⚡ 1-Tap Pay ${PhysioPayments.formatINR(totalDue)} via UPI
       </a>
 
+      <!-- Direct UPI App Selectors -->
+      <div class="upi-app-selector-title">Select your preferred UPI App:</div>
+      <div class="upi-app-buttons-grid">
+        <a href="${gpayLink}" class="upi-app-btn upi-btn-gpay">
+          <span>Google Pay</span>
+        </a>
+        <a href="${phonepeLink}" class="upi-app-btn upi-btn-phonepe">
+          <span>PhonePe</span>
+        </a>
+        <a href="${paytmLink}" class="upi-app-btn upi-btn-paytm">
+          <span>Paytm</span>
+        </a>
+      </div>
+
+      <!-- Direct UPI ID Copy Box (Risk Policy Workaround) -->
+      <div class="vpa-copy-card">
+        <div class="vpa-copy-head">
+          <span class="vpa-copy-label">Direct UPI ID:</span>
+          <button class="vpa-copy-button" onclick="PhysioApp.copyUPI()">📋 Copy ID</button>
+        </div>
+        <div class="vpa-copy-val">${PhysioConfig.CLINIC_UPI_ID}</div>
+        <div class="vpa-copy-note">
+          💡 <em>If PhonePe or your bank shows a "safeguard risk alert", copy the UPI ID above and paste it directly into Google Pay or PhonePe to pay with zero warnings.</em>
+        </div>
+      </div>
+
+      <!-- Dynamic QR Code -->
       <div class="invoice-qr-wrap">
-        <div class="invoice-qr-title">Or scan QR with GPay, PhonePe, Paytm, BHIM:</div>
+        <div class="invoice-qr-title">Or scan QR with any UPI app:</div>
         <div id="patientQrCanvasContainer" class="invoice-qr-canvas"></div>
       </div>
 
-      <button class="btn-main btn-secondary" style="margin-top:14px; padding:12px; font-size:13px;" onclick="PhysioApp.copyUPI()">
-        📋 Copy UPI ID: <strong>${PhysioConfig.CLINIC_UPI_ID}</strong>
-      </button>
-
       <div class="invoice-security-footer">
-        🔒 NPCI Verified • Direct Account-to-Account UPI Transfer
+        🔒 NPCI Compliant • Direct Account-to-Account Bank Transfer
       </div>
     </div>`;
 
@@ -490,7 +517,7 @@ window.PhysioApp = (function() {
 
   function copyUPI() {
     navigator.clipboard.writeText(PhysioConfig.CLINIC_UPI_ID).then(() => {
-      showToast("✓ UPI ID copied to clipboard!", "success");
+      showToast("✓ UPI ID copied! Paste in GPay or PhonePe", "success");
     }).catch(() => {
       showToast("UPI ID: " + PhysioConfig.CLINIC_UPI_ID, "info");
     });

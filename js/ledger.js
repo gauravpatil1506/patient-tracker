@@ -1,6 +1,7 @@
 /**
  * Ledger & Financial Operations
  * Handles pending balances, collected revenue, WhatsApp reminders, and delete management
+ * Site-wide multi-row stacked alignment architecture
  */
 
 window.PhysioLedger = (function() {
@@ -74,26 +75,40 @@ window.PhysioLedger = (function() {
 
         pendingHTML += `
         <div class="card ledger-due-card">
-          <div class="ledger-due-top">
-            <div class="ledger-patient-meta">
-              <h4 class="ledger-patient-name">${v.name}</h4>
-              <span class="ledger-session-sub">${v.sessionType || 'Physiotherapy'}</span>
-            </div>
-            <div class="ledger-due-badge">₹${balance.toLocaleString('en-IN')}</div>
+          <!-- Row 1: Patient Name & Outstanding Amount -->
+          <div class="card-row-head">
+            <h4 class="card-item-title">${v.name}</h4>
+            <div class="due-badge-amount">₹${balance.toLocaleString('en-IN')}</div>
           </div>
-          <div class="ledger-due-bottom">
-            <div class="ledger-date-tag">📅 ${displayDate}</div>
-            <div class="ledger-action-btns">
-              <button class="btn-micro btn-micro-qr" onclick="PhysioPayments.showQRModal('${v.name.replace(/'/g, "\\'")}', 'Session: ${displayDate}', ${balance}, 'PhysioClinic')" title="Show UPI QR Code">
-                📷 QR
-              </button>
-              <button class="btn-micro btn-micro-cash" onclick="PhysioLedger.settlePayment(${v.id}, 'Cash', ${totalFee})" title="Mark Received via Cash">
-                💵 Cash
-              </button>
-              <button class="btn-micro btn-micro-online" onclick="PhysioLedger.settlePayment(${v.id}, 'Online', ${totalFee})" title="Mark Received via Online UPI">
-                📱 UPI
-              </button>
-            </div>
+
+          <!-- Row 2: Therapy / Session Type on its own dedicated full-width line -->
+          <div class="card-row-therapy">
+            <span class="therapy-pill">🩺 ${v.sessionType || 'Physiotherapy'}</span>
+          </div>
+
+          <!-- Row 3: Meta details with clean | separators -->
+          <div class="card-row-meta">
+            <span class="meta-item">📅 ${displayDate}</span>
+            <span class="meta-sep">|</span>
+            <span class="meta-item">📍 ${v.location || 'Clinic'}</span>
+            <span class="meta-sep">|</span>
+            <span class="meta-item">Fee: ₹${totalFee.toLocaleString('en-IN')}</span>
+          </div>
+
+          <!-- Row 4: 1-Tap Action Buttons -->
+          <div class="card-row-actions">
+            <button class="btn-micro-action btn-action-wa" onclick="PhysioPayments.sendSingleSessionWhatsAppInvoice('${v.name.replace(/'/g, "\\'")}', '${waDateStr}', ${balance}, '${(v.sessionType || 'Session').replace(/'/g, "\\'")}')" title="Send WhatsApp Invoice Link">
+              ${PhysioPayments.getWhatsAppIconSVG(16)} <span>WhatsApp</span>
+            </button>
+            <button class="btn-micro-action btn-action-qr" onclick="PhysioPayments.showQRModal('${v.name.replace(/'/g, "\\'")}', 'Session: ${displayDate}', ${balance}, 'PhysioClinic')" title="Show UPI QR Code">
+              📷 <span>QR</span>
+            </button>
+            <button class="btn-micro-action btn-action-cash" onclick="PhysioLedger.settlePayment(${v.id}, 'Cash', ${totalFee})" title="Mark Received via Cash">
+              💵 <span>Cash</span>
+            </button>
+            <button class="btn-micro-action btn-action-online" onclick="PhysioLedger.settlePayment(${v.id}, 'Online', ${totalFee})" title="Mark Received via Online UPI">
+              📱 <span>Online</span>
+            </button>
           </div>
         </div>`;
       }
@@ -106,6 +121,8 @@ window.PhysioLedger = (function() {
           displayDate: displayDate,
           amount: amountPaid,
           fee: totalFee,
+          sessionType: v.sessionType || 'Session',
+          location: v.location || 'Clinic',
           method: v.paymentType || 'Paid'
         });
       }
@@ -119,7 +136,7 @@ window.PhysioLedger = (function() {
         <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Zero pending dues found ${filterName ? 'for ' + filterName : ''}!</p>
       </div>`;
       summaryBadge.style.display = 'none';
-      waButton.style.display = 'none';
+      if (waButton) waButton.style.display = 'none';
       groupedBar.style.display = 'none';
     } else {
       pendingListEl.innerHTML = pendingHTML;
@@ -127,20 +144,22 @@ window.PhysioLedger = (function() {
       summaryBadge.style.display = 'block';
 
       if (filterName) {
-        waButton.style.display = 'flex';
-        waButton.title = `Send WhatsApp Invoice to ${filterName}`;
+        if (waButton) {
+          waButton.style.display = 'flex';
+          waButton.title = `Send Combined WhatsApp Invoice to ${filterName}`;
+        }
         groupedBar.style.display = 'block';
         groupedQrBtn.innerText = `📷 Show Combined UPI QR (₹${pendingTotal.toLocaleString('en-IN')})`;
         groupedQrBtn.onclick = () => {
           PhysioPayments.showQRModal(filterName, `${pendingCount} Outstanding Sessions`, pendingTotal, 'PhysioClinic');
         };
       } else {
-        waButton.style.display = 'none';
+        if (waButton) waButton.style.display = 'none';
         groupedBar.style.display = 'none';
       }
     }
 
-    // Render Received Records
+    // Render Received Records (Stacked row architecture with | separators)
     receivedRecords.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
     const initialLimit = 15;
     const currentLimit = initialLimit + olderLoadedCount;
@@ -152,15 +171,25 @@ window.PhysioLedger = (function() {
     } else {
       visibleReceived.forEach(rec => {
         receivedHTML += `
-        <div class="card" style="border-left: 4px solid var(--success); padding: 12px 14px; margin-bottom: 10px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h4 style="margin: 0 0 2px 0; font-size: 15px; color: var(--text-main);">${rec.name}</h4>
-              <div style="font-size: 12px; color: var(--text-muted);">${rec.displayDate} • <span class="badge badge-success">${rec.method}</span></div>
-            </div>
-            <div style="color: var(--success); font-weight: 700; font-size: 15px;">
-              +₹${rec.amount.toLocaleString('en-IN')}
-            </div>
+        <div class="card ledger-received-card">
+          <!-- Row 1: Patient Name & Amount Received -->
+          <div class="card-row-head">
+            <h4 class="card-item-title">${rec.name}</h4>
+            <div class="received-badge-amount">+₹${rec.amount.toLocaleString('en-IN')}</div>
+          </div>
+
+          <!-- Row 2: Therapy Type -->
+          <div class="card-row-therapy">
+            <span class="therapy-pill">🩺 ${rec.sessionType}</span>
+          </div>
+
+          <!-- Row 3: Meta details with | separators -->
+          <div class="card-row-meta">
+            <span class="meta-item">📅 ${rec.displayDate}</span>
+            <span class="meta-sep">|</span>
+            <span class="meta-item">Mode: <strong style="color:var(--text-main);">${rec.method}</strong></span>
+            <span class="meta-sep">|</span>
+            <span class="meta-item">📍 ${rec.location}</span>
           </div>
         </div>`;
       });
@@ -168,7 +197,7 @@ window.PhysioLedger = (function() {
       if (receivedRecords.length > currentLimit) {
         receivedHTML += `
         <div style="text-align: center; margin: 16px 0;">
-          <button class="btn-main btn-secondary" style="width: auto; padding: 8px 18px; font-size: 13px;" onclick="PhysioLedger.loadMoreReceived()">
+          <button class="btn-main btn-secondary" style="width: auto; padding: 10px 22px; font-size: 13px;" onclick="PhysioLedger.loadMoreReceived()">
             Load Older Payments
           </button>
         </div>`;
@@ -197,7 +226,7 @@ window.PhysioLedger = (function() {
     }
   }
 
-  // Dispatch WhatsApp Invoice
+  // Dispatch WhatsApp Invoice (Header button for filtered patient)
   function dispatchWhatsAppReminder() {
     const filterName = document.getElementById('ledgerPatientSelect').value;
     if (!filterName) {
@@ -255,20 +284,32 @@ window.PhysioLedger = (function() {
         const phone = phones[PhysioDB.sanitizeName(item.name)];
 
         upHtml += `
-        <div class="card upcoming-card">
-          <div class="upcoming-meta">
-            <h4 class="upcoming-name">${item.name}</h4>
-            <div class="upcoming-date-pill">📅 ${dateStr}</div>
+        <div class="card upcoming-item-card">
+          <!-- Row 1: Patient Name & WhatsApp Action Button -->
+          <div class="card-row-head">
+            <h4 class="card-item-title">${item.name}</h4>
+            <button class="wa-btn-circle" onclick="PhysioPayments.sendAppointmentReminder('${item.name.replace(/'/g, "\\'")}', '${dateStr}', '${phone || ''}')" title="Send WhatsApp Appointment Reminder">
+              ${PhysioPayments.getWhatsAppIconSVG(20)}
+            </button>
           </div>
-          <button class="wa-btn" onclick="PhysioPayments.sendAppointmentReminder('${item.name.replace(/'/g, "\\'")}', '${dateStr}', '${phone || ''}')" title="Send WhatsApp Appointment Reminder">
-            ${PhysioPayments.getWhatsAppIconSVG(20)}
-          </button>
+
+          <!-- Row 2: Session Type on its own dedicated full-width line -->
+          <div class="card-row-therapy">
+            <span class="therapy-pill">🩺 ${item.visit.sessionType || "Physiotherapy Session"}</span>
+          </div>
+
+          <!-- Row 3: Meta info with | separators -->
+          <div class="card-row-meta">
+            <span class="meta-item-highlight">📅 ${dateStr}</span>
+            <span class="meta-sep">|</span>
+            <span class="meta-item">📍 ${item.visit.location || "Clinic"}</span>
+          </div>
         </div>`;
       });
       upcomingDiv.innerHTML = upHtml;
     }
 
-    // Last 5 Sessions
+    // Last 5 Sessions (Tab 2) - Dynamic multi-row stacked architecture
     const sortedVisits = [...visits].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const top5 = sortedVisits.slice(0, 5);
 
@@ -283,20 +324,31 @@ window.PhysioLedger = (function() {
       const isPaid = paid >= fee && fee > 0;
 
       recentHTML += `
-      <div class="card recent-session-card">
-        <div class="recent-session-left">
-          <h4 class="recent-session-name">${v.name}</h4>
-          <div class="recent-session-tags">
-            <span>${dateStr}</span>
-            <span>•</span>
-            <span>${v.location || "Clinic"}</span>
-            <span>•</span>
-            <span class="badge ${isPaid ? 'badge-success' : 'badge-danger'}">${isPaid ? 'Paid' : 'Due: ₹' + (fee - paid)}</span>
-          </div>
+      <div class="card session-item-card">
+        <!-- Row 1: Patient Name & Payment Status Badge -->
+        <div class="card-row-head">
+          <h4 class="card-item-title">${v.name}</h4>
+          <span class="badge ${isPaid ? 'badge-success' : 'badge-danger'}">
+            ${isPaid ? '✓ Paid' : 'Due: ₹' + (fee - paid).toLocaleString('en-IN')}
+          </span>
         </div>
-        <div class="recent-session-type">${v.sessionType || "Regular"}</div>
-        
-        <button class="delete-btn" style="display: ${displayStyle}; position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 13px; cursor: pointer; box-shadow: var(--shadow-md); display: ${displayStyle};" onclick="PhysioLedger.handleDeleteVisit(${v.id})">
+
+        <!-- Row 2: Therapy / Session Type (Full width, can have short or long words, never breaks other rows!) -->
+        <div class="card-row-therapy">
+          <span class="therapy-pill">🩺 ${v.sessionType || "Regular Session"}</span>
+        </div>
+
+        <!-- Row 3: Meta details with clean | separators and tabular alignment -->
+        <div class="card-row-meta">
+          <span class="meta-item">📅 ${dateStr}</span>
+          <span class="meta-sep">|</span>
+          <span class="meta-item">📍 ${v.location || "Clinic"}</span>
+          <span class="meta-sep">|</span>
+          <span class="meta-item">💰 Fee: ₹${fee.toLocaleString('en-IN')}</span>
+        </div>
+
+        <!-- Delete button in edit mode -->
+        <button class="delete-btn" style="display: ${displayStyle}; position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 13px; cursor: pointer; box-shadow: var(--shadow-md);" onclick="PhysioLedger.handleDeleteVisit(${v.id})">
           ✕
         </button>
       </div>`;

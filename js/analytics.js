@@ -1,6 +1,7 @@
 /**
  * Analytics & Business Intelligence Dashboard
  * Reuses Chart.js instances, generates monthly cashflow matrices, and calculates patient pain trajectories
+ * Strict columnar tabular alignment for aged debtors and balances
  */
 
 window.PhysioAnalytics = (function() {
@@ -134,25 +135,39 @@ window.PhysioAnalytics = (function() {
       }
     }
 
-    // Render Aged Debtors Breakdown
+    // Render Aged Debtors Breakdown with Strict Columnar Alignment
     const agedList = document.getElementById('agedDebtorsList');
     if (agedList) {
       const sortedKeys = Object.keys(agedDebtors).sort((a, b) => b.localeCompare(a));
       if (sortedKeys.length === 0) {
-        agedList.innerHTML = '<p style="color:var(--text-muted); font-size:14px;">No outstanding dues for this period.</p>';
+        agedList.innerHTML = '<p style="color:var(--text-muted); font-size:14px; text-align:center; padding:16px;">No outstanding dues for this period.</p>';
       } else {
         let agedHtml = '';
         sortedKeys.forEach(k => {
           const m = agedDebtors[k];
-          agedHtml += `<div class="month-header" style="font-weight:700; color:var(--primary); margin: 16px 0 6px 0; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px;">${m.label}</div>`;
+          let monthTotal = 0;
+          Object.values(m.patients).forEach(st => { monthTotal += st.amount; });
+
+          agedHtml += `
+          <div class="debtors-month-card">
+            <div class="debtors-month-header">
+              <span class="debtors-month-title">📅 ${m.label}</span>
+              <span class="debtors-month-sum">Due: ₹${monthTotal.toLocaleString('en-IN')}</span>
+            </div>
+            <div class="debtors-table-container">`;
+
           Object.keys(m.patients).sort().forEach(pName => {
             const st = m.patients[pName];
             agedHtml += `
-            <div style="display: flex; justify-content: space-between; padding: 6px 0 6px 12px; font-size: 14px; border-bottom: 1px dashed var(--border-subtle);">
-              <span>${pName}</span>
-              <span style="font-weight:700; color:var(--danger);">${st.count} visit${st.count > 1 ? 's' : ''} • ₹${st.amount.toLocaleString('en-IN')}</span>
+            <div class="debtor-table-row">
+              <div class="col-patient-name" title="${pName}">${pName}</div>
+              <div class="col-visit-badge">${st.count} visit${st.count > 1 ? 's' : ''}</div>
+              <div class="col-divider">|</div>
+              <div class="col-due-amount">₹${st.amount.toLocaleString('en-IN')}</div>
             </div>`;
           });
+
+          agedHtml += `</div></div>`;
         });
         agedList.innerHTML = agedHtml;
       }
