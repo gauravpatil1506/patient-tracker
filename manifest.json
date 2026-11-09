@@ -1,15 +1,19 @@
 {
-  "name": "Physio Clinic",
-  "short_name": "Clinic",
+  "name": "Dr. Anjali - Physio Clinic",
+  "short_name": "PhysioClinic",
+  "description": "Clinical Patient Tracker, Treatment Notes & Instant UPI Ledger",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#00796b",
+  "orientation": "portrait",
+  "background_color": "#004d40",
   "theme_color": "#00796b",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2966/2966327.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

@@ -1,0 +1,654 @@
+/**
+ * High-Performance Local-First Persistence Engine
+ * Supports Instant Offline Boot (IndexedDB), Google Sheets Sync, and Native Firebase Firestore Migration
+ */
+
+window.PhysioDB = (function() {
+  const DB_NAME = "PhysioClinicDB";
+  const DB_VERSION = 1;
+  const STORE_VISITS = "visits";
+  const STORE_META = "meta";
+
+  let dbInstance = null;
+  let inMemoryVisits = [];
+  let isSyncing = false;
+  let listeners = [];
+  let firestoreDb = null;
+
+  // Open / Upgrade IndexedDB
+  function openDatabase() {
+    return new Promise((resolve, reject) => {
+      if (dbInstance) return resolve(dbInstance);
+
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onupgradeneeded = function(e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_VISITS)) {
+          const visitStore = db.createObjectStore(STORE_VISITS, { keyPath: "id", autoIncrement: true });
+          visitStore.createIndex("name", "name", { unique: false });
+          visitStore.createIndex("date", "date", { unique: false });
+          visitStore.createIndex("paymentType", "paymentType", { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORE_META)) {
+          db.createObjectStore(STORE_META, { keyPath: "key" });
+        }
+      };
+
+      request.onsuccess = function(e) {
+        dbInstance = e.target.result;
+        resolve(dbInstance);
+      };
+
+      request.onerror = function(e) {
+        console.error("IndexedDB open error:", e);
+        reject(e);
+      };
+    });
+  }
+
+  function sanitizeName(rawName) {
+    if (!rawName) return "";
+    return rawName.toString().trim().replace(/\s+/g, ' ').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+  }
+
+  function parseSheetRow(row, rowIndex) {
+    if (!row || !row[1] || !row[2]) return null;
+    return {
+      timestamp: row[0] ? row[0].toString() : new Date().toISOString(),
+      date: row[1] ? row[1].toString() : "",
+      name: sanitizeName(row[2]),
+      location: row[3] ? row[3].toString().trim() : "",
+      paymentType: row[4] ? row[4].toString().trim() : "Pending",
+      amountPaid: parseFloat(row[5]) || 0,
+      totalFee: parseFloat(row[6]) || 0,
+      painBefore: row[7] !== "" && row[7] != null ? parseInt(row[7], 10) : null,
+      painAfter: row[8] !== "" && row[8] != null ? parseInt(row[8], 10) : null,
+      sessionType: row[9] ? row[9].toString().trim() : "Regular",
+      nextAppt: row[10] ? row[10].toString().trim() : "",
+      notes: row[11] ? row[11].toString().trim() : "",
+      month: row[12] ? row[12].toString().trim() : "",
+      sheetRowIndex: rowIndex
+    };
+  }
+
+  function toSheetRow(visit) {
+    return [
+      visit.timestamp || new Date().toISOString(),
+      visit.date || "",
+      visit.name || "",
+      visit.location || "",
+      visit.paymentType || "Pending",
+      visit.amountPaid != null ? visit.amountPaid : 0,
+      visit.totalFee != null ? visit.totalFee : 0,
+      visit.painBefore != null ? visit.painBefore : "",
+      visit.painAfter != null ? visit.painAfter : "",
+      visit.sessionType || "",
+      visit.nextAppt || "",
+      visit.notes || "",
+      visit.month || ""
+    ];
+  }
+
+  // Active Backend Resolver: 'sheets' or 'firebase'
+  function getActiveBackend() {
+    return localStorage.getItem(PhysioConfig.STORAGE_KEYS.ACTIVE_BACKEND) || (PhysioConfig.FIREBASE_CONFIG ? 'firebase' : 'sheets');
+  }
+
+  function setActiveBackend(backendType) {
+    localStorage.setItem(PhysioConfig.STORAGE_KEYS.ACTIVE_BACKEND, backendType);
+  }
+
+  // Firebase Config & Initialization
+  function getFirebaseConfig() {
+    try {
+      const cfg = localStorage.getItem(PhysioConfig.STORAGE_KEYS.FIREBASE_CONFIG);
+      return cfg ? JSON.parse(cfg) : PhysioConfig.FIREBASE_CONFIG;
+    } catch (e) {
+      return PhysioConfig.FIREBASE_CONFIG;
+    }
+  }
+
+  function initFirebase(config) {
+    if (!config || !config.projectId || typeof firebase === 'undefined') {
+      return false;
+    }
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config);
+      }
+      firestoreDb = firebase.firestore();
+      firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+          console.warn("Firestore offline persistence notice:", err);
+        }
+      });
+      return true;
+    } catch (e) {
+      console.error("Firebase init error:", e);
+      return false;
+    }
+  }
+
+  // Batch Migrate All 288 Records to Firebase Firestore
+  async function migrateAllToFirebase(onProgress) {
+    if (!firestoreDb) {
+      const cfg = getFirebaseConfig();
+      if (!cfg || !initFirebase(cfg)) {
+        throw new Error("Please save a valid Firebase Project configuration first.");
+      }
+    }
+
+    const visits = await getAllVisits();
+    if (visits.length === 0) {
+      throw new Error("No visits available to migrate.");
+    }
+
+    // Step 1: Upload visits in batches (max 400 per batch, Firestore limit is 500)
+    const totalVisits = visits.length;
+    let completed = 0;
+
+    for (let i = 0; i < totalVisits; i += 400) {
+      const batch = firestoreDb.batch();
+      const chunk = visits.slice(i, i + 400);
+
+      chunk.forEach(v => {
+        const docId = `visit_${v.id || i}`;
+        const docRef = firestoreDb.collection("visits").doc(docId);
+        batch.set(docRef, {
+          timestamp: v.timestamp || new Date().toISOString(),
+          date: v.date || "",
+          name: v.name || "",
+          location: v.location || "",
+          paymentType: v.paymentType || "Pending",
+          amountPaid: Number(v.amountPaid) || 0,
+          totalFee: Number(v.totalFee) || 0,
+          painBefore: v.painBefore != null ? Number(v.painBefore) : null,
+          painAfter: v.painAfter != null ? Number(v.painAfter) : null,
+          sessionType: v.sessionType || "Regular",
+          nextAppt: v.nextAppt || "",
+          notes: v.notes || "",
+          month: v.month || "",
+          migratedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      await batch.commit();
+      completed += chunk.length;
+      if (onProgress) onProgress(completed, totalVisits);
+    }
+
+    // Step 2: Aggregate & upload normalized patients collection
+    const patientMap = {};
+    visits.forEach(v => {
+      if (!patientMap[v.name]) {
+        patientMap[v.name] = {
+          name: v.name,
+          location: v.location,
+          sessionCount: 0,
+          totalPaid: 0,
+          totalPending: 0,
+          lastVisitDate: v.date
+        };
+      }
+      patientMap[v.name].sessionCount++;
+      const fee = parseFloat(v.totalFee) || 0;
+      const paid = parseFloat(v.amountPaid) || 0;
+      patientMap[v.name].totalPaid += paid;
+      if (fee > paid) patientMap[v.name].totalPending += (fee - paid);
+      if (new Date(v.date) > new Date(patientMap[v.name].lastVisitDate)) {
+        patientMap[v.name].lastVisitDate = v.date;
+      }
+    });
+
+    const patientBatch = firestoreDb.batch();
+    const phones = getPatientPhones();
+
+    Object.values(patientMap).forEach(p => {
+      const docId = `pat_${encodeURIComponent(p.name).replace(/%/g, '_')}`;
+      const docRef = firestoreDb.collection("patients").doc(docId);
+      patientBatch.set(docRef, {
+        name: p.name,
+        phone: phones[p.name] || "",
+        location: p.location || "",
+        sessionCount: p.sessionCount,
+        totalPaid: p.totalPaid,
+        totalPending: p.totalPending,
+        lastVisitDate: p.lastVisitDate,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    });
+
+    await patientBatch.commit();
+
+    // Activate Firebase as the active backend
+    setActiveBackend('firebase');
+    return { migratedVisits: totalVisits, migratedPatients: Object.keys(patientMap).length };
+  }
+
+  // Seed data from seed-data.json or localStorage cache
+  async function seedInitialData() {
+    const existingCount = await getCount();
+    if (existingCount > 0) {
+      inMemoryVisits = await getAllVisits();
+      checkAndInitFirebase();
+      return inMemoryVisits;
+    }
+
+    let rawRows = null;
+
+    try {
+      const cached = localStorage.getItem('clinicData');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 1) {
+          rawRows = parsed;
+        }
+      }
+    } catch (e) {}
+
+    if (!rawRows) {
+      try {
+        const res = await fetch(PhysioConfig.SEED_DATA_URL);
+        if (res.ok) {
+          rawRows = await res.json();
+        }
+      } catch (e) {
+        console.warn("Could not fetch seed-data.json:", e);
+      }
+    }
+
+    if (rawRows && Array.isArray(rawRows)) {
+      const db = await openDatabase();
+      const tx = db.transaction(STORE_VISITS, "readwrite");
+      const store = tx.objectStore(STORE_VISITS);
+
+      for (let i = 1; i < rawRows.length; i++) {
+        const parsed = parseSheetRow(rawRows[i], i + 1);
+        if (parsed) {
+          store.add(parsed);
+        }
+      }
+
+      await new Promise(res => { tx.oncomplete = res; });
+    }
+
+    inMemoryVisits = await getAllVisits();
+    checkAndInitFirebase();
+    return inMemoryVisits;
+  }
+
+  function checkAndInitFirebase() {
+    const cfg = getFirebaseConfig();
+    if (cfg && cfg.projectId) {
+      initFirebase(cfg);
+    }
+  }
+
+  function getCount() {
+    return new Promise(async resolve => {
+      const db = await openDatabase();
+      const tx = db.transaction(STORE_VISITS, "readonly");
+      const store = tx.objectStore(STORE_VISITS);
+      const countReq = store.count();
+      countReq.onsuccess = () => resolve(countReq.result);
+      countReq.onerror = () => resolve(0);
+    });
+  }
+
+  function getAllVisits() {
+    return new Promise(async resolve => {
+      const db = await openDatabase();
+      const tx = db.transaction(STORE_VISITS, "readonly");
+      const store = tx.objectStore(STORE_VISITS);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        inMemoryVisits = req.result || [];
+        resolve(inMemoryVisits);
+      };
+      req.onerror = () => resolve([]);
+    });
+  }
+
+  function subscribe(fn) {
+    listeners.push(fn);
+  }
+
+  function notify() {
+    listeners.forEach(fn => {
+      try { fn(inMemoryVisits); } catch (e) { console.error(e); }
+    });
+  }
+
+  // Add new visit
+  async function addVisit(visitData) {
+    const cleanRecord = {
+      timestamp: new Date().toISOString(),
+      date: visitData.date,
+      name: sanitizeName(visitData.name),
+      location: (visitData.location || "").trim(),
+      sessionType: (visitData.sessionType || "Regular").trim(),
+      painBefore: visitData.painBefore !== "" && visitData.painBefore != null ? parseInt(visitData.painBefore, 10) : null,
+      painAfter: visitData.painAfter !== "" && visitData.painAfter != null ? parseInt(visitData.painAfter, 10) : null,
+      totalFee: parseFloat(visitData.totalFee) || 0,
+      amountPaid: parseFloat(visitData.amountPaid) || 0,
+      paymentType: visitData.paymentType || "Pending",
+      nextAppt: visitData.nextAppt || "",
+      notes: (visitData.notes || "").trim(),
+      month: visitData.month || "",
+      sheetRowIndex: inMemoryVisits.length + 2,
+      synced: false
+    };
+
+    // 1. Optimistic write to IndexedDB
+    const db = await openDatabase();
+    const id = await new Promise(resolve => {
+      const tx = db.transaction(STORE_VISITS, "readwrite");
+      const store = tx.objectStore(STORE_VISITS);
+      const req = store.add(cleanRecord);
+      req.onsuccess = e => resolve(e.target.result);
+    });
+
+    cleanRecord.id = id;
+    inMemoryVisits.push(cleanRecord);
+    notify();
+
+    // 2. Dispatch to Active Cloud Backend
+    if (getActiveBackend() === 'firebase' && firestoreDb) {
+      firestoreDb.collection("visits").doc(`visit_${id}`).set(cleanRecord).then(() => {
+        markSynced(id);
+      }).catch(err => console.warn("Firestore write queued offline:", err));
+    }
+
+    // Always mirror to Google Sheet for dual redundancy
+    const payload = {
+      action: "addVisit",
+      date: cleanRecord.date,
+      name: cleanRecord.name,
+      location: cleanRecord.location,
+      sessionType: cleanRecord.sessionType,
+      painBefore: cleanRecord.painBefore != null ? cleanRecord.painBefore : "",
+      painAfter: cleanRecord.painAfter != null ? cleanRecord.painAfter : "",
+      totalFee: cleanRecord.totalFee,
+      amountPaid: cleanRecord.amountPaid,
+      paymentType: cleanRecord.paymentType,
+      nextAppt: cleanRecord.nextAppt,
+      notes: cleanRecord.notes,
+      month: cleanRecord.month
+    };
+    dispatchCloudAction(payload, cleanRecord.id);
+
+    return cleanRecord;
+  }
+
+  // Update payment status
+  async function updatePayment(visitId, paymentMethod, fullAmount) {
+    const visit = inMemoryVisits.find(v => v.id === visitId);
+    if (!visit) return false;
+
+    visit.amountPaid = fullAmount;
+    visit.paymentType = paymentMethod;
+    visit.synced = false;
+
+    const db = await openDatabase();
+    const tx = db.transaction(STORE_VISITS, "readwrite");
+    tx.objectStore(STORE_VISITS).put(visit);
+    await new Promise(res => { tx.oncomplete = res; });
+    notify();
+
+    // Update in Firestore
+    if (getActiveBackend() === 'firebase' && firestoreDb) {
+      firestoreDb.collection("visits").doc(`visit_${visitId}`).update({
+        amountPaid: fullAmount,
+        paymentType: paymentMethod,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => markSynced(visitId)).catch(e => console.warn("Firestore payment update queued:", e));
+    }
+
+    // Update in Google Sheet
+    const payload = {
+      action: "updatePayment",
+      rowNumber: visit.sheetRowIndex,
+      newAmountPaid: fullAmount,
+      newPaymentType: paymentMethod,
+      name: visit.name,
+      date: visit.date
+    };
+    dispatchCloudAction(payload, visitId);
+
+    return true;
+  }
+
+  // Delete visit
+  async function deleteVisit(visitId) {
+    const idx = inMemoryVisits.findIndex(v => v.id === visitId);
+    if (idx === -1) return false;
+
+    const visit = inMemoryVisits[idx];
+    const targetRowIndex = visit.sheetRowIndex;
+
+    inMemoryVisits.splice(idx, 1);
+    const db = await openDatabase();
+    const tx = db.transaction(STORE_VISITS, "readwrite");
+    tx.objectStore(STORE_VISITS).delete(visitId);
+    await new Promise(res => { tx.oncomplete = res; });
+    notify();
+
+    if (getActiveBackend() === 'firebase' && firestoreDb) {
+      firestoreDb.collection("visits").doc(`visit_${visitId}`).delete().catch(e => console.warn("Firestore delete queued:", e));
+    }
+
+    const payload = {
+      action: "deleteVisit",
+      rowNumber: targetRowIndex
+    };
+    dispatchCloudAction(payload, null);
+
+    return true;
+  }
+
+  // Update next appointment
+  async function updateNextAppt(patientName, nextApptDate) {
+    const cleanName = sanitizeName(patientName);
+    const patientVisits = inMemoryVisits.filter(v => v.name === cleanName);
+    if (patientVisits.length === 0) return false;
+
+    patientVisits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const latestVisit = patientVisits[0];
+    latestVisit.nextAppt = nextApptDate;
+
+    const db = await openDatabase();
+    const tx = db.transaction(STORE_VISITS, "readwrite");
+    tx.objectStore(STORE_VISITS).put(latestVisit);
+    await new Promise(res => { tx.oncomplete = res; });
+    notify();
+
+    if (getActiveBackend() === 'firebase' && firestoreDb) {
+      firestoreDb.collection("visits").doc(`visit_${latestVisit.id}`).update({
+        nextAppt: nextApptDate
+      }).catch(e => console.warn(e));
+    }
+
+    const payload = {
+      action: "updateNextAppt",
+      name: cleanName,
+      nextAppt: nextApptDate
+    };
+    dispatchCloudAction(payload, latestVisit.id);
+
+    return true;
+  }
+
+  function dispatchCloudAction(payload, entityId) {
+    if (!navigator.onLine) {
+      queueOfflineAction(payload);
+      return;
+    }
+
+    fetch(PhysioConfig.WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "success") {
+        if (entityId) markSynced(entityId);
+      } else {
+        queueOfflineAction(payload);
+      }
+    })
+    .catch(() => {
+      queueOfflineAction(payload);
+    });
+  }
+
+  async function markSynced(id) {
+    const visit = inMemoryVisits.find(v => v.id === id);
+    if (visit) {
+      visit.synced = true;
+      const db = await openDatabase();
+      const tx = db.transaction(STORE_VISITS, "readwrite");
+      tx.objectStore(STORE_VISITS).put(visit);
+    }
+  }
+
+  function queueOfflineAction(payload) {
+    let queue = JSON.parse(localStorage.getItem(PhysioConfig.STORAGE_KEYS.OFFLINE_QUEUE) || "[]");
+    queue.push(payload);
+    localStorage.setItem(PhysioConfig.STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+  }
+
+  async function syncOfflineQueue() {
+    if (!navigator.onLine) return;
+    let queue = JSON.parse(localStorage.getItem(PhysioConfig.STORAGE_KEYS.OFFLINE_QUEUE) || "[]");
+    if (queue.length === 0) return;
+
+    for (let i = 0; i < queue.length; i++) {
+      try {
+        const res = await fetch(PhysioConfig.WEB_APP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(queue[i])
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          queue.splice(i, 1);
+          i--;
+          localStorage.setItem(PhysioConfig.STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+        }
+      } catch (e) {
+        break;
+      }
+    }
+  }
+
+  // Full Background Sync
+  async function syncWithCloud(onStatusChange) {
+    if (isSyncing || !navigator.onLine) return;
+    isSyncing = true;
+    if (onStatusChange) onStatusChange("syncing");
+
+    try {
+      const res = await fetch(PhysioConfig.WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "getInitialData" })
+      });
+
+      const data = await res.json();
+      if (data.status === "success" && Array.isArray(data.data) && data.data.length > 1) {
+        const sheetRows = data.data;
+        const db = await openDatabase();
+        const tx = db.transaction(STORE_VISITS, "readwrite");
+        const store = tx.objectStore(STORE_VISITS);
+
+        store.clear();
+        for (let i = 1; i < sheetRows.length; i++) {
+          const parsed = parseSheetRow(sheetRows[i], i + 1);
+          if (parsed) {
+            parsed.synced = true;
+            store.add(parsed);
+          }
+        }
+
+        await new Promise(res => { tx.oncomplete = res; });
+        inMemoryVisits = await getAllVisits();
+        
+        try { localStorage.setItem('clinicData', JSON.stringify(sheetRows)); } catch(e) {}
+        
+        notify();
+        await syncOfflineQueue();
+        if (onStatusChange) onStatusChange("success");
+      } else {
+        if (onStatusChange) onStatusChange("idle");
+      }
+    } catch (e) {
+      console.warn("Sync failed, operating offline:", e);
+      if (onStatusChange) onStatusChange("offline");
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  function getPatientPhones() {
+    try {
+      return JSON.parse(localStorage.getItem(PhysioConfig.STORAGE_KEYS.CUSTOM_PHONE_MAP) || "{}");
+    } catch(e) { return {}; }
+  }
+
+  function setPatientPhone(patientName, phone) {
+    const phones = getPatientPhones();
+    phones[sanitizeName(patientName)] = phone.trim();
+    localStorage.setItem(PhysioConfig.STORAGE_KEYS.CUSTOM_PHONE_MAP, JSON.stringify(phones));
+  }
+
+  function exportJSONBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(inMemoryVisits, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", `Physio_Tracker_Backup_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function exportCSVBackup() {
+    const headers = ["Timestamp", "Date of Visit", "Patient Name", "Location", "Payment Type", "Amount Paid", "Total Fee", "Pain Before", "Pain After", "Session Type", "Next Appointment Date", "Notes", "Month"];
+    const rows = [headers];
+
+    inMemoryVisits.forEach(v => {
+      rows.push(toSheetRow(v));
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(cell => `"${(cell || "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+    const a = document.createElement('a');
+    a.setAttribute("href", encodeURI(csvContent));
+    a.setAttribute("download", `Physio_Tracker_Export_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  return {
+    init: seedInitialData,
+    getVisits: () => inMemoryVisits,
+    addVisit,
+    updatePayment,
+    deleteVisit,
+    updateNextAppt,
+    syncWithCloud,
+    syncOfflineQueue,
+    subscribe,
+    sanitizeName,
+    getPatientPhones,
+    setPatientPhone,
+    exportJSONBackup,
+    exportCSVBackup,
+    getActiveBackend,
+    setActiveBackend,
+    getFirebaseConfig,
+    initFirebase,
+    migrateAllToFirebase
+  };
+})();

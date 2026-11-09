@@ -1,1422 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dr. Anjali Vishwakarma - Physio Clinic</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00796b">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Dr. Anjali Vishwakarma - Physio Clinic</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
-    <script>
-        const savedTheme = localStorage.getItem('appTheme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    </script>
+  <!-- PWA & Mobile Web App Capabilities -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00796b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
-    <style>
-        :root {
-            --primary: #00796b;      
-            --primary-dark: #004d40;
-            --secondary: #26a69a;
-            --bg-color: #f0f4f8;
-            --card-bg: #ffffff;
-            --text-main: #2d3748;
-            --text-muted: #718096;
-            --border-color: #cbd5e0;
-            --divider-color: #e2e8f0;
-            --input-bg: #f8fafc;
-            --danger: #e53e3e;
-            --success: #38a169;
-            --danger-bg: #fff5f5;
-            --danger-border: #fed7d7;
-            --success-bg: #f0fff4;
-            --success-border: #c6f6d5;
-            --whatsapp: #25D366;
-            color-scheme: light;
-        }
+  <!-- Core Stylesheets -->
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/app.css">
 
-        [data-theme="dark"] {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #e2e8f0;
-            --text-muted: #a0aec0;
-            --border-color: #333333;
-            --divider-color: #2d2d2d;
-            --input-bg: #2d2d2d;
-            --primary-dark: #4fd1c5;
-            --danger-bg: rgba(229, 62, 62, 0.15);
-            --danger-border: rgba(229, 62, 62, 0.3);
-            --success-bg: rgba(56, 161, 105, 0.15);
-            --success-border: rgba(56, 161, 105, 0.3);
-            color-scheme: dark;
-        }
-
-        body, .card, input, select, textarea, .bottom-nav, .dash-card, .chart-wrapper {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
-
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--bg-color); 
-            margin: 0; padding: 0; padding-bottom: 80px; 
-            color: var(--text-main); 
-            overscroll-behavior-y: none;
-        }
-
-        .app-header {
-            background: var(--primary); color: white; padding: 18px 20px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.25rem; font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 100;
-        }
-        
-        .header-controls { position: absolute; right: 15px; display: flex; align-items: center; gap: 12px; }
-        .sync-indicator { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; opacity: 0.9; }
-        .theme-toggle-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; display: flex; line-height: 1; }
-
-        /* LOADING SPINNER CSS */
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .spinner { animation: spin 1s linear infinite; width: 14px; height: 14px; fill: currentColor; }
-
-        .container { padding: 20px; }
-        
-        /* SWIPE ANIMATION CSS */
-        .tab-content { display: none; opacity: 0; transform: translateX(15px); transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .tab-content.active { display: block; opacity: 1; transform: translateX(0); }
-        .tab-content.slide-left { animation: slideLeft 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .tab-content.slide-right { animation: slideRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-
-        .form-group { margin-bottom: 12px; }
-        label { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13px; color: var(--text-main); }
-        input, select, textarea { 
-            width: 100%; padding: 12px; border: 1px solid var(--border-color); 
-            border-radius: 8px; font-size: 15px; box-sizing: border-box; 
-            background: var(--input-bg); color: var(--text-main);
-        }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: var(--card-bg); }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-
-        .patient-select-btn {
-            width: 100%; padding: 12px; border: 1px solid var(--border-color); 
-            border-radius: 8px; font-size: 15px; text-align: left; 
-            background: var(--input-bg); color: var(--text-main); cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .patient-select-btn:after { content: "▼"; font-size: 12px; color: var(--text-muted); }
-
-        .btn-main { 
-            width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; 
-            font-size: 16px; font-weight: 700; margin-top: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: flex; justify-content: center; align-items: center; gap: 8px;
-        }
-        .btn-main:active { background: var(--primary-dark); transform: scale(0.98); }
-        .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
-        
-        .wa-btn {
-            display: flex; justify-content: center; align-items: center;
-            width: 36px; height: 36px; border-radius: 50%;
-            background-color: var(--whatsapp); padding: 0; margin: 0;
-            border: none; flex-shrink: 0; text-decoration: none; cursor: pointer;
-        }
-        .wa-btn svg { width: 20px; height: 20px; fill: white; display: block; margin: 0; padding: 0; }
-
-        .ledger-toggle { display: flex; background: var(--input-bg); border-radius: 8px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--divider-color); }
-        .toggle-btn { flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 6px; color: var(--text-muted); transition: 0.2s; border: none; background: transparent; }
-        .toggle-btn.active-pending { background: var(--card-bg); color: var(--danger); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .toggle-btn.active-received { background: var(--card-bg); color: var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
-        .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--divider-color); }
-        .card h4 { margin: 0 0 8px 0; color: var(--primary-dark); font-size: 18px; }
-        .card p { margin: 4px 0; font-size: 14px; color: var(--text-muted); }
-        
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
-        .badge-pending { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
-        .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
-
-        .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .dash-card { background: var(--card-bg); padding: 14px 10px; border-radius: 12px; text-align: center; border: 1px solid var(--divider-color);}
-        .dash-card h3 { margin: 0; font-size: 18px; color: var(--primary); white-space: nowrap; }
-        .dash-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-        .chart-wrapper { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--divider-color); }
-
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); display: flex; justify-content: space-between;
-            padding: 10px 10px 20px 10px; box-sizing: border-box; box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 1000; border-top: 1px solid var(--divider-color);
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; }
-        .nav-item.active { color: var(--primary); }
-        .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
-        
-        .status-msg { text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px; }
-        .month-header { font-weight: bold; font-size: 16px; color: var(--primary-dark); margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--divider-color); padding-bottom: 4px; }
-        .patient-row { display: flex; justify-content: space-between; padding: 6px 0 6px 15px; font-size: 15px; color: var(--text-main); }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-card { background: var(--card-bg); border-radius: 20px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease; }
-        #qrCanvasContainer { background: white; padding: 12px; border-radius: 12px; display: inline-block; margin: 15px 0; border: 1px solid var(--divider-color); }
-        #qrCanvasContainer img { display: block; margin: 0 auto; }
-
-        .sheet-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; align-items: flex-end; }
-        .sheet { background: var(--bg-color); width: 100%; height: 80vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 -5px 25px rgba(0,0,0,0.1); }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .sheet-header { padding: 18px 20px; border-bottom: 1px solid var(--divider-color); display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-radius: 20px 20px 0 0; }
-        .sheet-header h3 { margin: 0; color: var(--text-main); font-size: 18px; }
-        .sheet-close { font-size: 24px; color: var(--text-muted); background: none; border: none; cursor: pointer; line-height: 1; padding: 0; }
-        .sheet-search-wrap { padding: 12px 20px; background: var(--card-bg); border-bottom: 1px solid var(--divider-color); }
-        .sheet-search-wrap input { width: 100%; padding: 14px; border: 2px solid var(--primary); border-radius: 10px; font-size: 16px; box-sizing: border-box; background: var(--input-bg); color: var(--text-main); outline: none; }
-        .sheet-list { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; }
-        .sheet-item { padding: 16px 0; border-bottom: 1px solid var(--divider-color); font-size: 16px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-        .sheet-item:last-child { border-bottom: none; }
-        .sheet-item.add-new { color: var(--primary); font-weight: bold; }
-    </style>
+  <!-- Self-Hosted High Performance Vendor Libraries (Zero External CDN Latency) -->
+  <script src="vendor/chart.min.js"></script>
+  <script src="vendor/qrcode.min.js"></script>
+  <script src="vendor/firebase-app-compat.js"></script>
+  <script src="vendor/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-    <div class="app-header">
-        Dr. Anjali
-        <div class="header-controls">
-            <span id="syncText" class="sync-indicator"></span>
-            <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()">☀️</button>
+  <!-- Floating Toast Notifications -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- PATIENT STANDALONE INVOICE PORTAL MOUNT (Activated via ?invoice=TOKEN) -->
+  <div id="patientInvoiceMount" class="patient-invoice-shell" style="display: none;"></div>
+
+  <!-- MAIN DOCTOR CLINIC APPLICATION SHELL -->
+  <div id="doctorAppView">
+    
+    <!-- Top Sticky Header -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-4H7v-2h4V7h2v4h4v2h-4v3z"/></svg>
         </div>
-    </div>
+        <div class="brand-name">Dr. Anjali</div>
+      </div>
+      <div class="header-actions">
+        <span id="syncIndicator" class="sync-pill"></span>
+        <button class="btn-icon-header" onclick="PhysioApp.openSettingsModal()" title="Database & Cloud Migration">⚙️</button>
+        <button id="themeToggleBtn" class="btn-icon-header" onclick="PhysioApp.toggleTheme()" title="Toggle Theme">☀️</button>
+      </div>
+    </header>
 
-    <!-- TAB 1: NEW VISIT -->
-    <div id="tab1" class="tab-content active container">
-        <form id="entryForm">
-            <div class="card" style="padding: 16px;">
-                <div class="form-group">
-                    <label>Patient Name</label>
-                    <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="openPatientModal('tab1')">🔍 Search or enter new...</button>
-                    <input type="hidden" id="name" required>
-                </div>
-                
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label>Date of Visit</label>
-                        <input type="date" id="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Location (City)</label>
-                        <input type="text" id="location" required>
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label>Session Type</label>
-                        <input type="text" id="sessionType" required placeholder="e.g., Manual...">
-                    </div>
-                    <div class="form-group">
-                        <label>Next Appt (Opt)</label>
-                        <input type="date" id="nextAppt">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label>Pain Before (1-10)</label>
-                        <input type="number" id="painBefore" min="1" max="10">
-                    </div>
-                    <div class="form-group">
-                        <label>Pain After (1-10)</label>
-                        <input type="number" id="painAfter" min="1" max="10">
-                    </div>
-                </div>
-
-                <div class="grid-3">
-                    <div class="form-group">
-                        <label>Total (₹)</label>
-                        <input type="number" id="totalFee" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Paid (₹)</label>
-                        <input type="number" id="amountPaid" value="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Method</label>
-                        <select id="paymentType" style="padding: 11px 8px;">
-                            <option value="Cash">Cash</option>
-                            <option value="Online">Online</option>
-                            <option value="Pending">Unpaid</option>
-                            <option value="Closed">Closed</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 8px;">
-                    <label>Treatment Notes</label>
-                    <textarea id="notes" rows="4" placeholder="Enter clinical observations..."></textarea>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-main" id="submitBtn">Save Session Record</button>
-            <div id="statusMsg" class="status-msg"></div>
-        </form>
-    </div>
-
-    <!-- TAB 2: RECENT & UPCOMING -->
-    <div id="tab2" class="tab-content container">
-        <h3 style="margin-top:0; color: var(--primary-dark);">Upcoming Appointments</h3>
-        <div id="upcomingList" style="margin-bottom: 25px;"></div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin:0; color: var(--primary-dark);">Last 5 Sessions</h3>
-            <button id="btnEditRecent" onclick="toggleDeleteMode()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px;">✏️</button>
+    <!-- ========================================== -->
+    <!-- TAB 1: NEW VISIT CLINICAL ENTRY            -->
+    <!-- ========================================== -->
+    <main id="tab1" class="tab-content active container">
+      <!-- 1-Tap Recent Patients Quick-Bar -->
+      <div class="quick-patients-bar">
+        <div class="quick-patients-label">
+          <span>⚡ Quick Select Recent Patient:</span>
         </div>
-        <div id="recentList"></div>
-    </div>
+        <div id="quickPatientsList" class="quick-patients-scroll"></div>
+      </div>
 
-    <!-- TAB 3: PAYMENTS (LEDGER) -->
-    <div id="tab3" class="tab-content container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin:0; color: var(--primary-dark);">Ledger</h3>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <div id="ledgerSummary" style="background: var(--danger); color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: none; white-space: nowrap; line-height: 1;"></div>
-                <button id="waReminderBtn" class="wa-btn" style="display: none;" onclick="sendWhatsAppReminder()" title="Send WhatsApp Invoice">
-                    <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <div class="ledger-toggle">
-            <button id="btnTogglePending" class="toggle-btn active-pending" onclick="switchLedgerView('pending')">🔴 Pending Dues</button>
-            <button id="btnToggleReceived" class="toggle-btn" onclick="switchLedgerView('received')">🟢 Payments Received</button>
-        </div>
-        
-        <div class="card" style="padding: 12px; margin-bottom: 15px;">
-            <label style="margin-bottom: 4px;">Filter by Patient</label>
-            <button type="button" class="patient-select-btn" id="btnTab3Patient" onclick="openPatientModal('tab3')">📋 All Patients</button>
-            <input type="hidden" id="ledgerPatientSelect" value="">
-        </div>
-        
-        <div id="groupedActionBar" style="display: none; margin-bottom: 15px;">
-            <button id="groupedQrBtn" class="btn-main" style="background: #2b6cb0; margin-top: 0; padding: 12px;">📷 Show Grouped UPI QR</button>
-        </div>
-
-        <div id="pendingList"></div>
-        <div id="receivedList" style="display: none;"></div>
-    </div>
-
-    <!-- TAB 4: HISTORY (RECORDS) -->
-    <div id="tab4" class="tab-content container">
-        <h3 style="margin-top:0; color: var(--primary-dark);">Clinical Records</h3>
+      <form id="entryForm" onsubmit="PhysioClinical.handleEntryFormSubmit(event)">
         <div class="card">
-            <label>Select Patient</label>
-            <button type="button" class="patient-select-btn" id="btnTab4Patient" onclick="openPatientModal('tab4')">👤 Choose a Patient...</button>
-            <input type="hidden" id="patientSelect" value="">
-        </div>
-        
-        <div class="card" id="scheduleCard" style="display: none; border-left: 4px solid var(--primary);">
-            <h4 style="margin-bottom: 10px;">Schedule Next Visit</h4>
-            <div style="display: flex; gap: 10px;">
-                <input type="date" id="newNextApptDate" style="flex: 1; margin-bottom: 0;">
-                <button class="btn-main" style="margin-top: 0; padding: 10px 20px; width: auto;" onclick="saveNextAppt()">Save</button>
+          <!-- Patient Selection -->
+          <div class="form-group">
+            <label>Patient Name *</label>
+            <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="PhysioApp.openPatientModal('tab1')">🔍 Search or enter new...</button>
+            <input type="hidden" id="name" required>
+          </div>
+
+          <!-- Phone Number for Direct 1-Tap WhatsApp -->
+          <div class="form-group">
+            <label>Patient Phone Number (Optional - for 1-Tap WhatsApp)</label>
+            <input type="tel" id="patientPhone" placeholder="e.g. 9876543210">
+          </div>
+
+          <!-- Date & Location -->
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Date of Visit *</label>
+              <input type="date" id="date" required>
             </div>
-            <div id="apptStatusMsg" class="status-msg" style="margin-top: 8px; font-size: 12px; text-align: left;"></div>
-        </div>
-
-        <div id="historyTimeline"></div>
-    </div>
-
-    <!-- TAB 5: INSIGHTS DASHBOARD -->
-    <div id="tab5" class="tab-content container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-            <h3 style="margin:0; color: var(--primary-dark);">Business Insights</h3>
-            <select id="dashYearFilter" onchange="renderDashboard()" style="width: auto; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px; background: var(--input-bg); color: var(--text-main);">
-                <option value="All">All-Time</option>
-            </select>
-        </div>
-        
-        <div class="dash-grid">
-            <div class="dash-card"><h3 id="dashBilled">₹0</h3><span>Total Billed</span></div>
-            <div class="dash-card"><h3 id="dashCollected" style="color: var(--success);">₹0</h3><span>Collected</span></div>
-            <div class="dash-card"><h3 id="dashPending" style="color: var(--danger);">₹0</h3><span>Pending</span></div>
-        </div>
-
-        <div class="chart-wrapper"><canvas id="cashflowChart"></canvas></div>
-
-        <h3 style="margin-top:25px; color: var(--primary-dark);">Patient Performance</h3>
-        <div class="card">
-            <label>Select Patient</label>
-            <button type="button" class="patient-select-btn" id="btnTab5Patient" onclick="openPatientModal('tab5')">👤 Select Patient...</button>
-            <input type="hidden" id="analyticsPatientSelect" value="">
-            
-            <div id="patientAnalyticsData" style="display: none; margin-top: 15px; border-top: 1px solid var(--divider-color); padding-top: 15px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: var(--text-muted);">Total Sessions:</span><strong id="patTotalSessions">0</strong></div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: var(--text-muted);">Total Paid:</span><strong id="patTotalSpent" style="color: var(--success);">₹0</strong></div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><span style="color: var(--text-muted);">Current Pending:</span><strong id="patTotalPending" style="color: var(--danger);">₹0</strong></div>
-                <div style="border-top: 1px solid var(--divider-color); padding-top: 15px;"><canvas id="painChart"></canvas></div>
+            <div class="form-group">
+              <label>Location (City) *</label>
+              <input type="text" id="location" required placeholder="e.g. Borivali">
             </div>
-        </div>
+          </div>
 
-        <div id="agedDebtorsContainer" style="margin-top: 25px;">
-            <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Pending Balance Breakdown</h3>
-            <div id="agedDebtorsList"></div>
-        </div>
-    </div>
-
-    <!-- GLOBAL SLIDE-UP SEARCH MODAL -->
-    <div id="patientSearchModal" class="sheet-overlay" onclick="closePatientModal()">
-        <div class="sheet" onclick="event.stopPropagation()">
-            <div class="sheet-header">
-                <h3>Select Patient</h3>
-                <button class="sheet-close" onclick="closePatientModal()">&times;</button>
+          <!-- Session & Next Appointment -->
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Session Type *</label>
+              <input type="text" id="sessionType" required placeholder="e.g. Regular, Manual...">
             </div>
-            <div class="sheet-search-wrap">
-                <input type="text" id="modalSearchInput" placeholder="🔍 Search name..." onkeyup="renderModalList(this.value)" autocomplete="off">
+            <div class="form-group">
+              <label>Next Appt (Optional)</label>
+              <input type="date" id="nextAppt">
             </div>
-            <div class="sheet-list" id="modalPatientList"></div>
+          </div>
+
+          <!-- Ergonomic Pain Scale Selectors (1-10) -->
+          <div class="pain-selector-wrap">
+            <label>Pain Level Before Session (1 = Mild, 10 = Severe)</label>
+            <div id="painBeforeChips" class="pain-chips-row"></div>
+            <input type="hidden" id="painBefore">
+          </div>
+
+          <div class="pain-selector-wrap">
+            <label>Pain Level After Session (1 = Mild, 10 = Severe)</label>
+            <div id="painAfterChips" class="pain-chips-row"></div>
+            <input type="hidden" id="painAfter">
+          </div>
+
+          <!-- Financial Breakdown -->
+          <div class="grid-3">
+            <div class="form-group">
+              <label>Total Fee (₹) *</label>
+              <input type="number" id="totalFee" required placeholder="1000">
+            </div>
+            <div class="form-group">
+              <label>Paid (₹) *</label>
+              <input type="number" id="amountPaid" value="0" required>
+            </div>
+            <div class="form-group">
+              <label>Payment Method *</label>
+              <select id="paymentType">
+                <option value="Online">Online / UPI</option>
+                <option value="Cash">Cash</option>
+                <option value="Pending">Unpaid (Pending)</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Clinical Observations -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Treatment Notes</label>
+            <textarea id="notes" rows="3" placeholder="Enter clinical observations, exercises performed, ROM improvements..."></textarea>
+          </div>
         </div>
+
+        <button type="submit" class="btn-main" id="submitBtn">Save Session Record</button>
+      </form>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: RECENT SESSIONS & UPCOMING          -->
+    <!-- ========================================== -->
+    <main id="tab2" class="tab-content container">
+      <h3 style="margin-top:0; color:var(--primary); font-size:1.15rem;">Upcoming Appointments</h3>
+      <div id="upcomingList" style="margin-bottom: 24px;"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+        <h3 style="margin:0; color:var(--primary); font-size:1.15rem;">Last 5 Treatment Sessions</h3>
+        <button id="btnEditRecent" onclick="PhysioLedger.toggleDeleteMode()" style="background:none; border:none; font-size:18px; cursor:pointer; padding:4px;">✏️</button>
+      </div>
+      <div id="recentList"></div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: LEDGER & FINANCIAL COLLECTION       -->
+    <!-- ========================================== -->
+    <main id="tab3" class="tab-content container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
+        <h3 style="margin:0; color:var(--primary); font-size:1.15rem;">Clinic Ledger</h3>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div id="ledgerSummary" style="background:var(--danger); color:white; padding:6px 12px; border-radius:20px; font-weight:700; font-size:13px; display:none; white-space:nowrap;"></div>
+          <button id="waReminderBtn" class="wa-btn" style="display:none;" onclick="PhysioLedger.dispatchWhatsAppReminder()" title="Send WhatsApp Invoice Link">
+            <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Toggle -->
+      <div class="segmented-control">
+        <button id="btnTogglePending" class="segment-btn active-pending" onclick="PhysioLedger.switchLedgerView('pending')">🔴 Pending Dues</button>
+        <button id="btnToggleReceived" class="segment-btn" onclick="PhysioLedger.switchLedgerView('received')">🟢 Payments Received</button>
+      </div>
+
+      <!-- Patient Filter -->
+      <div class="card" style="padding:12px; margin-bottom:14px;">
+        <label>Filter by Patient</label>
+        <button type="button" class="patient-select-btn" id="btnTab3Patient" onclick="PhysioApp.openPatientModal('tab3')">📋 All Patients</button>
+        <input type="hidden" id="ledgerPatientSelect" value="">
+      </div>
+
+      <!-- Grouped Combined QR Action Bar -->
+      <div id="groupedActionBar" style="display:none; margin-bottom:14px;">
+        <button id="groupedQrBtn" class="btn-main" style="background:#2563eb; padding:12px;">📷 Show Combined UPI QR</button>
+      </div>
+
+      <div id="pendingList"></div>
+      <div id="receivedList" style="display:none;"></div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: CLINICAL RECORDS (PATIENT TIMELINE) -->
+    <!-- ========================================== -->
+    <main id="tab4" class="tab-content container">
+      <h3 style="margin-top:0; color:var(--primary); font-size:1.15rem;">Patient Clinical History</h3>
+      <div class="card">
+        <label>Select Patient</label>
+        <button type="button" class="patient-select-btn" id="btnTab4Patient" onclick="PhysioApp.openPatientModal('tab4')">👤 Choose a Patient...</button>
+        <input type="hidden" id="patientSelect" value="">
+      </div>
+
+      <!-- Schedule Next Visit Card -->
+      <div class="card" id="scheduleCard" style="display:none; border-left:4px solid var(--primary);">
+        <h4 style="margin:0 0 10px 0; font-size:15px; color:var(--text-main);">Schedule Next Visit</h4>
+        <div style="display:flex; gap:10px;">
+          <input type="date" id="newNextApptDate" style="flex:1;">
+          <button class="btn-main" style="width:auto; padding:10px 20px;" onclick="PhysioClinical.saveNextAppt()">Save</button>
+        </div>
+        <div id="apptStatusMsg" style="margin-top:8px; font-size:12px;"></div>
+      </div>
+
+      <div id="historyTimeline"></div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: BUSINESS INSIGHTS & ANALYTICS       -->
+    <!-- ========================================== -->
+    <main id="tab5" class="tab-content container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0; color:var(--primary); font-size:1.15rem;">Practice Intelligence</h3>
+        <select id="dashYearFilter" onchange="PhysioAnalytics.renderDashboard()" style="width:auto; padding:6px 12px; font-size:13px;">
+          <option value="All">All-Time</option>
+        </select>
+      </div>
+
+      <div class="dash-grid">
+        <div class="dash-card">
+          <h3 id="dashBilled">₹0</h3>
+          <span>Total Billed</span>
+        </div>
+        <div class="dash-card">
+          <h3 id="dashCollected" style="color:var(--success);">₹0</h3>
+          <span>Collected</span>
+        </div>
+        <div class="dash-card">
+          <h3 id="dashPending" style="color:var(--danger);">₹0</h3>
+          <span>Pending</span>
+        </div>
+      </div>
+
+      <!-- Monthly Cashflow Matrix Chart -->
+      <div class="chart-wrapper">
+        <canvas id="cashflowChart"></canvas>
+      </div>
+
+      <!-- Individual Patient Recovery Trajectory -->
+      <h3 style="margin-top:24px; color:var(--primary); font-size:1.15rem;">Patient Progress Analytics</h3>
+      <div class="card">
+        <label>Select Patient</label>
+        <button type="button" class="patient-select-btn" id="btnTab5Patient" onclick="PhysioApp.openPatientModal('tab5')">👤 Select Patient...</button>
+        <input type="hidden" id="analyticsPatientSelect" value="">
+
+        <div id="patientAnalyticsData" style="display:none; margin-top:16px; border-top:1px solid var(--border-subtle); padding-top:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
+            <span style="color:var(--text-muted);">Total Sessions:</span>
+            <strong id="patTotalSessions">0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
+            <span style="color:var(--text-muted);">Total Paid:</span>
+            <strong id="patTotalSpent" style="color:var(--success);">₹0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:14px; font-size:14px;">
+            <span style="color:var(--text-muted);">Current Pending:</span>
+            <strong id="patTotalPending" style="color:var(--danger);">₹0</strong>
+          </div>
+
+          <div style="border-top:1px solid var(--border-subtle); padding-top:16px;">
+            <canvas id="painChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aged Debtors Breakdown -->
+      <div id="agedDebtorsContainer" style="margin-top:24px;">
+        <h3 style="color:var(--primary); margin-bottom:10px; font-size:1.15rem;">Pending Balances by Month</h3>
+        <div id="agedDebtorsList"></div>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" id="nav-tab1" onclick="PhysioApp.switchTab('tab1')">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+        New Visit
+      </div>
+      <div class="nav-item" id="nav-tab2" onclick="PhysioApp.switchTab('tab2')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        Recent
+      </div>
+      <div class="nav-item" id="nav-tab3" onclick="PhysioApp.switchTab('tab3')">
+        <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+        Ledger
+      </div>
+      <div class="nav-item" id="nav-tab4" onclick="PhysioApp.switchTab('tab4')">
+        <svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg>
+        Records
+      </div>
+      <div class="nav-item" id="nav-tab5" onclick="PhysioApp.switchTab('tab5')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Insights
+      </div>
+    </nav>
+
+    <!-- Global Slide-Up Patient Search Drawer -->
+    <div id="patientSearchModal" class="sheet-overlay" onclick="PhysioApp.closePatientModal()">
+      <div class="sheet" onclick="event.stopPropagation()">
+        <div class="sheet-header">
+          <h3>Select Patient</h3>
+          <button class="sheet-close" onclick="PhysioApp.closePatientModal()">&times;</button>
+        </div>
+        <div class="sheet-search-wrap">
+          <input type="text" id="modalSearchInput" placeholder="🔍 Type patient name..." onkeyup="PhysioApp.renderModalList(this.value)" autocomplete="off">
+        </div>
+        <div class="sheet-list" id="modalPatientList"></div>
+      </div>
     </div>
 
-    <!-- IN-APP UPI QR MODAL -->
-    <div id="qrModal" class="modal-overlay" onclick="closeQRModal(event)">
-        <div class="modal-card" onclick="event.stopPropagation()">
-            <h3 style="margin: 0; color: var(--primary-dark);" id="qrModalTitle">Scan & Pay</h3>
-            <div id="qrModalSub" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Dr. Anjali Vishwakarma</div>
-            <div id="qrModalAmount" style="font-size: 26px; font-weight: 800; color: var(--primary); margin-top: 10px;">₹0</div>
-            <div id="qrCanvasContainer"></div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Scan using Google Pay, PhonePe, Paytm, or BHIM</div>
-            <button class="btn-main" style="margin-top: 0; padding: 12px; background: var(--text-muted);" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
+    <!-- In-App Dynamic UPI QR Code Modal -->
+    <div id="qrModal" class="modal-overlay" onclick="PhysioPayments.closeQRModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3 id="qrModalTitle" style="margin:0 0 4px 0; color:var(--primary); font-size:18px;">Scan & Pay</h3>
+        <div id="qrModalSub" style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">Physiotherapy Session</div>
+        <div id="qrModalAmount" style="font-size:28px; font-weight:800; color:var(--primary); margin-bottom:12px;">₹0</div>
+        
+        <div id="qrCanvasContainer"></div>
+
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+          Scan with Google Pay, PhonePe, Paytm, or BHIM
         </div>
+        
+        <div style="display:flex; gap:10px;">
+          <button class="btn-main btn-secondary" style="margin:0;" onclick="PhysioApp.copyUPI()">📋 Copy UPI</button>
+          <button class="btn-main" style="margin:0; background:var(--text-muted);" onclick="PhysioPayments.closeQRModal()">Close</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Native App Bottom Navigation -->
-    <div class="bottom-nav">
-        <div class="nav-item active" id="nav-tab1" onclick="switchTab('tab1')">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-            New
+    <!-- Database, Settings & Firebase Migration Modal -->
+    <div id="settingsModal" class="modal-overlay" onclick="PhysioApp.closeSettingsModal()">
+      <div class="modal-card" style="text-align:left; max-width:440px; max-height:85vh; overflow-y:auto;" onclick="event.stopPropagation()">
+        <h3 style="margin:0 0 8px 0; color:var(--primary);">Database & Cloud Storage</h3>
+        
+        <div style="background:var(--bg-input); padding:10px 14px; border-radius:var(--radius-md); margin-bottom:14px; border:1px solid var(--border-subtle);">
+          <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Active Cloud Backend:</div>
+          <div id="backendStatusBadge" style="font-size:14px; margin-top:4px;"></div>
         </div>
-        <div class="nav-item" id="nav-tab2" onclick="switchTab('tab2')">
-            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-            Recent
+
+        <!-- Firebase Firestore Migration Engine -->
+        <div style="border-top:1px solid var(--border-subtle); padding-top:14px; margin-bottom:14px;">
+          <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-main);">🔥 Migrate to Firebase Firestore (Free Tier)</h4>
+          <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0; line-height:1.4;">
+            Paste your Firebase Web App configuration JSON from your Firebase Console.
+          </p>
+          <textarea id="firebaseConfigInput" rows="4" style="font-family:monospace; font-size:12px;" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "physio.firebaseapp.com",
+  "projectId": "physio-clinic-123",
+  "storageBucket": "physio.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:12345:web:abcdef"
+}'></textarea>
+          
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn-main btn-secondary" style="padding:8px 12px; font-size:13px;" onclick="PhysioApp.handleSaveFirebaseConfig()">Save Config</button>
+            <button class="btn-main" id="btnStartMigration" style="padding:8px 12px; font-size:13px; background:#f97316;" onclick="PhysioApp.handleStartFirebaseMigration()">
+              🔥 Migrate 288 Records to Firestore
+            </button>
+          </div>
         </div>
-        <div class="nav-item" id="nav-tab3" onclick="switchTab('tab3')">
-            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-            Ledger
+
+        <!-- Backend Switcher -->
+        <div style="border-top:1px solid var(--border-subtle); padding-top:12px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Backend Mode Switch:</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-main btn-secondary" style="padding:8px; font-size:12px;" onclick="PhysioApp.handleSwitchBackend('sheets')">Use Google Sheets</button>
+            <button class="btn-main btn-secondary" style="padding:8px; font-size:12px;" onclick="PhysioApp.handleSwitchBackend('firebase')">Use Firebase</button>
+          </div>
         </div>
-        <div class="nav-item" id="nav-tab4" onclick="switchTab('tab4')">
-            <svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg>
-            Records
+
+        <!-- Backup & Force Sync Actions -->
+        <div style="border-top:1px solid var(--border-subtle); padding-top:12px; display:flex; flex-direction:column; gap:8px;">
+          <button class="btn-main" style="background:#0284c7; padding:10px; font-size:13px;" onclick="PhysioDB.exportJSONBackup()">
+            💾 Export Full JSON Backup
+          </button>
+          <button class="btn-main btn-secondary" style="padding:10px; font-size:13px;" onclick="PhysioDB.exportCSVBackup()">
+            📊 Export CSV Spreadsheet
+          </button>
+          <button class="btn-main" style="background:var(--success); padding:10px; font-size:13px;" onclick="PhysioDB.syncWithCloud(); PhysioApp.closeSettingsModal(); PhysioApp.showToast('Syncing with Cloud...', 'info');">
+            🔄 Force Re-Sync with Cloud
+          </button>
         </div>
-        <div class="nav-item" id="nav-tab5" onclick="switchTab('tab5')">
-            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            Insights
-        </div>
+
+        <button class="btn-main" style="background:var(--text-muted); margin-top:14px; padding:10px;" onclick="PhysioApp.closeSettingsModal()">Close</button>
+      </div>
     </div>
 
-    <script>
-        // =======================================================
-        // 🚨 CONFIGURE YOUR PARAMETERS BELOW
-        // =======================================================
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec";
-        const CLINIC_UPI_ID = "dranjalivish@axl"; 
-        const CLINIC_PAYEE_NAME = "Anjali Vishwakarma";
-        // =======================================================
-        
-        let allSheetData = []; 
-        let globalPatientList = []; 
-        let patientIndex = {}; 
-        let currentModalContext = ''; 
-        
-        let cashflowChartInstance = null;
-        let painChartInstance = null;
-        let currentPendingSessionsForWA = [];
-        let isSyncing = false;
-        let isSubmittingForm = false; // The absolute form lock
-        
-        let currentLedgerFilter = "";
-        let loadedOlderClicks = 0;
-        let deleteMode = false; // Tracks if Tab 2 is in delete state
-        
-        const tabOrder = ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
-        
-        // LOADING SPINNER SVG
-        const loadingIcon = `<svg class="spinner" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>`;
-
-        window.onload = function() { 
-            document.getElementById('date').valueAsDate = new Date();
-            updateThemeIcon(savedTheme); updateChartColors(savedTheme);
-
-            try {
-                const cachedData = localStorage.getItem('clinicData');
-                if (cachedData) {
-                    allSheetData = JSON.parse(cachedData);
-                    buildMemoryIndex();
-                    updateGlobalPatientList();
-                    const activeTabId = document.querySelector('.tab-content.active').id;
-                    renderCurrentTab(activeTabId);
-                }
-            } catch (e) {}
-
-            syncWithDatabase(); 
-            initSwipeGestures();
-            
-            window.addEventListener('online', syncOfflineQueue);
-        };
-
-        function sanitizeName(rawName) {
-            if (!rawName) return "";
-            return rawName.trim().replace(/\s+/g, ' ').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
-        }
-
-        function buildMemoryIndex() {
-            patientIndex = {};
-            for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i];
-                if(!row || !row[2]) continue;
-                const name = sanitizeName(row[2].toString());
-                if(!patientIndex[name]) patientIndex[name] = [];
-                patientIndex[name].push({row: row, index: i});
-            }
-        }
-
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('appTheme', newTheme);
-            updateThemeIcon(newTheme); updateChartColors(newTheme);
-            if (document.getElementById('tab5').classList.contains('active')) { renderDashboard(); showPatientAnalytics(); }
-        }
-        function updateThemeIcon(theme) { document.getElementById('themeToggleBtn').innerText = theme === 'dark' ? '☀️' : '🌙'; }
-        function updateChartColors(theme) {
-            Chart.defaults.color = theme === 'dark' ? '#a0aec0' : '#718096';
-            Chart.defaults.borderColor = theme === 'dark' ? '#333333' : '#e2e8f0';
-        }
-
-        function formatApptDate(dateObj) {
-            if(isNaN(dateObj)) return "";
-            const d = dateObj.getDate().toString().padStart(2, '0');
-            const m = dateObj.toLocaleString('en-IN', { month: 'short' });
-            const y = dateObj.getFullYear().toString().slice(-2);
-            const day = dateObj.toLocaleString('en-IN', { weekday: 'long' });
-            return `${d}-${m}-${y} | ${day}`; 
-        }
-
-        function initSwipeGestures() {
-            let touchStartX = 0; let touchStartY = 0;
-            document.addEventListener('touchstart', e => { 
-                touchStartX = e.changedTouches[0].screenX; 
-                touchStartY = e.changedTouches[0].screenY; 
-            }, {passive: true});
-            
-            document.addEventListener('touchend', e => {
-                if(document.getElementById('patientSearchModal').style.display === 'flex' || document.getElementById('qrModal').style.display === 'flex') return;
-                
-                const touchEndX = e.changedTouches[0].screenX; 
-                const touchEndY = e.changedTouches[0].screenY;
-                const xDiff = touchStartX - touchEndX; 
-                const yDiff = Math.abs(touchStartY - touchEndY);
-                
-                if (yDiff > Math.abs(xDiff) || Math.abs(xDiff) < 60) return;
-                
-                const activeTabId = document.querySelector('.tab-content.active').id;
-                let currentIndex = tabOrder.indexOf(activeTabId);
-                
-                if (xDiff > 0 && currentIndex < tabOrder.length - 1) { switchTab(tabOrder[currentIndex + 1], 'right'); } 
-                else if (xDiff < 0 && currentIndex > 0) { switchTab(tabOrder[currentIndex - 1], 'left'); }
-            }, {passive: true});
-        }
-
-        function switchTab(tabId, direction = 'fade') {
-            window.scrollTo(0, 0);
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active', 'slide-left', 'slide-right');
-            });
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            
-            const newTab = document.getElementById(tabId);
-            newTab.classList.add('active');
-            
-            if (direction === 'left') newTab.classList.add('slide-left');
-            if (direction === 'right') newTab.classList.add('slide-right');
-            
-            document.getElementById('nav-' + tabId).classList.add('active');
-            renderCurrentTab(tabId);
-        }
-
-        function syncOfflineQueue() {
-            let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-            if (queue.length === 0) return;
-            
-            const syncText = document.getElementById('syncText');
-            syncText.innerHTML = loadingIcon + " Syncing queue..."; syncText.style.color = "white";
-            
-            let successfulSyncs = 0;
-            
-            queue.forEach((payload, index) => {
-                fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-                .then(res => res.json()).then(data => {
-                    if(data.status === 'success') {
-                        successfulSyncs++;
-                        if (successfulSyncs === queue.length) {
-                            localStorage.removeItem('offlineQueue');
-                            syncWithDatabase(); 
-                        }
-                    }
-                }).catch(e => console.log("Offline sync retry failed."));
-            });
-        }
-
-        function syncWithDatabase(callback) {
-            if (isSyncing) return;
-            isSyncing = true;
-            
-            const syncText = document.getElementById('syncText');
-            if (!navigator.onLine) {
-                isSyncing = false;
-                syncText.innerText = "⚠️ Offline"; syncText.style.color = "var(--danger)";
-                if(callback) callback();
-                return;
-            }
-            
-            syncText.innerHTML = loadingIcon + " Syncing..."; syncText.style.color = "white";
-            
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getInitialData" }) })
-            .then(res => res.json()).then(data => {
-                isSyncing = false;
-                if(data.status === 'success') {
-                    allSheetData = data.data;
-                    buildMemoryIndex(); 
-                    try { localStorage.setItem('clinicData', JSON.stringify(allSheetData)); } catch (e) {}
-                    updateGlobalPatientList(); syncText.innerText = "";
-                    renderCurrentTab(document.querySelector('.tab-content.active').id);
-                    syncOfflineQueue(); 
-                    if(callback) callback(); 
-                }
-            }).catch(e => {
-                isSyncing = false;
-                if (allSheetData.length <= 1) { syncText.innerText = "⚠️ Offline"; syncText.style.color = "var(--danger)"; } 
-                else { syncText.innerText = ""; }
-                if(callback) callback();
-            });
-        }
-
-        function updateGlobalPatientList() {
-            let names = new Set(); 
-            let years = new Set();
-            
-            for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i]; if(!row) continue;
-                if(row[2]) { names.add(sanitizeName(row[2].toString())); }
-                if(row[1]) {
-                    const d = new Date(row[1]);
-                    if(!isNaN(d)) years.add(d.getFullYear());
-                }
-            }
-            globalPatientList = Array.from(names).sort();
-
-            const yearFilter = document.getElementById('dashYearFilter');
-            const savedYear = yearFilter.value;
-            yearFilter.innerHTML = '<option value="All">All-Time</option>';
-            Array.from(years).sort((a,b)=>b-a).forEach(y => { yearFilter.appendChild(new Option(y, y)); });
-            if(savedYear && Array.from(years).includes(parseInt(savedYear))) yearFilter.value = savedYear;
-        }
-
-        function openPatientModal(contextTabId) {
-            currentModalContext = contextTabId;
-            document.getElementById('patientSearchModal').style.display = 'flex';
-            
-            const searchInput = document.getElementById('modalSearchInput');
-            searchInput.value = '';
-            renderModalList('');
-            
-            setTimeout(() => { searchInput.focus(); }, 100); 
-        }
-
-        function closePatientModal() {
-            document.getElementById('patientSearchModal').style.display = 'none';
-        }
-
-        function renderModalList(query) {
-            const listDiv = document.getElementById('modalPatientList');
-            let html = '';
-            
-            const safeQuery = sanitizeName(query);
-            const filteredNames = globalPatientList.filter(name => name.toLowerCase().includes(safeQuery.toLowerCase()));
-
-            if (currentModalContext === 'tab3') {
-                html += `<div class="sheet-item" onclick="selectFromModal('All Patients')"><strong>📋 Show All Patients</strong></div>`;
-            }
-            
-            if (currentModalContext === 'tab1' && safeQuery !== '') {
-                const exactMatch = filteredNames.find(n => n.toLowerCase() === safeQuery.toLowerCase());
-                if (!exactMatch) {
-                    html += `<div class="sheet-item add-new" onclick="selectFromModal('${safeQuery.replace(/'/g, "\\'")}')">
-                                + Add "${safeQuery}" as New Patient
-                             </div>`;
-                }
-            }
-
-            filteredNames.forEach(name => {
-                html += `<div class="sheet-item" onclick="selectFromModal('${name.replace(/'/g, "\\'")}')">${name}</div>`;
-            });
-
-            if (filteredNames.length === 0 && safeQuery === '' && currentModalContext !== 'tab3') {
-                html += `<div class="sheet-item" style="color:var(--text-muted); justify-content:center;">Type to search patients...</div>`;
-            }
-
-            listDiv.innerHTML = html;
-        }
-
-        function selectFromModal(selectedName) {
-            closePatientModal();
-            
-            if (currentModalContext === 'tab1') {
-                document.getElementById('name').value = selectedName;
-                document.getElementById('btnTab1Patient').innerHTML = `<strong>${selectedName}</strong>`;
-                handleTab1PatientChange(selectedName);
-            } 
-            else if (currentModalContext === 'tab3') {
-                const finalValue = selectedName === 'All Patients' ? '' : selectedName;
-                document.getElementById('ledgerPatientSelect').value = finalValue;
-                document.getElementById('btnTab3Patient').innerHTML = finalValue ? `<strong>${finalValue}</strong>` : '📋 All Patients';
-                renderLedgerData();
-            }
-            else if (currentModalContext === 'tab4') {
-                document.getElementById('patientSelect').value = selectedName;
-                document.getElementById('btnTab4Patient').innerHTML = `<strong>${selectedName}</strong>`;
-                showPatientHistory();
-            }
-            else if (currentModalContext === 'tab5') {
-                document.getElementById('analyticsPatientSelect').value = selectedName;
-                document.getElementById('btnTab5Patient').innerHTML = `<strong>${selectedName}</strong>`;
-                showPatientAnalytics();
-            }
-        }
-
-        function handleTab1PatientChange(selectedName) {
-            let patientRecords = patientIndex[selectedName] || [];
-            
-            if (patientRecords.length > 0) {
-                let sortedRecords = [...patientRecords].sort((a, b) => {
-                    let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                    let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                    if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
-                    return dateB - dateA; 
-                }); 
-                const latestVisit = sortedRecords[0].row;
-                document.getElementById('location').value = latestVisit[3] ? latestVisit[3].toString().trim() : "";
-                document.getElementById('sessionType').value = latestVisit[9] ? latestVisit[9].toString().trim() : "";
-                document.getElementById('totalFee').value = parseFloat(latestVisit[6]) || "";
-            } else {
-                document.getElementById('location').value = "";
-                document.getElementById('sessionType').value = "";
-                document.getElementById('totalFee').value = "";
-            }
-        }
-
-        function renderCurrentTab(tabId) {
-            if(tabId === 'tab2') loadRecentPatients(); 
-            if(tabId === 'tab3') renderLedgerData(); 
-            if(tabId === 'tab4') showPatientHistory();
-            if(tabId === 'tab5') { renderDashboard(); showPatientAnalytics(); }
-        }
-
-        // Toggles the delete mode for recent sessions
-        function toggleDeleteMode() {
-            const btns = document.querySelectorAll('.delete-btn');
-            if (btns.length === 0) return;
-            
-            deleteMode = !deleteMode;
-            btns.forEach(btn => btn.style.display = deleteMode ? 'block' : 'none');
-            document.getElementById('btnEditRecent').innerText = deleteMode ? '❌' : '✏️';
-        }
-
-        function deleteSession(arrayIndex) {
-            if(!confirm("Are you sure you want to permanently delete this visit? This cannot be undone.")) return;
-            
-            const syncText = document.getElementById('syncText');
-            syncText.innerHTML = loadingIcon + " Deleting...";
-            syncText.style.color = "var(--danger)";
-            
-            // arrayIndex is 0-based index from allSheetData. In GAS, row number is usually index + 1
-            const payload = { action: "deleteVisit", rowNumber: arrayIndex + 1 };
-            
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(res => res.json()).then(data => {
-                if(data.status === 'success') {
-                    deleteMode = false;
-                    document.getElementById('btnEditRecent').innerText = '✏️';
-                    syncWithDatabase(); // Pull fresh data to fix array indices
-                } else {
-                    alert("Error deleting record.");
-                    syncText.innerText = "";
-                }
-            }).catch(e => {
-                alert("Network error. Try again when online.");
-                syncText.innerText = "";
-            });
-        }
-
-        function loadRecentPatients() {
-            const upcomingDiv = document.getElementById('upcomingList');
-            const recentDiv = document.getElementById('recentList');
-            
-            if(allSheetData.length <= 1) { 
-                upcomingDiv.innerHTML = "";
-                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
-                document.getElementById('btnEditRecent').style.display = 'none';
-                return; 
-            }
-            
-            document.getElementById('btnEditRecent').style.display = 'block';
-
-            let latestRecordsMap = new Map();
-            let allValidRows = [];
-            
-            for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i];
-                if(!row || !row[1] || !row[2]) continue;
-                
-                const name = sanitizeName(row[2].toString());
-                let visitDate = row[1] ? new Date(row[1]).getTime() : 0;
-                if(isNaN(visitDate)) visitDate = 0; 
-                
-                allValidRows.push({row: row, index: i});
-
-                if(!latestRecordsMap.has(name)) {
-                    latestRecordsMap.set(name, row);
-                } else {
-                    let existingDate = latestRecordsMap.get(name)[1] ? new Date(latestRecordsMap.get(name)[1]).getTime() : 0;
-                    if(isNaN(existingDate)) existingDate = 0;
-                    if (visitDate > existingDate) { latestRecordsMap.set(name, row); }
-                }
-            }
-
-            let upcomingList = [];
-            let today = new Date();
-            today.setHours(0,0,0,0);
-
-            latestRecordsMap.forEach((row, name) => {
-                if (row[10]) { 
-                    const apptDate = new Date(row[10]);
-                    if (!isNaN(apptDate) && apptDate >= today) {
-                        upcomingList.push({ name: name, date: apptDate, row: row });
-                    }
-                }
-            });
-
-            upcomingList.sort((a, b) => {
-                let dateA = a.date ? a.date.getTime() : 0;
-                let dateB = b.date ? b.date.getTime() : 0;
-                if(isNaN(dateA)) dateA = 0;
-                if(isNaN(dateB)) dateB = 0;
-                return dateA - dateB; 
-            }); 
-
-            if (upcomingList.length === 0) {
-                upcomingDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No upcoming appointments.</p></div>";
-            } else {
-                let upcomingHTML = "";
-                upcomingList.forEach(item => {
-                    const dateFormatted = formatApptDate(item.date);
-                    let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding your upcoming physiotherapy session.\n\n📅 *Scheduled Date:* *${dateFormatted}*\n\nPlease let me know if you need to reschedule. Wishing you a wonderful day! 🌟`;
-                    let encodedMsg = encodeURIComponent(msg);
-                    
-                    upcomingHTML += `
-                    <div class="card" style="border-left: 4px solid var(--whatsapp); display: flex; justify-content: space-between; align-items: center; padding: 14px;">
-                        <div>
-                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${item.name}</h4>
-                            <span style="font-size: 13px; font-weight: bold; color: var(--text-main);">${dateFormatted}</span>
-                        </div>
-                        <a href="https://api.whatsapp.com/send?text=${encodedMsg}" target="_blank" class="wa-btn" title="Send Reminder">
-                            <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
-                        </a>
-                    </div>`;
-                });
-                upcomingDiv.innerHTML = upcomingHTML;
-            }
-
-            allValidRows.sort((a, b) => {
-                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                if (isNaN(dateB)) dateB = 0;
-                if (isNaN(dateA)) dateA = 0;
-                if (dateB !== dateA) return dateB - dateA;
-                return b.index - a.index; 
-            });
-
-            const top5 = allValidRows.slice(0, 5);
-
-            if(top5.length === 0) { 
-                recentDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No visits recorded yet.</p></div>"; 
-            } else {
-                let recentHTML = "";
-                const displayStyle = deleteMode ? 'block' : 'none';
-                
-                top5.forEach(item => {
-                    const row = item.row;
-                    const dateObj = row[1] ? new Date(row[1]) : null;
-                    const dateStr = (dateObj && !isNaN(dateObj)) ? formatApptDate(dateObj) : "No Date";
-                    recentHTML += `
-                    <div class="card" style="border-left: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; padding: 14px; position: relative;">
-                        <div>
-                            <h4 style="margin: 0 0 4px 0; color: var(--primary-dark); font-size: 16px;">${row[2] ? sanitizeName(row[2].toString()) : "Unknown"}</h4>
-                            <span style="font-size: 12px; color: var(--text-muted);">${row[3] ? row[3].toString().trim() : "No City"}</span>
-                        </div>
-                        <div style="font-weight: bold; color: var(--primary); font-size: 13px; text-align: right;">${dateStr.replace(' | ', '<br>')}</div>
-                        
-                        <!-- Delete Button (Hidden by default) -->
-                        <button class="delete-btn" style="display: ${displayStyle}; position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 12px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" onclick="deleteSession(${item.index})">🗑️</button>
-                    </div>`;
-                });
-                recentDiv.innerHTML = recentHTML; 
-            }
-        }
-
-        function switchLedgerView(view) {
-            const summaryBadge = document.getElementById('ledgerSummary');
-            const waButton = document.getElementById('waReminderBtn');
-            const filterName = document.getElementById('ledgerPatientSelect').value;
-            const groupedBar = document.getElementById('groupedActionBar');
-            
-            if (view === 'pending') {
-                document.getElementById('btnTogglePending').classList.add('active-pending');
-                document.getElementById('btnToggleReceived').classList.remove('active-received');
-                document.getElementById('pendingList').style.display = 'block';
-                document.getElementById('receivedList').style.display = 'none';
-                
-                if (filterName && currentPendingSessionsForWA.length > 0) {
-                    summaryBadge.style.display = 'block'; waButton.style.display = 'flex'; groupedBar.style.display = 'block';
-                }
-            } else {
-                document.getElementById('btnToggleReceived').classList.add('active-received');
-                document.getElementById('btnTogglePending').classList.remove('active-pending');
-                document.getElementById('pendingList').style.display = 'none';
-                document.getElementById('receivedList').style.display = 'block';
-                
-                summaryBadge.style.display = 'none'; waButton.style.display = 'none'; groupedBar.style.display = 'none';
-            }
-        }
-        
-        function loadMoreReceived() {
-            loadedOlderClicks++;
-            renderLedgerData();
-        }
-
-        function renderLedgerData() {
-            const pendingListDiv = document.getElementById('pendingList');
-            const receivedListDiv = document.getElementById('receivedList');
-            const filterName = document.getElementById('ledgerPatientSelect').value;
-            const summaryBadge = document.getElementById('ledgerSummary');
-            const waButton = document.getElementById('waReminderBtn');
-            const groupedBar = document.getElementById('groupedActionBar');
-            const groupedQrBtn = document.getElementById('groupedQrBtn');
-            
-            if (filterName !== currentLedgerFilter) {
-                loadedOlderClicks = 0; currentLedgerFilter = filterName;
-            }
-            
-            let foundPending = false; let pendingHTML = ""; let summaryCount = 0; let summaryTotal = 0;
-            let receivedRecords = []; currentPendingSessionsForWA = [];
-            
-            for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i]; if(!row || !row[1]) continue;
-                const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
-                
-                const displayDate = dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
-                const waDateStr = dateObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
-                const name = row[2] ? sanitizeName(row[2].toString()) : ""; 
-                const paymentType = String(row[4]).toLowerCase().trim();
-                const amountPaid = parseFloat(row[5]) || 0; 
-                const totalFee = parseFloat(row[6]) || 0;
-                
-                if (filterName && name !== filterName) continue;
-
-                if (paymentType === 'pending' || ((paymentType === 'cash' || paymentType === 'online') && amountPaid < totalFee)) {
-                    foundPending = true; const balance = totalFee - amountPaid; const rowNum = i + 1;
-                    summaryCount++; summaryTotal += balance;
-                    currentPendingSessionsForWA.push({ date: waDateStr, amount: balance });
-                    
-                    pendingHTML += `
-                    <div class="card" style="border-left: 4px solid var(--danger); padding: 12px 16px; margin-bottom: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; padding-right: 8px;">
-                                <h4 style="margin: 0 0 2px 0; font-size: 16px;">${name}</h4>
-                                <div style="font-size:12px; color:var(--text-muted);">${displayDate}</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="color:var(--danger); font-weight:bold; font-size: 16px;">₹${balance}</div>
-                                <div style="display:flex; gap: 6px;">
-                                    <button class="btn-main" style="margin:0; width: 38px; height: 38px; padding: 0; font-size: 15px; background: #2b6cb0; border-radius: 8px;" onclick="showSingleQR('${name.replace(/'/g, "\\'")}', ${balance}, '${displayDate}')" title="Show UPI QR">📷</button>
-                                    <button class="btn-main" style="margin:0; width: 38px; height: 38px; padding: 0; font-size: 15px; background: var(--success); border-radius: 8px;" onclick="submitPaymentUpdate(${rowNum}, 'Cash', ${totalFee})">💵</button>
-                                    <button class="btn-main" style="margin:0; width: 38px; height: 38px; padding: 0; font-size: 15px; background: #3182ce; border-radius: 8px;" onclick="submitPaymentUpdate(${rowNum}, 'Online', ${totalFee})">📱</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="payStatus_${rowNum}" class="status-msg" style="margin-top:5px; font-size: 12px; display:none;"></div>
-                    </div>`;
-                }
-
-                if (amountPaid > 0) {
-                    receivedRecords.push({ name: name, dateObj: dateObj, displayDate: displayDate, amount: amountPaid, method: row[4] ? row[4].toString().trim() : "Unknown", index: i });
-                }
-            }
-            
-            if(!foundPending) {
-                if(filterName) { pendingListDiv.innerHTML = `<div class='card' style='text-align:center;'><p>🎉 ${filterName} has zero pending balances!</p></div>`; } 
-                else { pendingListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>🎉 Zero pending balances across all patients!</p></div>"; }
-                groupedBar.style.display = "none";
-            } else { pendingListDiv.innerHTML = pendingHTML; }
-
-            if(receivedRecords.length === 0) {
-                receivedListDiv.innerHTML = "<div class='card' style='text-align:center;'><p>No payments recorded yet.</p></div>";
-            } else {
-                receivedRecords.sort((a, b) => {
-                    let dateB = b.dateObj.getTime(); let dateA = a.dateObj.getTime();
-                    if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
-                    if (dateB !== dateA) return dateB - dateA;
-                    return b.index - a.index;
-                });
-                
-                const today = new Date();
-                const thresholdDate = new Date(today.getFullYear(), today.getMonth() - 1, 1).getTime();
-                let displayRecords = []; let olderRecords = [];
-                
-                receivedRecords.forEach(rec => {
-                    if (rec.dateObj.getTime() >= thresholdDate) { displayRecords.push(rec); } 
-                    else { olderRecords.push(rec); }
-                });
-
-                let olderToDisplay = loadedOlderClicks * 50;
-                if (olderToDisplay > 0) { displayRecords = displayRecords.concat(olderRecords.slice(0, olderToDisplay)); }
-                let remainingOlder = Math.max(0, olderRecords.length - olderToDisplay);
-                
-                let receivedHTML = "";
-                displayRecords.forEach(rec => {
-                    receivedHTML += `
-                    <div class="card" style="border-left: 4px solid var(--success); padding: 12px 16px; margin-bottom: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; padding-right: 8px;">
-                                <h4 style="margin: 0 0 2px 0; font-size: 16px;">${rec.name}</h4>
-                                <div style="font-size:12px; color:var(--text-muted);">${rec.displayDate}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color:var(--success); font-weight:bold; font-size: 16px; margin-bottom: 2px;">+ ₹${rec.amount.toLocaleString('en-IN')}</div>
-                                <div style="font-size:11px; color:var(--text-muted); font-weight: bold;">✓ ${rec.method}</div>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                
-                if (remainingOlder > 0) {
-                    receivedHTML += `<button class="btn-main btn-secondary" style="margin-bottom: 20px;" onclick="loadMoreReceived()">Load Older Payments (${remainingOlder} remaining)</button>`;
-                }
-                receivedListDiv.innerHTML = receivedHTML;
-            }
-
-            const isPendingView = document.getElementById('btnTogglePending').classList.contains('active-pending');
-            if (filterName && foundPending && isPendingView) {
-                summaryBadge.innerText = `${summaryCount} | ₹${summaryTotal}`; 
-                summaryBadge.style.display = "block"; waButton.style.display = "flex"; groupedBar.style.display = "block";
-                groupedQrBtn.innerText = `📷 Show Grouped QR (₹${summaryTotal})`;
-                groupedQrBtn.onclick = function() { showGroupedQR(filterName, summaryTotal, summaryCount); };
-            } else {
-                summaryBadge.style.display = "none"; waButton.style.display = "none"; groupedBar.style.display = "none";
-            }
-        }
-
-        function showSingleQR(patientName, amount, dateStr) { openQRModal(patientName, amount, `Session: ${dateStr}`); }
-        function showGroupedQR(patientName, amount, sessionCount) { openQRModal(patientName, amount, `Combined (${sessionCount} Sessions)`); }
-
-        function openQRModal(patientName, amount, subText) {
-            document.getElementById('qrModalTitle').innerText = patientName;
-            document.getElementById('qrModalSub').innerText = subText;
-            document.getElementById('qrModalAmount').innerText = `₹${amount.toLocaleString('en-IN')}`;
-            
-            const qrContainer = document.getElementById('qrCanvasContainer');
-            qrContainer.innerHTML = ""; 
-
-            const upiString = `upi://pay?pa=${CLINIC_UPI_ID}&pn=${encodeURIComponent(CLINIC_PAYEE_NAME)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Physio - ' + patientName)}`;
-            
-            new QRCode(qrContainer, { text: upiString, width: 180, height: 180, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
-            document.getElementById('qrModal').style.display = 'flex';
-        }
-
-        function closeQRModal(e) { document.getElementById('qrModal').style.display = 'none'; }
-
-        function sendWhatsAppReminder() {
-            const filterName = document.getElementById('ledgerPatientSelect').value;
-            if (currentPendingSessionsForWA.length === 0 || !filterName) return;
-
-            let totalAmount = 0; let sessionLines = "";
-            currentPendingSessionsForWA.forEach(session => {
-                sessionLines += `• ${session.date} - ₹${session.amount.toLocaleString('en-IN')}\n`;
-                totalAmount += session.amount;
-            });
-
-            const token = btoa(unescape(encodeURIComponent(filterName)));
-            const paymentPortalUrl = `${WEB_APP_URL}?token=${token}`;
-
-            let msg = `🌸 *Greetings from Dr. Anjali Vishwakarma.*\n\nThis is a gentle reminder regarding the outstanding balance for your physiotherapy sessions.\n\n📅 *Session Breakdown:*\n${sessionLines}\n📊 *Total Pending Sessions:* ${currentPendingSessionsForWA.length}\n💳 *Total Amount Due:* *₹${totalAmount.toLocaleString('en-IN')}*\n\n👉 *View Invoice & Pay Online:*\n${paymentPortalUrl}\n\nKindly clear the dues at your earliest convenience. Wishing you a speedy and healthy recovery! 🌟`;
-            
-            const encodedMessage = encodeURIComponent(msg);
-            window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
-        }
-
-        function submitPaymentUpdate(rowNum, paymentMethod, fullAmount) {
-            if (!confirm(`Are you sure you want to clear this ₹${fullAmount} balance via ${paymentMethod}?`)) return; 
-            const status = document.getElementById('payStatus_' + rowNum); 
-            status.style.display = "block"; status.style.color = "var(--primary)"; status.innerText = "Updating ledger...";
-            
-            const payload = { action: "updatePayment", rowNumber: rowNum, newAmountPaid: fullAmount, newPaymentType: paymentMethod };
-            
-            if (!navigator.onLine) {
-                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-                queue.push(payload);
-                localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                
-                status.style.color = "var(--success)"; status.innerText = "✓ Saved Offline"; 
-                if (allSheetData[rowNum - 1]) {
-                    allSheetData[rowNum - 1][5] = fullAmount;
-                    allSheetData[rowNum - 1][4] = paymentMethod;
-                }
-                syncWithDatabase(); 
-                return;
-            }
-            
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(res => res.json()).then(data => {
-                if(data.status === 'success') { 
-                    status.style.color = "var(--success)"; status.innerText = "✓ Cleared"; 
-                    if (allSheetData[rowNum - 1]) {
-                        allSheetData[rowNum - 1][5] = fullAmount;
-                        allSheetData[rowNum - 1][4] = paymentMethod;
-                    }
-                    syncWithDatabase(); 
-                } else { status.style.color = "var(--danger)"; status.innerText = "Error"; }
-            }).catch(e => { 
-                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-                queue.push(payload);
-                localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                status.style.color = "var(--success)"; status.innerText = "✓ Queued for Sync"; 
-                if (allSheetData[rowNum - 1]) {
-                    allSheetData[rowNum - 1][5] = fullAmount;
-                    allSheetData[rowNum - 1][4] = paymentMethod;
-                }
-                syncWithDatabase();
-            });
-        }
-
-        document.getElementById('entryForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // THE STRICT DOUBLE-CLICK LOCK
-            if (isSubmittingForm) return; 
-            isSubmittingForm = true; 
-            
-            let rawName = document.getElementById('name').value.trim();
-            if (!rawName) { 
-                alert("Please select or enter a Patient Name."); 
-                isSubmittingForm = false; 
-                return; 
-            }
-
-            const btn = document.getElementById('submitBtn'); const status = document.getElementById('statusMsg');
-            btn.innerText = "Saving Session..."; btn.disabled = true; status.innerText = "";
-            
-            let cleanName = sanitizeName(rawName);
-            
-            const payload = {
-                action: "addVisit", date: document.getElementById('date').value, name: cleanName,
-                location: document.getElementById('location').value, sessionType: document.getElementById('sessionType').value,
-                painBefore: document.getElementById('painBefore').value, painAfter: document.getElementById('painAfter').value,
-                totalFee: document.getElementById('totalFee').value, amountPaid: document.getElementById('amountPaid').value,
-                paymentType: document.getElementById('paymentType').value, nextAppt: document.getElementById('nextAppt').value,
-                notes: document.getElementById('notes').value, month: "" 
-            };
-            
-            if (!navigator.onLine) {
-                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-                queue.push(payload);
-                localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                
-                status.style.color = "var(--success)"; status.innerText = "✓ Saved Offline"; 
-                allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
-                document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
-                document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
-                syncWithDatabase(); 
-                
-                // Release the lock
-                btn.innerText = "Save Session Record"; btn.disabled = false; isSubmittingForm = false;
-                return;
-            }
-
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(res => res.json()).then(data => {
-                if(data.status === 'success') {
-                    status.style.color = "var(--success)"; status.innerText = "✓ Record Saved Successfully"; 
-                    allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
-                    document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
-                    document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
-                    syncWithDatabase(); 
-                } else { status.style.color = "var(--danger)"; status.innerText = "Error: " + data.message; }
-                
-                // Release the lock
-                btn.innerText = "Save Session Record"; btn.disabled = false; isSubmittingForm = false;
-            }).catch(err => { 
-                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-                queue.push(payload);
-                localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                status.style.color = "var(--success)"; status.innerText = "✓ Saved Offline"; 
-                allSheetData.push(["", payload.date, payload.name, payload.location, payload.paymentType, payload.amountPaid, payload.totalFee, payload.painBefore, payload.painAfter, payload.sessionType, payload.nextAppt, payload.notes]);
-                document.getElementById('entryForm').reset(); document.getElementById('date').valueAsDate = new Date(); document.getElementById('amountPaid').value = "0"; 
-                document.getElementById('name').value = ""; document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
-                syncWithDatabase();
-                
-                // Release the lock
-                btn.innerText = "Save Session Record"; btn.disabled = false; isSubmittingForm = false;
-            });
-        });
-
-        function showPatientHistory() {
-            const selectedName = document.getElementById('patientSelect').value;
-            const timeline = document.getElementById('historyTimeline'); 
-            const scheduleCard = document.getElementById('scheduleCard');
-            
-            if(!selectedName) { timeline.innerHTML = ""; scheduleCard.style.display = "none"; return; }
-            
-            scheduleCard.style.display = "block";
-            document.getElementById('apptStatusMsg').innerText = "";
-            document.getElementById('newNextApptDate').value = "";
-
-            let records = patientIndex[selectedName] || [];
-            
-            let sortedRecords = [...records].sort((a, b) => {
-                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                if(isNaN(dateB)) dateB = 0; if(isNaN(dateA)) dateA = 0;
-                if (dateB !== dateA) return dateB - dateA;
-                return b.index - a.index; 
-            });
-            
-            let newHTML = "";
-            sortedRecords.forEach(item => {
-                const row = item.row;
-                const dateObj = row[1] ? new Date(row[1]) : null;
-                const date = (dateObj && !isNaN(dateObj)) ? dateObj.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) : "No Date";
-                newHTML += `
-                <div class="card" style="border-left: 4px solid var(--primary);">
-                    <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
-                        <span style="font-weight:bold; color:var(--primary-dark);">${date}</span>
-                        <span class="badge badge-success">${row[9] ? row[9].toString().trim() : "Session"}</span>
-                    </div>
-                    <div style="background: var(--input-bg); padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-around; text-align:center;">
-                        <div><div style="font-size:11px; color:var(--text-muted);">PAIN BEFORE</div><strong style="font-size:16px;">${row[7]||"-"}</strong></div>
-                        <div style="color:var(--text-muted); font-size:20px;">&rarr;</div>
-                        <div><div style="font-size:11px; color:var(--text-muted);">PAIN AFTER</div><strong style="font-size:16px;">${row[8]||"-"}</strong></div>
-                    </div>
-                    <p style="font-size: 13px;"><strong>Notes:</strong> ${row[11] ? row[11].toString().trim() : "No clinical notes recorded."}</p>
-                </div>`;
-            });
-            timeline.innerHTML = newHTML;
-        }
-
-        function saveNextAppt() {
-            const patientName = document.getElementById('patientSelect').value;
-            const nextApptDate = document.getElementById('newNextApptDate').value;
-            const statusMsg = document.getElementById('apptStatusMsg');
-            
-            if (!nextApptDate) { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Please select a date."; return; }
-            statusMsg.style.color = "var(--primary)"; statusMsg.innerText = "Scheduling...";
-            
-            const payload = { action: "updateNextAppt", name: patientName, nextAppt: nextApptDate };
-
-            if (!navigator.onLine) {
-                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-                queue.push(payload);
-                localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                
-                statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Scheduled Offline";
-                let pRecords = patientIndex[patientName] || [];
-                let latestDate = 0; let latestItem = null;
-                pRecords.forEach(item => {
-                    let d = item.row[1] ? new Date(item.row[1]).getTime() : 0;
-                    if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestItem = item; }
-                });
-                if (latestItem) { allSheetData[latestItem.index][10] = nextApptDate; }
-                syncWithDatabase();
-                return;
-            }
-
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(res => res.json()).then(data => {
-                if(data.status === 'success') {
-                    statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Appointment scheduled";
-                    let pRecords = patientIndex[patientName] || [];
-                    let latestDate = 0; let latestItem = null;
-                    pRecords.forEach(item => {
-                        let d = item.row[1] ? new Date(item.row[1]).getTime() : 0;
-                        if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestItem = item; }
-                    });
-                    if (latestItem) { allSheetData[latestItem.index][10] = nextApptDate; }
-                    syncWithDatabase();
-                } else { statusMsg.style.color = "var(--danger)"; statusMsg.innerText = "Error scheduling."; }
-            }).catch(err => { 
-                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-                queue.push(payload);
-                localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                statusMsg.style.color = "var(--success)"; statusMsg.innerText = "✓ Scheduled Offline";
-                
-                let pRecords = patientIndex[patientName] || [];
-                let latestDate = 0; let latestItem = null;
-                pRecords.forEach(item => {
-                    let d = item.row[1] ? new Date(item.row[1]).getTime() : 0;
-                    if(isNaN(d)) d = 0; if (d > latestDate) { latestDate = d; latestItem = item; }
-                });
-                if (latestItem) { allSheetData[latestItem.index][10] = nextApptDate; }
-                syncWithDatabase();
-            });
-        }
-
-        function renderDashboard() {
-            if(allSheetData.length <= 1) return; 
-
-            const yearFilter = document.getElementById('dashYearFilter').value;
-            
-            let totalBilled = 0; let totalCollected = 0; let totalPending = 0;
-            let monthDataMap = {}; let agedDebtorsObj = {};
-
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            if (yearFilter !== "All") { monthNames.forEach(m => monthDataMap[m] = { collected: 0, pending: 0 }); }
-
-            for(let i = 1; i < allSheetData.length; i++) {
-                const row = allSheetData[i]; if(!row || !row[1]) continue; 
-                const dateObj = new Date(row[1]); if(isNaN(dateObj)) continue;
-
-                const rowYear = dateObj.getFullYear().toString();
-                if(yearFilter !== "All" && rowYear !== yearFilter) continue;
-
-                const paymentType = String(row[4]).toLowerCase().trim();
-                const amountPaid = parseFloat(row[5]) || 0;
-                const totalFee = parseFloat(row[6]) || 0;
-                const balance = totalFee - amountPaid;
-                const name = row[2] ? sanitizeName(row[2].toString()) : "";
-                
-                const monthNameFull = dateObj.toLocaleString('default', { month: 'long' });
-                const monthNameShort = monthNames[dateObj.getMonth()];
-                const allTimeLabelShort = monthNameShort + " '" + rowYear.substr(-2);
-                const chartKey = yearFilter === "All" ? allTimeLabelShort : monthNameShort;
-                
-                const sortableMonth = `${rowYear}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-                const displayMonthYear = `${monthNameFull}-${rowYear}`;
-
-                totalBilled += totalFee; totalCollected += amountPaid;
-                if(balance > 0 || paymentType === 'pending') {
-                    totalPending += balance;
-                    if(name) {
-                        if(!agedDebtorsObj[sortableMonth]) agedDebtorsObj[sortableMonth] = { label: displayMonthYear, patients: {} };
-                        if(!agedDebtorsObj[sortableMonth].patients[name]) agedDebtorsObj[sortableMonth].patients[name] = { count: 0, amount: 0 };
-                        agedDebtorsObj[sortableMonth].patients[name].count += 1;
-                        agedDebtorsObj[sortableMonth].patients[name].amount += balance;
-                    }
-                }
-
-                if(!monthDataMap[chartKey]) monthDataMap[chartKey] = { collected: 0, pending: 0 };
-                monthDataMap[chartKey].collected += amountPaid;
-                if(balance > 0) monthDataMap[chartKey].pending += balance;
-            }
-
-            document.getElementById('dashBilled').innerText = "₹" + totalBilled.toLocaleString('en-IN');
-            document.getElementById('dashCollected').innerText = "₹" + totalCollected.toLocaleString('en-IN');
-            document.getElementById('dashPending').innerText = "₹" + totalPending.toLocaleString('en-IN');
-
-            let labels = Object.keys(monthDataMap);
-            if(yearFilter === "All") { labels = labels.slice(-6); }
-            const collectedData = labels.map(l => monthDataMap[l].collected);
-            const pendingData = labels.map(l => monthDataMap[l].pending);
-
-            const ctx1 = document.getElementById('cashflowChart').getContext('2d');
-            if(cashflowChartInstance) cashflowChartInstance.destroy();
-            cashflowChartInstance = new Chart(ctx1, {
-                type: 'bar',
-                data: { labels: labels, datasets: [ { label: 'Collected (₹)', data: collectedData, backgroundColor: '#38a169', stack: 'Stack 0' }, { label: 'Pending (₹)', data: pendingData, backgroundColor: '#e53e3e', stack: 'Stack 0' } ] },
-                options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Cashflow Matrix' } }, scales: { x: { stacked: true }, y: { stacked: true } }, animation: { duration: 0 } }
-            });
-            
-            const agedDebtorsDiv = document.getElementById('agedDebtorsList');
-            agedDebtorsDiv.innerHTML = "";
-            const sortedMonths = Object.keys(agedDebtorsObj).sort((a,b) => b.localeCompare(a));
-            
-            if (sortedMonths.length === 0) {
-                agedDebtorsDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 14px;'>No pending balances for the selected timeframe.</p>";
-            } else {
-                let listHTML = "";
-                sortedMonths.forEach(monthKey => {
-                    const monthData = agedDebtorsObj[monthKey];
-                    listHTML += `<div class="month-header">${monthData.label}</div>`;
-                    Object.keys(monthData.patients).sort().forEach(patName => {
-                        const stats = monthData.patients[patName];
-                        listHTML += `<div class="patient-row"><span>${patName}</span><span class="patient-stats">${stats.count} | ₹${stats.amount.toLocaleString('en-IN')}</span></div>`;
-                    });
-                });
-                agedDebtorsDiv.innerHTML = listHTML;
-            }
-        }
-
-        function showPatientAnalytics() {
-            const name = document.getElementById('analyticsPatientSelect').value;
-            const container = document.getElementById('patientAnalyticsData');
-            const debtorsContainer = document.getElementById('agedDebtorsContainer');
-            
-            if(!name) { container.style.display = 'none'; debtorsContainer.style.display = 'block'; return; }
-            debtorsContainer.style.display = 'none';
-
-            let sessions = 0; let spent = 0; let pending = 0;
-            let chartDates = []; let painBeforeData = []; let painAfterData = [];
-            
-            let patRecords = patientIndex[name] || [];
-            
-            let sortedRecords = [...patRecords].sort((a, b) => {
-                let dateA = a.row[1] ? new Date(a.row[1]).getTime() : 0;
-                let dateB = b.row[1] ? new Date(b.row[1]).getTime() : 0;
-                if(isNaN(dateA)) dateA = 0; if(isNaN(dateB)) dateB = 0;
-                if (dateA !== dateB) return dateA - dateB;
-                return a.index - b.index;
-            });
-
-            sortedRecords.forEach(item => {
-                const row = item.row;
-                sessions++; const paid = parseFloat(row[5]) || 0; const fee = parseFloat(row[6]) || 0;
-                spent += paid; if(fee > paid) pending += (fee - paid);
-                if(row[1]) {
-                    const d = new Date(row[1]);
-                    if(!isNaN(d)) chartDates.push(d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}));
-                }
-                painBeforeData.push(parseFloat(row[7]) || null); painAfterData.push(parseFloat(row[8]) || null);
-            });
-
-            document.getElementById('patTotalSessions').innerText = sessions;
-            document.getElementById('patTotalSpent').innerText = "₹" + spent.toLocaleString('en-IN');
-            document.getElementById('patTotalPending').innerText = "₹" + pending.toLocaleString('en-IN');
-            container.style.display = 'block';
-
-            const ctx3 = document.getElementById('painChart').getContext('2d');
-            if(painChartInstance) painChartInstance.destroy();
-            painChartInstance = new Chart(ctx3, {
-                type: 'line',
-                data: {
-                    labels: chartDates,
-                    datasets: [
-                        { label: 'Pain Before', data: painBeforeData, borderColor: '#e53e3e', backgroundColor: '#e53e3e', tension: 0.3 },
-                        { label: 'Pain After', data: painAfterData, borderColor: '#38a169', backgroundColor: '#38a169', tension: 0.3 }
-                    ]
-                },
-                options: { responsive: true, plugins: { title: { display: true, text: 'Clinical Progress (Pain Score 1-10)' } }, scales: { y: { min: 0, max: 10 } }, animation: { duration: 0 } }
-            });
-        }
-    </script>
+  </div>
+
+  <!-- Application Modules -->
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/payments.js"></script>
+  <script src="js/clinical.js"></script>
+  <script src="js/ledger.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
