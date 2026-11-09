@@ -12,7 +12,7 @@ window.PhysioApp = (function() {
     initTheme();
     registerServiceWorker();
 
-    // Check if URL is in Patient Invoice Viewer mode
+    // Check if URL is in Patient Invoice Viewer mode (?invoice=TOKEN)
     const urlParams = new URLSearchParams(window.location.search);
     const invoiceToken = urlParams.get('invoice');
     if (invoiceToken) {
@@ -29,7 +29,11 @@ window.PhysioApp = (function() {
     PhysioClinical.initPainSelectors();
     PhysioClinical.renderQuickPatientsBar();
     renderCurrentTab('tab1');
-    document.getElementById('date').valueAsDate = new Date();
+    
+    const dateInput = document.getElementById('date');
+    if (dateInput && !dateInput.value) {
+      dateInput.valueAsDate = new Date();
+    }
 
     // Populate Settings modal status
     updateSettingsModalBackendInfo();
@@ -54,16 +58,28 @@ window.PhysioApp = (function() {
 
     window.addEventListener('offline', () => {
       updateSyncIndicator("offline");
-      showToast("Operating Offline - Changes saved locally", "info");
+      showToast("Operating Offline - All changes saved locally", "info");
     });
+
+    // Setup Fee / Paid auto-sync
+    const feeInput = document.getElementById('totalFee');
+    if (feeInput) {
+      feeInput.addEventListener('input', () => {
+        const pType = document.getElementById('paymentType')?.value;
+        if (pType === 'Online' || pType === 'Cash') {
+          const paidInput = document.getElementById('amountPaid');
+          if (paidInput) paidInput.value = feeInput.value;
+        }
+      });
+    }
   }
 
-  // Register Service Worker
+  // Register Service Worker for Instant PWA Caching
   function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => {
-          console.warn('SW registration failed:', err);
+          console.warn('SW registration skipped:', err);
         });
       });
     }
@@ -93,26 +109,62 @@ window.PhysioApp = (function() {
     if (btn) btn.innerText = theme === 'dark' ? '☀️' : '🌙';
   }
 
-  // Sync Indicator
+  // Sleek Status Indicator (Non-intrusive)
   function updateSyncIndicator(status) {
     const pill = document.getElementById('syncIndicator');
     if (!pill) return;
 
     const backend = PhysioDB.getActiveBackend();
-    const badgeLabel = backend === 'firebase' ? 'Firestore' : 'Sheets';
+    const label = backend === 'firebase' ? 'Firestore' : 'Cloud';
 
     if (status === 'syncing') {
       pill.className = 'sync-pill syncing';
-      pill.innerHTML = `<svg class="spinner" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> ${badgeLabel}`;
+      pill.innerHTML = `<span class="status-dot pulse"></span><span>${label}</span>`;
+      pill.style.opacity = '1';
     } else if (status === 'offline') {
-      pill.className = 'sync-pill offline';
-      pill.innerText = '⚠️ Offline';
+      if (!navigator.onLine) {
+        pill.className = 'sync-pill offline';
+        pill.innerHTML = `<span class="status-dot offline"></span><span>Offline</span>`;
+        pill.style.opacity = '1';
+      } else {
+        pill.style.opacity = '0';
+      }
     } else {
-      pill.className = 'sync-pill';
-      pill.innerText = `✓ ${badgeLabel}`;
+      pill.className = 'sync-pill synced';
+      pill.innerHTML = `<span class="status-dot online"></span><span>${label}</span>`;
+      pill.style.opacity = '1';
       setTimeout(() => {
-        if (pill.innerText === `✓ ${badgeLabel}`) pill.innerText = '';
+        if (pill.classList.contains('synced')) {
+          pill.style.opacity = '0.35';
+        }
       }, 3000);
+    }
+  }
+
+  // 1-Tap Payment Method Pill Selector for Tab 1
+  function setPaymentMethod(mode) {
+    const hidden = document.getElementById('paymentType');
+    const feeInput = document.getElementById('totalFee');
+    const paidInput = document.getElementById('amountPaid');
+    if (!hidden) return;
+
+    hidden.value = mode === 'unpaid' ? 'Pending' : mode.charAt(0).toUpperCase() + mode.slice(1);
+
+    document.querySelectorAll('.pay-method-pill').forEach(pill => {
+      if (pill.getAttribute('data-mode') === mode) {
+        pill.classList.add('active');
+      } else {
+        pill.classList.remove('active');
+      }
+    });
+
+    const feeVal = parseFloat(feeInput?.value) || 0;
+    if (mode === 'unpaid') {
+      if (paidInput) paidInput.value = '0';
+    } else {
+      if (paidInput && (parseFloat(paidInput.value) === 0 || !paidInput.value)) {
+        if (feeVal > 0) paidInput.value = feeVal;
+      }
     }
   }
 
@@ -131,176 +183,158 @@ window.PhysioApp = (function() {
       toast.style.transform = 'translateY(-10px)';
       toast.style.transition = 'all 0.25s ease';
       setTimeout(() => toast.remove(), 250);
-    }, 3200);
+    }, 3000);
   }
 
-  // Tab Switching
+  // Global Patient Cache
+  function updateGlobalPatientsList(visits) {
+    const names = new Set();
+    visits.forEach(v => {
+      if (v.name) names.add(v.name);
+    });
+    globalPatients = Array.from(names).sort((a, b) => a.localeCompare(b));
+  }
+
+  // Tab Navigation Routing
   function switchTab(tabId) {
-    window.scrollTo(0, 0);
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
     const targetTab = document.getElementById(tabId);
     if (targetTab) targetTab.classList.add('active');
 
-    const targetNav = document.getElementById('nav-' + tabId);
+    const targetNav = document.getElementById(`nav-${tabId}`);
     if (targetNav) targetNav.classList.add('active');
 
     renderCurrentTab(tabId);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   function renderCurrentTab(tabId) {
-    if (tabId === 'tab1') PhysioClinical.renderQuickPatientsBar();
-    if (tabId === 'tab2') PhysioLedger.renderRecentAndUpcoming();
-    if (tabId === 'tab3') PhysioLedger.renderLedger();
-    if (tabId === 'tab4') PhysioClinical.renderPatientHistory();
-    if (tabId === 'tab5') {
+    if (tabId === 'tab1') {
+      PhysioClinical.renderQuickPatientsBar();
+    } else if (tabId === 'tab2') {
+      PhysioLedger.renderUpcomingAndRecent();
+    } else if (tabId === 'tab3') {
+      PhysioLedger.renderLedger();
+    } else if (tabId === 'tab4') {
+      PhysioClinical.renderPatientHistory();
+    } else if (tabId === 'tab5') {
       PhysioAnalytics.renderDashboard();
-      PhysioAnalytics.renderPatientAnalytics();
     }
   }
 
-  function updateGlobalPatientsList(visits) {
-    const names = new Set();
-    visits.forEach(v => {
-      if (v.name) names.add(PhysioDB.sanitizeName(v.name));
-    });
-    globalPatients = Array.from(names).sort();
-  }
-
-  // Slide-Up Bottom Sheet Patient Search Drawer
-  function openPatientModal(contextTabId) {
-    currentModalContext = contextTabId;
+  // Patient Slide-Up Modal Drawer
+  function openPatientModal(context) {
+    currentModalContext = context;
     const modal = document.getElementById('patientSearchModal');
-    if (!modal) return;
-
-    modal.style.display = 'flex';
     const input = document.getElementById('modalSearchInput');
+    modal.classList.add('active');
     input.value = '';
     renderModalList('');
-    setTimeout(() => input.focus(), 80);
+    setTimeout(() => input.focus(), 150);
   }
 
   function closePatientModal() {
     const modal = document.getElementById('patientSearchModal');
-    if (modal) modal.style.display = 'none';
+    modal.classList.remove('active');
   }
 
-  function renderModalList(query) {
+  function renderModalList(filterText) {
     const list = document.getElementById('modalPatientList');
-    if (!list) return;
-
-    const safeQ = PhysioDB.sanitizeName(query);
-    const filtered = globalPatients.filter(n => n.toLowerCase().includes(safeQ.toLowerCase()));
+    const query = (filterText || '').trim().toLowerCase();
+    const filtered = globalPatients.filter(p => p.toLowerCase().includes(query));
 
     let html = '';
+    if (query && !filtered.some(p => p.toLowerCase() === query)) {
+      const properName = PhysioDB.sanitizeName(filterText);
+      html += `
+      <div class="sheet-item sheet-item-new" onclick="PhysioApp.selectFromModal('${properName.replace(/'/g, "\\'")}')">
+        <span>➕ Add New: <strong>${properName}</strong></span>
+      </div>`;
+    }
+
     if (currentModalContext === 'tab3') {
-      html += `<div class="sheet-item" onclick="PhysioApp.selectFromModal('All Patients')"><strong>📋 Show All Patients</strong></div>`;
+      html += `<div class="sheet-item" onclick="PhysioApp.selectFromModal('')"><em>📋 Show All Patients</em></div>`;
     }
 
-    if (currentModalContext === 'tab1' && safeQ) {
-      const exact = filtered.find(n => n.toLowerCase() === safeQ.toLowerCase());
-      if (!exact) {
-        html += `<div class="sheet-item add-new" onclick="PhysioApp.selectFromModal('${safeQ.replace(/'/g, "\\'")}')">+ Add "${safeQ}" as New Patient</div>`;
-      }
-    }
-
-    filtered.forEach(name => {
-      html += `<div class="sheet-item" onclick="PhysioApp.selectFromModal('${name.replace(/'/g, "\\'")}')">${name}</div>`;
+    filtered.forEach(p => {
+      html += `<div class="sheet-item" onclick="PhysioApp.selectFromModal('${p.replace(/'/g, "\\'")}')">${p}</div>`;
     });
 
-    if (filtered.length === 0 && !safeQ && currentModalContext !== 'tab3') {
-      html += `<div class="sheet-item" style="color:var(--text-muted); justify-content:center;">Type to search patient name...</div>`;
+    if (filtered.length === 0 && !query) {
+      html = '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 14px;">No patients found.</div>';
     }
 
     list.innerHTML = html;
   }
 
-  function selectFromModal(selectedName) {
-    closePatientModal();
-
+  function selectFromModal(patientName) {
     if (currentModalContext === 'tab1') {
-      document.getElementById('name').value = selectedName;
-      document.getElementById('btnTab1Patient').innerHTML = `<strong>${selectedName}</strong>`;
-      PhysioClinical.quickSelectPatient(selectedName);
-
-      const phones = PhysioDB.getPatientPhones();
-      const pField = document.getElementById('patientPhone');
-      if (pField) pField.value = phones[PhysioDB.sanitizeName(selectedName)] || '';
+      document.getElementById('name').value = patientName;
+      document.getElementById('btnTab1Patient').innerHTML = patientName ? `<strong>${patientName}</strong>` : 'Select Patient...';
+      if (patientName) PhysioClinical.quickSelectPatient(patientName);
     } else if (currentModalContext === 'tab3') {
-      const val = selectedName === 'All Patients' ? '' : selectedName;
-      document.getElementById('ledgerPatientSelect').value = val;
-      document.getElementById('btnTab3Patient').innerHTML = val ? `<strong>${val}</strong>` : '📋 All Patients';
+      document.getElementById('ledgerPatientSelect').value = patientName;
+      document.getElementById('btnTab3Patient').innerHTML = patientName ? `<strong>${patientName}</strong>` : '📋 All Patients';
       PhysioLedger.renderLedger();
     } else if (currentModalContext === 'tab4') {
-      document.getElementById('patientSelect').value = selectedName;
-      document.getElementById('btnTab4Patient').innerHTML = `<strong>${selectedName}</strong>`;
+      document.getElementById('patientSelect').value = patientName;
+      document.getElementById('btnTab4Patient').innerHTML = patientName ? `<strong>${patientName}</strong>` : 'Choose Patient...';
       PhysioClinical.renderPatientHistory();
     } else if (currentModalContext === 'tab5') {
-      document.getElementById('analyticsPatientSelect').value = selectedName;
-      document.getElementById('btnTab5Patient').innerHTML = `<strong>${selectedName}</strong>`;
+      document.getElementById('analyticsPatientSelect').value = patientName;
+      document.getElementById('btnTab5Patient').innerHTML = patientName ? `<strong>${patientName}</strong>` : 'Select Patient...';
       PhysioAnalytics.renderPatientAnalytics();
     }
+
+    closePatientModal();
   }
 
-  // Backup & Settings Modal
+  // Settings & Migration Modal
   function openSettingsModal() {
-    updateSettingsModalBackendInfo();
     const modal = document.getElementById('settingsModal');
-    if (modal) modal.style.display = 'flex';
+    updateSettingsModalBackendInfo();
+    modal.classList.add('active');
   }
 
   function closeSettingsModal() {
     const modal = document.getElementById('settingsModal');
-    if (modal) modal.style.display = 'none';
+    modal.classList.remove('active');
   }
 
   function updateSettingsModalBackendInfo() {
-    const statusText = document.getElementById('backendStatusBadge');
-    if (!statusText) return;
-
+    const badge = document.getElementById('backendStatusBadge');
+    if (!badge) return;
     const backend = PhysioDB.getActiveBackend();
     if (backend === 'firebase') {
-      statusText.innerHTML = '<span style="color:var(--success); font-weight:700;">🔥 Firebase Firestore Active</span>';
+      badge.innerHTML = `<span style="color:var(--success); font-weight:700;">🔥 Firebase Firestore Active</span>`;
     } else {
-      statusText.innerHTML = '<span style="color:var(--primary); font-weight:700;">🟢 Google Sheets ("Physio Tracker") Active</span>';
-    }
-
-    const cfg = PhysioDB.getFirebaseConfig();
-    const configInput = document.getElementById('firebaseConfigInput');
-    if (configInput && cfg) {
-      configInput.value = JSON.stringify(cfg, null, 2);
+      badge.innerHTML = `<span style="color:var(--accent); font-weight:700;">📊 Google Sheets Active</span>`;
     }
   }
 
   async function handleSaveFirebaseConfig() {
-    const raw = (document.getElementById('firebaseConfigInput').value || '').trim();
+    const textarea = document.getElementById('firebaseConfigInput');
+    const raw = textarea.value.trim();
     if (!raw) {
-      showToast("Please paste your Firebase Config JSON", "error");
+      showToast("Please paste configuration JSON", "error");
       return;
     }
-
     try {
-      let cfg;
-      if (raw.startsWith('{')) {
-        cfg = JSON.parse(raw);
-      } else {
-        // Extract json object if user pasted const firebaseConfig = { ... };
-        const match = raw.match(/\{[\s\S]*\}/);
-        if (match) cfg = JSON.parse(match[0]);
-        else throw new Error("Invalid config format");
+      const cfg = JSON.parse(raw);
+      if (!cfg.projectId || !cfg.apiKey) {
+        throw new Error("Invalid Firebase config object");
       }
-
       localStorage.setItem(PhysioConfig.STORAGE_KEYS.FIREBASE_CONFIG, JSON.stringify(cfg));
       const ok = PhysioDB.initFirebase(cfg);
       if (ok) {
-        showToast("✓ Firebase Config saved & initialized!", "success");
-        updateSettingsModalBackendInfo();
+        showToast("Firebase Config saved & connected!", "success");
       } else {
-        showToast("Firebase init error. Check projectId.", "error");
+        showToast("Firebase Config saved (offline initialization)", "info");
       }
     } catch (e) {
-      showToast("Invalid JSON config format", "error");
+      showToast("Invalid JSON format. Check brackets and quotes.", "error");
     }
   }
 
@@ -308,20 +342,21 @@ window.PhysioApp = (function() {
     const btn = document.getElementById('btnStartMigration');
     btn.disabled = true;
     btn.innerText = "Migrating to Firestore...";
+    showToast("Starting Firestore migration...", "info");
 
     try {
-      const res = await PhysioDB.migrateAllToFirebase((done, total) => {
-        btn.innerText = `Migrating ${done}/${total}...`;
+      const result = await PhysioDB.migrateAllToFirebase((done, total) => {
+        btn.innerText = `Migrating (${done}/${total})...`;
       });
-
-      showToast(`🎉 Migrated ${res.migratedVisits} visits & ${res.migratedPatients} patients!`, "success");
+      showToast(`Success! Migrated ${result.migratedVisits} visits & ${result.migratedPatients} patients!`, "success");
       updateSettingsModalBackendInfo();
       updateSyncIndicator("success");
-    } catch (err) {
-      showToast(err.message || "Migration failed", "error");
+    } catch (e) {
+      console.error(e);
+      showToast("Migration error: " + e.message, "error");
     } finally {
       btn.disabled = false;
-      btn.innerText = "🔥 Migrate All 288 Records to Firebase Firestore";
+      btn.innerText = "🔥 Migrate to Firestore";
     }
   }
 
@@ -329,100 +364,112 @@ window.PhysioApp = (function() {
     PhysioDB.setActiveBackend(type);
     updateSettingsModalBackendInfo();
     updateSyncIndicator("success");
-    showToast(`Switched active cloud backend to ${type.toUpperCase()}`, "info");
+    showToast(`Switched backend to ${type.toUpperCase()}`, "info");
   }
 
   // ========================================================
   // STANDALONE INVOICE PORTAL FOR PATIENTS
   // ========================================================
   async function renderStandaloneInvoiceMode(token) {
-    const patientName = PhysioPayments.decodePatientToken(token);
+    const payload = PhysioPayments.decodeInvoicePayload(token);
     document.getElementById('doctorAppView').style.display = 'none';
 
     const portalMount = document.getElementById('patientInvoiceMount');
     portalMount.style.display = 'flex';
 
-    if (!patientName) {
+    if (!payload || !payload.name) {
       portalMount.innerHTML = `
       <div class="invoice-card">
-        <div style="font-size:3rem; margin-bottom:10px;">❌</div>
-        <h2 style="color:var(--danger); margin:0 0 8px 0;">Invoice Not Found</h2>
-        <p style="color:var(--text-muted);">The payment link is invalid or expired. Please contact ${PhysioConfig.CLINIC_NAME}.</p>
+        <div style="font-size:3rem; margin-bottom:12px;">❌</div>
+        <h2 style="color:var(--danger); margin:0 0 8px 0; font-size:1.4rem;">Invoice Not Found</h2>
+        <p style="color:var(--text-muted); font-size:14px; line-height:1.5;">This payment link appears to be invalid or expired. Please contact ${PhysioConfig.CLINIC_NAME}.</p>
       </div>`;
       return;
     }
 
-    const visits = await PhysioDB.init();
-    const cleanName = PhysioDB.sanitizeName(patientName);
-    const patientVisits = visits.filter(v => v.name === cleanName);
+    const patientName = payload.name;
+    let totalDue = payload.totalAmount || 0;
+    let sessions = payload.sessions || [];
 
-    let pendingSessions = [];
-    let totalDue = 0;
+    // If payload did not carry itemized sessions, fallback to local DB if available
+    if (totalDue === 0 && sessions.length === 0) {
+      try {
+        const visits = await PhysioDB.init();
+        const cleanName = PhysioDB.sanitizeName(patientName);
+        const patientVisits = visits.filter(v => v.name === cleanName);
 
-    patientVisits.forEach(v => {
-      const pType = (v.paymentType || '').toLowerCase().trim();
-      const fee = parseFloat(v.totalFee) || 0;
-      const paid = parseFloat(v.amountPaid) || 0;
-      if (pType === 'pending' || ((pType === 'cash' || pType === 'online') && paid < fee)) {
-        const bal = fee - paid;
-        totalDue += bal;
-        const d = v.date ? new Date(v.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : "Visit";
-        pendingSessions.push({ date: d, amount: bal, session: v.sessionType || "Session" });
+        patientVisits.forEach(v => {
+          const pType = (v.paymentType || '').toLowerCase().trim();
+          const fee = parseFloat(v.totalFee) || 0;
+          const paid = parseFloat(v.amountPaid) || 0;
+          if (pType === 'pending' || ((pType === 'cash' || pType === 'online') && paid < fee)) {
+            const bal = fee - paid;
+            totalDue += bal;
+            const d = v.date ? new Date(v.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : "Session";
+            sessions.push({ d: d, a: bal });
+          }
+        });
+      } catch (e) {
+        console.warn("Local DB fallback lookup skipped:", e);
       }
-    });
+    }
 
     if (totalDue === 0) {
       portalMount.innerHTML = `
       <div class="invoice-card">
-        <div style="font-size:3rem; margin-bottom:10px;">✅</div>
-        <h2 style="color:var(--success); margin:0 0 8px 0;">All Dues Cleared</h2>
-        <p style="color:var(--text-main); font-size:15px;">Hello <strong>${cleanName}</strong>, you have zero outstanding balances with ${PhysioConfig.CLINIC_NAME}. Thank you!</p>
+        <div style="font-size:3rem; margin-bottom:12px;">✅</div>
+        <h2 style="color:var(--success); margin:0 0 8px 0; font-size:1.4rem;">All Dues Cleared</h2>
+        <p style="color:var(--text-main); font-size:15px; margin-bottom:16px;">Hello <strong>${patientName}</strong>, you have no outstanding dues with ${PhysioConfig.CLINIC_NAME}.</p>
+        <div style="font-size:13px; color:var(--text-muted);">Thank you for your timely payment! 🌟</div>
       </div>`;
       return;
     }
 
     let itemsHtml = '';
-    pendingSessions.forEach(item => {
+    sessions.forEach(item => {
       itemsHtml += `
-      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border-subtle); font-size:14px;">
-        <span>${item.date} (${item.session})</span>
-        <strong style="color:var(--text-main);">${PhysioPayments.formatINR(item.amount)}</strong>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--border-subtle); font-size:14px;">
+        <span style="color:var(--text-main); font-weight:500;">${item.d || 'Physiotherapy Session'}</span>
+        <strong style="color:var(--text-main);">${PhysioPayments.formatINR(item.a)}</strong>
       </div>`;
     });
 
-    const upiLink = PhysioPayments.buildUPIString(PhysioConfig.CLINIC_UPI_ID, PhysioConfig.CLINIC_PAYEE_NAME, totalDue, `Physio Fee - ${cleanName}`);
+    const upiLink = PhysioPayments.buildUPIString(PhysioConfig.CLINIC_UPI_ID, PhysioConfig.CLINIC_PAYEE_NAME, totalDue, "PhysioClinic");
 
     portalMount.innerHTML = `
     <div class="invoice-card">
-      <div style="font-size: 13px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--primary); margin-bottom:4px;">${PhysioConfig.CLINIC_NAME}</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">${PhysioConfig.CLINIC_TITLE}</div>
+      <div class="invoice-clinic-header">
+        <div class="invoice-clinic-name">${PhysioConfig.CLINIC_NAME}</div>
+        <div class="invoice-clinic-sub">${PhysioConfig.CLINIC_TITLE}</div>
+      </div>
       
       <div class="invoice-badge-due">
-        <div style="font-size:12px; font-weight:700; color:var(--success-text); text-transform:uppercase;">Total Outstanding Due</div>
-        <div style="font-size:2.2rem; font-weight:800; color:var(--success-text); margin-top:4px;">${PhysioPayments.formatINR(totalDue)}</div>
-        <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Patient: <strong>${cleanName}</strong></div>
+        <div class="invoice-badge-label">TOTAL OUTSTANDING DUE</div>
+        <div class="invoice-badge-amount">${PhysioPayments.formatINR(totalDue)}</div>
+        <div class="invoice-patient-tag">Patient: <strong>${patientName}</strong></div>
       </div>
 
-      <div style="text-align:left; background:var(--bg-input); border-radius:var(--radius-md); padding:14px; margin-bottom:20px; border:1px solid var(--border-subtle);">
-        <strong style="font-size:13px; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:8px;">Session Breakdown:</strong>
+      ${itemsHtml ? `
+      <div class="invoice-breakdown-card">
+        <div class="invoice-breakdown-title">Treatment Sessions</div>
         ${itemsHtml}
-      </div>
+      </div>` : ''}
 
-      <a href="${upiLink}" class="btn-main" style="background:var(--primary); text-decoration:none; padding:16px; font-size:17px; margin-bottom:16px;">
+      <a href="${upiLink}" class="btn-main invoice-pay-btn">
         ⚡ Pay ${PhysioPayments.formatINR(totalDue)} via UPI
       </a>
 
-      <div style="margin-top:10px;">
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Or scan using any UPI App (GPay, PhonePe, Paytm):</div>
-        <div id="patientQrCanvasContainer" style="background:#fff; padding:12px; border-radius:var(--radius-md); display:inline-block; border:1px solid var(--border-subtle);"></div>
+      <div class="invoice-qr-wrap">
+        <div class="invoice-qr-title">Or scan QR with GPay, PhonePe, Paytm, BHIM:</div>
+        <div id="patientQrCanvasContainer" class="invoice-qr-canvas"></div>
       </div>
 
-      <button class="btn-main btn-secondary" style="margin-top:16px; padding:10px;" onclick="PhysioApp.copyUPI()">
-        📋 Copy UPI ID: ${PhysioConfig.CLINIC_UPI_ID}
+      <button class="btn-main btn-secondary" style="margin-top:14px; padding:12px; font-size:13px;" onclick="PhysioApp.copyUPI()">
+        📋 Copy UPI ID: <strong>${PhysioConfig.CLINIC_UPI_ID}</strong>
       </button>
 
-      <div style="margin-top:20px; font-size:11px; color:var(--text-light);">
-        Secured UPI Peer-to-Peer Transfer • Bank Grade Security
+      <div class="invoice-security-footer">
+        🔒 NPCI Verified • Direct Account-to-Account UPI Transfer
       </div>
     </div>`;
 
@@ -438,7 +485,7 @@ window.PhysioApp = (function() {
           correctLevel: QRCode.CorrectLevel.H
         });
       }
-    }, 50);
+    }, 60);
   }
 
   function copyUPI() {
@@ -454,6 +501,7 @@ window.PhysioApp = (function() {
     toggleTheme,
     switchTab,
     showToast,
+    setPaymentMethod,
     openPatientModal,
     closePatientModal,
     renderModalList,

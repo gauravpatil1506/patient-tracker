@@ -10,6 +10,7 @@
   <meta name="theme-color" content="#00796b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Physio Clinic">
   <link rel="apple-touch-icon" href="assets/icons/icon.svg">
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
@@ -40,11 +41,14 @@
         <div class="brand-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-4H7v-2h4V7h2v4h4v2h-4v3z"/></svg>
         </div>
-        <div class="brand-name">Dr. Anjali</div>
+        <div>
+          <div class="brand-name">Dr. Anjali Vishwakarma</div>
+          <div class="brand-subtitle">Physiotherapy & Rehabilitation</div>
+        </div>
       </div>
       <div class="header-actions">
         <span id="syncIndicator" class="sync-pill"></span>
-        <button class="btn-icon-header" onclick="PhysioApp.openSettingsModal()" title="Database & Cloud Migration">⚙️</button>
+        <button class="btn-icon-header" onclick="PhysioApp.openSettingsModal()" title="Settings & Cloud Database">⚙️</button>
         <button id="themeToggleBtn" class="btn-icon-header" onclick="PhysioApp.toggleTheme()" title="Toggle Theme">☀️</button>
       </div>
     </header>
@@ -53,95 +57,115 @@
     <!-- TAB 1: NEW VISIT CLINICAL ENTRY            -->
     <!-- ========================================== -->
     <main id="tab1" class="tab-content active container">
-      <!-- 1-Tap Recent Patients Quick-Bar -->
+      
+      <!-- Recent Patients Quick Selector -->
       <div class="quick-patients-bar">
-        <div class="quick-patients-label">
-          <span>⚡ Quick Select Recent Patient:</span>
-        </div>
+        <div class="quick-patients-label">Recent Patients</div>
         <div id="quickPatientsList" class="quick-patients-scroll"></div>
       </div>
 
       <form id="entryForm" onsubmit="PhysioClinical.handleEntryFormSubmit(event)">
-        <div class="card">
+        <div class="card form-card">
+          
           <!-- Patient Selection -->
           <div class="form-group">
-            <label>Patient Name *</label>
-            <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="PhysioApp.openPatientModal('tab1')">🔍 Search or enter new...</button>
+            <label class="field-label">Patient Name *</label>
+            <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="PhysioApp.openPatientModal('tab1')">Select Patient...</button>
             <input type="hidden" id="name" required>
           </div>
 
-          <!-- Phone Number for Direct 1-Tap WhatsApp -->
+          <!-- WhatsApp Phone Number -->
           <div class="form-group">
-            <label>Patient Phone Number (Optional - for 1-Tap WhatsApp)</label>
-            <input type="tel" id="patientPhone" placeholder="e.g. 9876543210">
+            <label class="field-label">WhatsApp Phone (For Invoices & Reminders)</label>
+            <div class="input-with-icon">
+              <span class="input-icon">📞</span>
+              <input type="tel" id="patientPhone" placeholder="10-digit mobile number">
+            </div>
           </div>
 
           <!-- Date & Location -->
           <div class="grid-2">
             <div class="form-group">
-              <label>Date of Visit *</label>
+              <label class="field-label">Date *</label>
               <input type="date" id="date" required>
             </div>
             <div class="form-group">
-              <label>Location (City) *</label>
+              <label class="field-label">Location *</label>
               <input type="text" id="location" required placeholder="e.g. Borivali">
             </div>
           </div>
 
-          <!-- Session & Next Appointment -->
+          <!-- Session Type & Next Appointment -->
           <div class="grid-2">
             <div class="form-group">
-              <label>Session Type *</label>
+              <label class="field-label">Session Type *</label>
               <input type="text" id="sessionType" required placeholder="e.g. Regular, Manual...">
             </div>
             <div class="form-group">
-              <label>Next Appt (Optional)</label>
+              <label class="field-label">Next Visit</label>
               <input type="date" id="nextAppt">
             </div>
           </div>
 
           <!-- Ergonomic Pain Scale Selectors (1-10) -->
           <div class="pain-selector-wrap">
-            <label>Pain Level Before Session (1 = Mild, 10 = Severe)</label>
-            <div id="painBeforeChips" class="pain-chips-row"></div>
+            <div class="pain-label-row">
+              <label class="field-label" style="margin:0;">Pain Before Session</label>
+              <span class="pain-scale-hint">1 Mild • 10 Severe</span>
+            </div>
+            <div id="painBeforeChips" class="pain-chips-grid"></div>
             <input type="hidden" id="painBefore">
           </div>
 
           <div class="pain-selector-wrap">
-            <label>Pain Level After Session (1 = Mild, 10 = Severe)</label>
-            <div id="painAfterChips" class="pain-chips-row"></div>
+            <div class="pain-label-row">
+              <label class="field-label" style="margin:0;">Pain After Session</label>
+              <span class="pain-scale-hint">1 Mild • 10 Severe</span>
+            </div>
+            <div id="painAfterChips" class="pain-chips-grid"></div>
             <input type="hidden" id="painAfter">
           </div>
 
-          <!-- Financial Breakdown -->
-          <div class="grid-3">
+          <!-- Financial Section -->
+          <div class="grid-2">
             <div class="form-group">
-              <label>Total Fee (₹) *</label>
-              <input type="number" id="totalFee" required placeholder="1000">
+              <label class="field-label">Total Fee (₹) *</label>
+              <input type="number" id="totalFee" required placeholder="850" min="0">
             </div>
             <div class="form-group">
-              <label>Paid (₹) *</label>
-              <input type="number" id="amountPaid" value="0" required>
+              <label class="field-label">Amount Paid (₹) *</label>
+              <input type="number" id="amountPaid" value="0" required min="0">
             </div>
-            <div class="form-group">
-              <label>Payment Method *</label>
-              <select id="paymentType">
-                <option value="Online">Online / UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Pending">Unpaid (Pending)</option>
-                <option value="Closed">Closed</option>
-              </select>
+          </div>
+
+          <!-- 1-Tap Payment Mode Segmented Selector -->
+          <div class="form-group">
+            <label class="field-label">Payment Mode</label>
+            <div class="pay-method-selector">
+              <button type="button" class="pay-method-pill active" data-mode="online" onclick="PhysioApp.setPaymentMethod('online')">
+                📱 Online / UPI
+              </button>
+              <button type="button" class="pay-method-pill" data-mode="cash" onclick="PhysioApp.setPaymentMethod('cash')">
+                💵 Cash
+              </button>
+              <button type="button" class="pay-method-pill" data-mode="unpaid" onclick="PhysioApp.setPaymentMethod('unpaid')">
+                ⏳ Unpaid
+              </button>
             </div>
+            <input type="hidden" id="paymentType" value="Online">
           </div>
 
           <!-- Clinical Observations -->
           <div class="form-group" style="margin-bottom: 0;">
-            <label>Treatment Notes</label>
-            <textarea id="notes" rows="3" placeholder="Enter clinical observations, exercises performed, ROM improvements..."></textarea>
+            <label class="field-label">Treatment Notes</label>
+            <textarea id="notes" rows="2" placeholder="Exercises performed, ROM improvements, precautions..."></textarea>
           </div>
+
         </div>
 
-        <button type="submit" class="btn-main" id="submitBtn">Save Session Record</button>
+        <button type="submit" class="btn-main submit-btn" id="submitBtn">
+          Save Session Record
+        </button>
       </form>
     </main>
 
@@ -149,12 +173,17 @@
     <!-- TAB 2: RECENT SESSIONS & UPCOMING          -->
     <!-- ========================================== -->
     <main id="tab2" class="tab-content container">
-      <h3 style="margin-top:0; color:var(--primary); font-size:1.15rem;">Upcoming Appointments</h3>
+      
+      <div class="section-header">
+        <h3 class="section-title">Upcoming Appointments</h3>
+      </div>
       <div id="upcomingList" style="margin-bottom: 24px;"></div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <h3 style="margin:0; color:var(--primary); font-size:1.15rem;">Last 5 Treatment Sessions</h3>
-        <button id="btnEditRecent" onclick="PhysioLedger.toggleDeleteMode()" style="background:none; border:none; font-size:18px; cursor:pointer; padding:4px;">✏️</button>
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 class="section-title" style="margin:0;">Recent Sessions</h3>
+        <button id="btnEditRecent" onclick="PhysioLedger.toggleDeleteMode()" class="btn-subtle-action" title="Toggle Delete Mode">
+          ✏️ Edit
+        </button>
       </div>
       <div id="recentList"></div>
     </main>
@@ -163,32 +192,39 @@
     <!-- TAB 3: LEDGER & FINANCIAL COLLECTION       -->
     <!-- ========================================== -->
     <main id="tab3" class="tab-content container">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
-        <h3 style="margin:0; color:var(--primary); font-size:1.15rem;">Clinic Ledger</h3>
+      
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 class="section-title" style="margin:0;">Practice Ledger</h3>
         <div style="display:flex; gap:8px; align-items:center;">
-          <div id="ledgerSummary" style="background:var(--danger); color:white; padding:6px 12px; border-radius:20px; font-weight:700; font-size:13px; display:none; white-space:nowrap;"></div>
+          <div id="ledgerSummary" class="ledger-pill-summary"></div>
           <button id="waReminderBtn" class="wa-btn" style="display:none;" onclick="PhysioLedger.dispatchWhatsAppReminder()" title="Send WhatsApp Invoice Link">
-            <svg viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.388 0 12.042c0 2.128.552 4.195 1.6 6.007L.182 24l6.103-1.602a11.967 11.967 0 0 0 5.746 1.472h.005c6.645 0 12.03-5.387 12.03-12.04C24.066 5.385 18.679 0 12.031 0zm0 21.916a9.927 9.927 0 0 1-5.077-1.39l-.364-.216-3.774.99.999-3.681-.237-.377a9.914 9.914 0 0 1-1.523-5.2C2.054 5.518 7.558 0 14.167 0c6.608 0 12.016 5.517 12.016 12.042 0 6.526-5.408 12.042-12.016 12.042zm6.59-8.995c-.361-.182-2.143-1.058-2.474-1.18-.332-.12-5.74-.182-.812.09l-1.168 1.39c-.276.332-.553.364-.915.183-.362-.182-1.529-.564-2.913-1.802-1.077-.962-1.804-2.15-2.014-2.512-.21-.362-.022-.558.158-.738.163-.162.362-.423.543-.634.181-.212.241-.362.362-.603.12-.24.06-.453-.03-.634-.09-.182-.813-1.958-1.114-2.68-.293-.7-.594-.606-.813-.617-.211-.01-.452-.01-.693-.01-.24 0-.632.09-.963.452-.332.363-1.265 1.239-1.265 3.02s1.295 3.504 1.476 3.746c.181.242 2.551 3.896 6.182 5.462.864.373 1.54.596 2.066.763.868.275 1.658.236 2.279.143.697-.104 2.143-.876 2.443-1.722.302-.846.302-1.57.211-1.722-.09-.15-.332-.24-.693-.42z"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.456 5.71 1.457h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
           </button>
         </div>
       </div>
 
-      <!-- Segmented Toggle -->
+      <!-- Segmented View Toggle -->
       <div class="segmented-control">
-        <button id="btnTogglePending" class="segment-btn active-pending" onclick="PhysioLedger.switchLedgerView('pending')">🔴 Pending Dues</button>
-        <button id="btnToggleReceived" class="segment-btn" onclick="PhysioLedger.switchLedgerView('received')">🟢 Payments Received</button>
+        <button id="btnTogglePending" class="segment-btn active-pending" onclick="PhysioLedger.switchLedgerView('pending')">
+          🔴 Pending Dues
+        </button>
+        <button id="btnToggleReceived" class="segment-btn" onclick="PhysioLedger.switchLedgerView('received')">
+          🟢 Collected Revenue
+        </button>
       </div>
 
       <!-- Patient Filter -->
-      <div class="card" style="padding:12px; margin-bottom:14px;">
-        <label>Filter by Patient</label>
+      <div class="card" style="padding:12px 16px; margin-bottom:14px;">
+        <label class="field-label" style="margin-bottom:4px;">Filter by Patient</label>
         <button type="button" class="patient-select-btn" id="btnTab3Patient" onclick="PhysioApp.openPatientModal('tab3')">📋 All Patients</button>
         <input type="hidden" id="ledgerPatientSelect" value="">
       </div>
 
       <!-- Grouped Combined QR Action Bar -->
       <div id="groupedActionBar" style="display:none; margin-bottom:14px;">
-        <button id="groupedQrBtn" class="btn-main" style="background:#2563eb; padding:12px;">📷 Show Combined UPI QR</button>
+        <button id="groupedQrBtn" class="btn-main" style="background:#2563eb; padding:12px; font-size:14px;">📷 Show Combined UPI QR</button>
       </div>
 
       <div id="pendingList"></div>
@@ -199,19 +235,22 @@
     <!-- TAB 4: CLINICAL RECORDS (PATIENT TIMELINE) -->
     <!-- ========================================== -->
     <main id="tab4" class="tab-content container">
-      <h3 style="margin-top:0; color:var(--primary); font-size:1.15rem;">Patient Clinical History</h3>
-      <div class="card">
-        <label>Select Patient</label>
-        <button type="button" class="patient-select-btn" id="btnTab4Patient" onclick="PhysioApp.openPatientModal('tab4')">👤 Choose a Patient...</button>
+      <div class="section-header">
+        <h3 class="section-title">Patient Clinical History</h3>
+      </div>
+      
+      <div class="card" style="padding:14px 16px; margin-bottom:14px;">
+        <label class="field-label" style="margin-bottom:4px;">Select Patient</label>
+        <button type="button" class="patient-select-btn" id="btnTab4Patient" onclick="PhysioApp.openPatientModal('tab4')">Choose Patient...</button>
         <input type="hidden" id="patientSelect" value="">
       </div>
 
       <!-- Schedule Next Visit Card -->
-      <div class="card" id="scheduleCard" style="display:none; border-left:4px solid var(--primary);">
-        <h4 style="margin:0 0 10px 0; font-size:15px; color:var(--text-main);">Schedule Next Visit</h4>
+      <div class="card" id="scheduleCard" style="display:none; border-left:4px solid var(--primary); padding:16px;">
+        <h4 style="margin:0 0 10px 0; font-size:14px; font-weight:700; color:var(--text-main);">Schedule Next Appointment</h4>
         <div style="display:flex; gap:10px;">
           <input type="date" id="newNextApptDate" style="flex:1;">
-          <button class="btn-main" style="width:auto; padding:10px 20px;" onclick="PhysioClinical.saveNextAppt()">Save</button>
+          <button class="btn-main" style="width:auto; padding:10px 18px; margin:0;" onclick="PhysioClinical.saveNextAppt()">Save</button>
         </div>
         <div id="apptStatusMsg" style="margin-top:8px; font-size:12px;"></div>
       </div>
@@ -223,8 +262,9 @@
     <!-- TAB 5: BUSINESS INSIGHTS & ANALYTICS       -->
     <!-- ========================================== -->
     <main id="tab5" class="tab-content container">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0; color:var(--primary); font-size:1.15rem;">Practice Intelligence</h3>
+      
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 class="section-title" style="margin:0;">Clinic Intelligence</h3>
         <select id="dashYearFilter" onchange="PhysioAnalytics.renderDashboard()" style="width:auto; padding:6px 12px; font-size:13px;">
           <option value="All">All-Time</option>
         </select>
@@ -251,10 +291,12 @@
       </div>
 
       <!-- Individual Patient Recovery Trajectory -->
-      <h3 style="margin-top:24px; color:var(--primary); font-size:1.15rem;">Patient Progress Analytics</h3>
-      <div class="card">
-        <label>Select Patient</label>
-        <button type="button" class="patient-select-btn" id="btnTab5Patient" onclick="PhysioApp.openPatientModal('tab5')">👤 Select Patient...</button>
+      <div class="section-header" style="margin-top:24px;">
+        <h3 class="section-title">Patient Progress Analytics</h3>
+      </div>
+      <div class="card" style="padding:16px;">
+        <label class="field-label" style="margin-bottom:4px;">Select Patient</label>
+        <button type="button" class="patient-select-btn" id="btnTab5Patient" onclick="PhysioApp.openPatientModal('tab5')">Select Patient...</button>
         <input type="hidden" id="analyticsPatientSelect" value="">
 
         <div id="patientAnalyticsData" style="display:none; margin-top:16px; border-top:1px solid var(--border-subtle); padding-top:16px;">
@@ -279,7 +321,7 @@
 
       <!-- Aged Debtors Breakdown -->
       <div id="agedDebtorsContainer" style="margin-top:24px;">
-        <h3 style="color:var(--primary); margin-bottom:10px; font-size:1.15rem;">Pending Balances by Month</h3>
+        <h3 class="section-title" style="margin-bottom:10px;">Pending Balances by Month</h3>
         <div id="agedDebtorsList"></div>
       </div>
     </main>
@@ -354,23 +396,16 @@
 
         <!-- Firebase Firestore Migration Engine -->
         <div style="border-top:1px solid var(--border-subtle); padding-top:14px; margin-bottom:14px;">
-          <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-main);">🔥 Migrate to Firebase Firestore (Free Tier)</h4>
+          <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-main);">🔥 Firebase Firestore (Free Tier)</h4>
           <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0; line-height:1.4;">
-            Paste your Firebase Web App configuration JSON from your Firebase Console.
+            Active project: <code>physio-clinic-730a1</code> (All 288 records migrated).
           </p>
-          <textarea id="firebaseConfigInput" rows="4" style="font-family:monospace; font-size:12px;" placeholder='{
-  "apiKey": "AIzaSy...",
-  "authDomain": "physio.firebaseapp.com",
-  "projectId": "physio-clinic-123",
-  "storageBucket": "physio.appspot.com",
-  "messagingSenderId": "123456789",
-  "appId": "1:12345:web:abcdef"
-}'></textarea>
+          <textarea id="firebaseConfigInput" rows="3" style="font-family:monospace; font-size:12px;" placeholder="Paste new config if rotating keys..."></textarea>
           
           <div style="display:flex; gap:8px; margin-top:8px;">
             <button class="btn-main btn-secondary" style="padding:8px 12px; font-size:13px;" onclick="PhysioApp.handleSaveFirebaseConfig()">Save Config</button>
             <button class="btn-main" id="btnStartMigration" style="padding:8px 12px; font-size:13px; background:#f97316;" onclick="PhysioApp.handleStartFirebaseMigration()">
-              🔥 Migrate 288 Records to Firestore
+              🔥 Re-Sync to Firestore
             </button>
           </div>
         </div>

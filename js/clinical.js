@@ -6,7 +6,7 @@
 window.PhysioClinical = (function() {
   let isSubmitting = false;
 
-  // Initialize Pain Scale Chips (1-10)
+  // Initialize Ergonomic Pain Scale Selectors (1-10 in 2 rows of 5)
   function initPainSelectors() {
     const beforeContainer = document.getElementById('painBeforeChips');
     const afterContainer = document.getElementById('painAfterChips');
@@ -19,7 +19,7 @@ window.PhysioClinical = (function() {
   function createPainChipsHTML(inputPrefix) {
     let html = '';
     for (let i = 1; i <= 10; i++) {
-      html += `<div class="pain-chip" data-val="${i}" onclick="PhysioClinical.selectPainChip('${inputPrefix}', ${i})">${i}</div>`;
+      html += `<button type="button" class="pain-chip" data-val="${i}" onclick="PhysioClinical.selectPainChip('${inputPrefix}', ${i})">${i}</button>`;
     }
     return html;
   }
@@ -27,6 +27,16 @@ window.PhysioClinical = (function() {
   function selectPainChip(inputPrefix, value) {
     const hiddenInput = document.getElementById(inputPrefix);
     if (!hiddenInput) return;
+
+    // Toggle off if tapping already selected chip
+    if (parseInt(hiddenInput.value, 10) === value) {
+      hiddenInput.value = '';
+      const container = document.getElementById(inputPrefix + 'Chips');
+      if (container) {
+        container.querySelectorAll('.pain-chip').forEach(c => c.classList.remove('active'));
+      }
+      return;
+    }
 
     hiddenInput.value = value;
     const container = document.getElementById(inputPrefix + 'Chips');
@@ -63,14 +73,13 @@ window.PhysioClinical = (function() {
       return;
     }
 
-    // Sort visits descending
     const sorted = [...visits].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const uniqueNames = [];
     for (let v of sorted) {
       if (v.name && !uniqueNames.includes(v.name)) {
         uniqueNames.push(v.name);
       }
-      if (uniqueNames.length >= 6) break;
+      if (uniqueNames.length >= 8) break;
     }
 
     let html = '';
@@ -87,6 +96,13 @@ window.PhysioClinical = (function() {
     if (nameInput) nameInput.value = patientName;
     if (selectBtn) selectBtn.innerHTML = `<strong>${patientName}</strong>`;
 
+    // Load custom saved phone if any
+    const phones = PhysioDB.getPatientPhones();
+    const phoneInput = document.getElementById('patientPhone');
+    if (phoneInput) {
+      phoneInput.value = phones[PhysioDB.sanitizeName(patientName)] || '';
+    }
+
     // Auto-fill recent visit parameters
     const visits = PhysioDB.getVisits();
     const patientVisits = visits.filter(v => v.name === patientName);
@@ -95,7 +111,13 @@ window.PhysioClinical = (function() {
       const latest = patientVisits[0];
       if (latest.location) document.getElementById('location').value = latest.location;
       if (latest.sessionType) document.getElementById('sessionType').value = latest.sessionType;
-      if (latest.totalFee) document.getElementById('totalFee').value = latest.totalFee;
+      if (latest.totalFee) {
+        document.getElementById('totalFee').value = latest.totalFee;
+        const pType = document.getElementById('paymentType')?.value;
+        if (pType === 'Online' || pType === 'Cash') {
+          document.getElementById('amountPaid').value = latest.totalFee;
+        }
+      }
     }
   }
 
@@ -110,9 +132,17 @@ window.PhysioClinical = (function() {
       return;
     }
 
+    const feeVal = parseFloat(document.getElementById('totalFee').value) || 0;
+    const paidVal = parseFloat(document.getElementById('amountPaid').value) || 0;
+    let paymentType = document.getElementById('paymentType')?.value || 'Online';
+
+    if (paidVal === 0 && feeVal > 0) {
+      paymentType = 'Pending';
+    }
+
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
-    submitBtn.innerText = "Saving Record...";
+    submitBtn.innerText = "Saving...";
     isSubmitting = true;
 
     const visitData = {
@@ -122,9 +152,9 @@ window.PhysioClinical = (function() {
       sessionType: document.getElementById('sessionType').value,
       painBefore: document.getElementById('painBefore').value,
       painAfter: document.getElementById('painAfter').value,
-      totalFee: document.getElementById('totalFee').value,
-      amountPaid: document.getElementById('amountPaid').value,
-      paymentType: document.getElementById('paymentType').value,
+      totalFee: feeVal,
+      amountPaid: paidVal,
+      paymentType: paymentType,
       nextAppt: document.getElementById('nextAppt').value,
       notes: document.getElementById('notes').value
     };
@@ -139,16 +169,18 @@ window.PhysioClinical = (function() {
       await PhysioDB.addVisit(visitData);
       PhysioApp.showToast("✓ Visit saved successfully", "success");
 
-      // Reset Form
+      // Reset Form for next record
       document.getElementById('entryForm').reset();
       document.getElementById('date').valueAsDate = new Date();
       document.getElementById('amountPaid').value = "0";
       document.getElementById('name').value = "";
-      document.getElementById('btnTab1Patient').innerHTML = "🔍 Search or enter new...";
+      document.getElementById('btnTab1Patient').innerHTML = "Select Patient...";
+      PhysioApp.setPaymentMethod('online');
       resetPainChips();
       renderQuickPatientsBar();
 
     } catch (err) {
+      console.error(err);
       PhysioApp.showToast("Error saving session", "error");
     } finally {
       submitBtn.disabled = false;
@@ -165,7 +197,7 @@ window.PhysioClinical = (function() {
     if (!timeline) return;
 
     if (!selectedName) {
-      timeline.innerHTML = '<div class="card" style="text-align:center;"><p style="color:var(--text-muted);">Please select a patient above to view treatment history.</p></div>';
+      timeline.innerHTML = '<div class="card" style="text-align:center; padding:24px;"><p style="color:var(--text-muted); margin:0; font-size:14px;">Select a patient above to view their clinical history and pain recovery trajectory.</p></div>';
       if (scheduleCard) scheduleCard.style.display = "none";
       return;
     }
@@ -178,7 +210,7 @@ window.PhysioClinical = (function() {
     const patientVisits = visits.filter(v => v.name === selectedName);
 
     if (patientVisits.length === 0) {
-      timeline.innerHTML = '<div class="card" style="text-align:center;"><p>No records found for this patient.</p></div>';
+      timeline.innerHTML = '<div class="card" style="text-align:center; padding:20px;"><p style="margin:0; color:var(--text-muted);">No records found for this patient.</p></div>';
       return;
     }
 
@@ -190,17 +222,23 @@ window.PhysioClinical = (function() {
       const displayDate = d && !isNaN(d) ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : "No Date";
       
       html += `
-      <div class="card" style="border-left: 4px solid var(--primary);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+      <div class="card" style="border-left: 4px solid var(--primary); padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
           <span style="font-weight:700; color:var(--primary); font-size:15px;">${displayDate}</span>
           <span class="badge badge-success">${v.sessionType || "Session"}</span>
         </div>
-        <div style="background: var(--bg-input); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 8px; display:flex; justify-content:space-around; text-align:center;">
-          <div><div style="font-size:11px; color:var(--text-muted); font-weight:700;">PAIN BEFORE</div><strong style="font-size:17px; color:var(--danger);">${v.painBefore || "-"}</strong></div>
-          <div style="color:var(--text-muted); font-size:20px; line-height:1.2;">→</div>
-          <div><div style="font-size:11px; color:var(--text-muted); font-weight:700;">PAIN AFTER</div><strong style="font-size:17px; color:var(--success);">${v.painAfter || "-"}</strong></div>
+        <div style="background: var(--bg-input); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 10px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
+          <div>
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Before</div>
+            <strong style="font-size:18px; color:var(--danger);">${v.painBefore != null ? v.painBefore : "-"}</strong>
+          </div>
+          <div style="color:var(--text-muted); font-size:18px;">→</div>
+          <div>
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">After</div>
+            <strong style="font-size:18px; color:var(--success);">${v.painAfter != null ? v.painAfter : "-"}</strong>
+          </div>
         </div>
-        <p style="margin: 4px 0; font-size: 14px; line-height:1.5;"><strong>Notes:</strong> ${v.notes || "No clinical observations recorded."}</p>
+        ${v.notes ? `<p style="margin: 0; font-size: 13.5px; line-height:1.5; color:var(--text-main);"><strong>Notes:</strong> ${v.notes}</p>` : `<span style="font-size:12px; color:var(--text-muted);">No additional notes.</span>`}
       </div>`;
     });
 
