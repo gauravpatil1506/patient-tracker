@@ -285,11 +285,12 @@ window.PhysioLedger = (function() {
 
         upHtml += `
         <div class="card upcoming-item-card">
-          <!-- Row 1: Patient Name & WhatsApp Action Button -->
+          <!-- Row 1: Patient Name & WhatsApp Action Badge (Exact same height as Recent Sessions .badge) -->
           <div class="card-row-head">
             <h4 class="card-item-title">${item.name}</h4>
-            <button class="wa-btn-circle" onclick="PhysioPayments.sendAppointmentReminder('${item.name.replace(/'/g, "\\'")}', '${dateStr}', '${phone || ''}')" title="Send WhatsApp Appointment Reminder">
-              ${PhysioPayments.getWhatsAppIconSVG(20)}
+            <button class="upcoming-wa-badge" onclick="PhysioPayments.sendAppointmentReminder('${item.name.replace(/'/g, "\\'")}', '${dateStr}', '${phone || ''}')" title="Send WhatsApp Appointment Reminder">
+              ${PhysioPayments.getWhatsAppIconSVG(13)}
+              <span>Remind</span>
             </button>
           </div>
 
@@ -303,6 +304,8 @@ window.PhysioLedger = (function() {
             <span class="meta-item-highlight">📅 ${dateStr}</span>
             <span class="meta-sep">|</span>
             <span class="meta-item">📍 ${item.visit.location || "Clinic"}</span>
+            <span class="meta-sep">|</span>
+            <span class="meta-item" style="color:var(--primary); font-weight:600;">⏳ Scheduled</span>
           </div>
         </div>`;
       });

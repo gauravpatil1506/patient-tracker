@@ -15,8 +15,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/design-system.css?v=4">
-  <link rel="stylesheet" href="css/app.css?v=4">
+  <link rel="stylesheet" href="css/design-system.css?v=6">
+  <link rel="stylesheet" href="css/app.css?v=6">
 
   <!-- Self-Hosted High Performance Vendor Libraries (Zero External CDN Latency) -->
   <script src="vendor/chart.min.js"></script>
@@ -35,24 +35,24 @@
   <!-- MAIN DOCTOR CLINIC APPLICATION SHELL -->
   <div id="doctorAppView">
     
-    <!-- Top Sticky Header -->
+    <!-- Top Sticky Header (Uncluttered, Zero Overlap Architecture) -->
     <header class="app-header">
       <div class="brand-wrapper">
         <div class="brand-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-4H7v-2h4V7h2v4h4v2h-4v3z"/></svg>
         </div>
-        <div>
+        <div class="brand-text-col">
           <div class="brand-name">Dr. Anjali Vishwakarma</div>
-          <div class="brand-subtitle">Physiotherapy & Rehabilitation</div>
+          <div class="brand-subtitle">Physiotherapy Clinic</div>
         </div>
       </div>
       <div class="header-actions">
         <button id="btnHeaderSync" class="btn-icon-header" onclick="PhysioApp.manualCloudSync()" title="Fast Cloud Sync & Refresh">
-          <svg id="headerSyncIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg id="headerSyncIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
           </svg>
+          <span id="syncDotBadge" class="sync-dot-badge online" title="Firestore Connected"></span>
         </button>
-        <span id="syncIndicator" class="sync-pill"></span>
         <button class="btn-icon-header" onclick="PhysioApp.openSettingsModal()" title="Clinic Profile & Settings">⚙️</button>
         <button id="themeToggleBtn" class="btn-icon-header" onclick="PhysioApp.toggleTheme()" title="Toggle Theme">☀️</button>
       </div>
@@ -328,12 +328,33 @@
         </div>
       </div>
 
-      <!-- Treatment Modality Distribution Breakdown -->
-      <div class="card" style="padding:14px 16px; margin-bottom:14px;">
-        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; letter-spacing:0.05em;">
-          🩺 Clinical Treatment Modalities
+      <!-- Practice Earnings & Revenue Channels (Financial Intelligence) -->
+      <div class="card earnings-analysis-card">
+        <div class="earnings-header-row">
+          <span class="earnings-module-title">💼 Revenue by Practice Location</span>
+          <span class="earnings-health-badge" id="dashRealizationRate">Realized Rate</span>
         </div>
-        <div id="dashModalityList"></div>
+        
+        <!-- Practice Economics Sub-metrics -->
+        <div class="earnings-kpi-grid">
+          <div class="earnings-kpi-item">
+            <span class="kpi-label">Avg / Visit</span>
+            <strong class="kpi-value" id="dashAvgFee">₹0</strong>
+          </div>
+          <div class="earnings-kpi-divider"></div>
+          <div class="earnings-kpi-item">
+            <span class="kpi-label">Avg / Patient</span>
+            <strong class="kpi-value" id="dashAvgPerPatient">₹0</strong>
+          </div>
+          <div class="earnings-kpi-divider"></div>
+          <div class="earnings-kpi-item">
+            <span class="kpi-label">Collected</span>
+            <strong class="kpi-value" id="dashRealizationPct" style="color:var(--success);">0%</strong>
+          </div>
+        </div>
+
+        <!-- Location-wise Earnings Breakdown -->
+        <div id="dashLocationEarningsList" class="earnings-location-list"></div>
       </div>
 
       <!-- Monthly Cashflow Matrix Chart -->
@@ -511,12 +532,12 @@
   </div>
 
   <!-- Application Modules -->
-  <script src="js/config.js?v=5"></script>
-  <script src="js/db.js?v=5"></script>
-  <script src="js/payments.js?v=5"></script>
-  <script src="js/clinical.js?v=5"></script>
-  <script src="js/ledger.js?v=5"></script>
-  <script src="js/analytics.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/db.js?v=6"></script>
+  <script src="js/payments.js?v=6"></script>
+  <script src="js/clinical.js?v=6"></script>
+  <script src="js/ledger.js?v=6"></script>
+  <script src="js/analytics.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>

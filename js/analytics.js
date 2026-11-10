@@ -44,7 +44,9 @@ window.PhysioAnalytics = (function() {
 
     const monthDataMap = {};
     const agedDebtors = {};
-    const modalityCounts = {};
+    const locationRevenueMap = {};
+    const activePatientSet = new Set();
+    let totalVisitsCount = 0;
     let documentedSessions = 0;
     let sumPainReliefPct = 0;
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -67,10 +69,17 @@ window.PhysioAnalytics = (function() {
 
       totalBilled += fee;
       totalCollected += paid;
+      totalVisitsCount++;
+      if (v.name) activePatientSet.add(v.name);
 
-      // Track modalities
-      const sType = (v.sessionType || 'Regular').trim();
-      modalityCounts[sType] = (modalityCounts[sType] || 0) + 1;
+      // Track revenue by practice location
+      const loc = (v.location || 'Clinic').trim();
+      if (!locationRevenueMap[loc]) {
+        locationRevenueMap[loc] = { collected: 0, billed: 0, visits: 0 };
+      }
+      locationRevenueMap[loc].collected += paid;
+      locationRevenueMap[loc].billed += fee;
+      locationRevenueMap[loc].visits += 1;
 
       // Track clinical recovery index
       if (v.painBefore !== null && v.painAfter !== null && v.painBefore > 0) {
@@ -120,26 +129,40 @@ window.PhysioAnalytics = (function() {
       }
     }
 
-    // Treatment Modality Distribution Breakdown
-    const modalityContainer = document.getElementById('dashModalityList');
-    if (modalityContainer) {
-      const totalSessions = Object.values(modalityCounts).reduce((a, b) => a + b, 0);
-      const sortedModalities = Object.entries(modalityCounts).sort((a, b) => b[1] - a[1]);
-      let modHtml = '';
-      sortedModalities.forEach(([mod, count]) => {
-        const pct = totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
-        modHtml += `
-        <div class="modality-row">
-          <div class="modality-info">
-            <span class="modality-name">${mod}</span>
-            <span class="modality-count">${count} visits (${pct}%)</span>
+    // Practice Financial KPIs (Average Fee, Per-Patient, Realization Rate)
+    const avgFee = totalVisitsCount > 0 ? Math.round(totalCollected / totalVisitsCount) : 0;
+    const avgPerPatient = activePatientSet.size > 0 ? Math.round(totalCollected / activePatientSet.size) : 0;
+    const realizationRate = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 100;
+
+    const avgFeeEl = document.getElementById('dashAvgFee');
+    const avgPatientEl = document.getElementById('dashAvgPerPatient');
+    const realizationPctEl = document.getElementById('dashRealizationPct');
+    const realizationRateBadge = document.getElementById('dashRealizationRate');
+
+    if (avgFeeEl) avgFeeEl.innerText = `₹${avgFee.toLocaleString('en-IN')}`;
+    if (avgPatientEl) avgPatientEl.innerText = `₹${avgPerPatient.toLocaleString('en-IN')}`;
+    if (realizationPctEl) realizationPctEl.innerText = `${realizationRate}%`;
+    if (realizationRateBadge) realizationRateBadge.innerText = `${realizationRate}% Realized`;
+
+    // Revenue by Practice Location Breakdown
+    const locationContainer = document.getElementById('dashLocationEarningsList');
+    if (locationContainer) {
+      const sortedLocations = Object.entries(locationRevenueMap).sort((a, b) => b[1].collected - a[1].collected);
+      let locHtml = '';
+      sortedLocations.forEach(([locName, data]) => {
+        const pct = totalCollected > 0 ? Math.round((data.collected / totalCollected) * 100) : 0;
+        locHtml += `
+        <div class="earnings-location-item">
+          <div class="earnings-loc-info">
+            <span class="earnings-loc-name">📍 ${locName} <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(${data.visits} visits)</span></span>
+            <span class="earnings-loc-amount">₹${data.collected.toLocaleString('en-IN')} <strong style="color:var(--text-muted); font-size:11px;">(${pct}%)</strong></span>
           </div>
-          <div class="modality-bar-bg">
-            <div class="modality-bar-fill" style="width: ${pct}%;"></div>
+          <div class="earnings-loc-bar-bg">
+            <div class="earnings-loc-bar-fill" style="width: ${pct}%;"></div>
           </div>
         </div>`;
       });
-      modalityContainer.innerHTML = modHtml;
+      locationContainer.innerHTML = locHtml;
     }
 
     // Update Cashflow Chart

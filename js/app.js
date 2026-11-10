@@ -109,35 +109,31 @@ window.PhysioApp = (function() {
     if (btn) btn.innerText = theme === 'dark' ? '☀️' : '🌙';
   }
 
-  // Sleek Status Indicator (Non-intrusive)
+  // Sleek Status Indicator (Zero-clutter badge on Cloud Sync button)
   function updateSyncIndicator(status) {
-    const pill = document.getElementById('syncIndicator');
-    if (!pill) return;
-
-    const backend = PhysioDB.getActiveBackend();
-    const label = backend === 'firebase' ? 'Firestore' : 'Cloud';
-
-    if (status === 'syncing') {
-      pill.className = 'sync-pill syncing';
-      pill.innerHTML = `<span class="status-dot pulse"></span><span>${label}</span>`;
-      pill.style.opacity = '1';
-    } else if (status === 'offline') {
-      if (!navigator.onLine) {
-        pill.className = 'sync-pill offline';
-        pill.innerHTML = `<span class="status-dot offline"></span><span>Offline</span>`;
-        pill.style.opacity = '1';
+    const dot = document.getElementById('syncDotBadge');
+    if (dot) {
+      if (status === 'syncing') {
+        dot.className = 'sync-dot-badge syncing';
+        dot.title = 'Syncing with Firestore...';
+      } else if (status === 'offline' || !navigator.onLine) {
+        dot.className = 'sync-dot-badge offline';
+        dot.title = 'Operating Offline (Local DB Active)';
       } else {
-        pill.style.opacity = '0';
+        dot.className = 'sync-dot-badge online';
+        dot.title = 'Connected to Firestore Cloud';
       }
-    } else {
-      pill.className = 'sync-pill synced';
-      pill.innerHTML = `<span class="status-dot online"></span><span>${label}</span>`;
-      pill.style.opacity = '1';
-      setTimeout(() => {
-        if (pill.classList.contains('synced')) {
-          pill.style.opacity = '0.35';
-        }
-      }, 3000);
+    }
+
+    const pill = document.getElementById('syncIndicator');
+    if (pill) {
+      if (status === 'syncing') {
+        pill.className = 'sync-pill syncing';
+      } else if (status === 'offline') {
+        pill.className = 'sync-pill offline';
+      } else {
+        pill.className = 'sync-pill synced';
+      }
     }
   }
 
