@@ -1647,6 +1647,58 @@ input:focus, select:focus, textarea:focus {
   background: var(--border-subtle);
 }
 
+/* Clickable Expandable Location Breakdown Accordion */
+.earnings-details-accordion {
+  border-top: 1px dashed var(--border-subtle);
+  padding-top: 10px;
+}
+
+.earnings-details-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.earnings-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.earnings-details-summary:active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.summary-arrow {
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  line-height: 1;
+}
+
+.earnings-details-accordion[open] .summary-arrow {
+  transform: rotate(180deg);
+}
+
+.earnings-details-accordion[open] .earnings-details-summary {
+  margin-bottom: 12px;
+  background: var(--primary-light);
+}
+
+.earnings-location-list {
+  padding: 2px 2px;
+}
+
 .earnings-location-item {
   margin-bottom: 10px;
 }

@@ -146,8 +146,12 @@ window.PhysioAnalytics = (function() {
 
     // Revenue by Practice Location Breakdown
     const locationContainer = document.getElementById('dashLocationEarningsList');
+    const locationSummaryText = document.getElementById('earningsLocationSummaryText');
     if (locationContainer) {
       const sortedLocations = Object.entries(locationRevenueMap).sort((a, b) => b[1].collected - a[1].collected);
+      if (locationSummaryText) {
+        locationSummaryText.innerText = `📍 View Location Breakdown (${sortedLocations.length} Locations)`;
+      }
       let locHtml = '';
       sortedLocations.forEach(([locName, data]) => {
         const pct = totalCollected > 0 ? Math.round((data.collected / totalCollected) * 100) : 0;

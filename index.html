@@ -15,8 +15,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/design-system.css?v=6">
-  <link rel="stylesheet" href="css/app.css?v=6">
+  <link rel="stylesheet" href="css/design-system.css?v=7">
+  <link rel="stylesheet" href="css/app.css?v=7">
 
   <!-- Self-Hosted High Performance Vendor Libraries (Zero External CDN Latency) -->
   <script src="vendor/chart.min.js"></script>
@@ -353,8 +353,14 @@
           </div>
         </div>
 
-        <!-- Location-wise Earnings Breakdown -->
-        <div id="dashLocationEarningsList" class="earnings-location-list"></div>
+        <!-- Clickable Expandable Location Breakdown (Clean & Compact) -->
+        <details class="earnings-details-accordion" id="earningsLocationDetails">
+          <summary class="earnings-details-summary">
+            <span id="earningsLocationSummaryText">📍 View Location Breakdown</span>
+            <span class="summary-arrow">▾</span>
+          </summary>
+          <div id="dashLocationEarningsList" class="earnings-location-list"></div>
+        </details>
       </div>
 
       <!-- Monthly Cashflow Matrix Chart -->
@@ -532,12 +538,12 @@
   </div>
 
   <!-- Application Modules -->
-  <script src="js/config.js?v=6"></script>
-  <script src="js/db.js?v=6"></script>
-  <script src="js/payments.js?v=6"></script>
-  <script src="js/clinical.js?v=6"></script>
-  <script src="js/ledger.js?v=6"></script>
-  <script src="js/analytics.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/config.js?v=7"></script>
+  <script src="js/db.js?v=7"></script>
+  <script src="js/payments.js?v=7"></script>
+  <script src="js/clinical.js?v=7"></script>
+  <script src="js/ledger.js?v=7"></script>
+  <script src="js/analytics.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>
