@@ -11,6 +11,7 @@ window.PhysioApp = (function() {
   async function init() {
     initTheme();
     registerServiceWorker();
+    initSwipeGestures();
 
     // Check if URL is in Patient Invoice Viewer mode (?invoice=TOKEN)
     const urlParams = new URLSearchParams(window.location.search);
@@ -191,19 +192,146 @@ window.PhysioApp = (function() {
     globalPatients = Array.from(names).sort((a, b) => a.localeCompare(b));
   }
 
-  // Tab Navigation Routing
-  function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  const TAB_ORDER = ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'];
+
+  // Tab Navigation Routing with Fluid Directional Animations
+  function switchTab(tabId, direction = null) {
+    const currentActive = document.querySelector('.tab-content.active');
+    const currentId = currentActive ? currentActive.id : 'tab1';
+
+    // Auto-infer direction if not explicitly supplied
+    if (!direction && currentId !== tabId) {
+      const fromIdx = TAB_ORDER.indexOf(currentId);
+      const toIdx = TAB_ORDER.indexOf(tabId);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        direction = toIdx > fromIdx ? 'right' : 'left';
+      }
+    }
+
+    document.querySelectorAll('.tab-content').forEach(el => {
+      el.classList.remove('active', 'slide-from-right', 'slide-from-left');
+    });
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
     const targetTab = document.getElementById(tabId);
-    if (targetTab) targetTab.classList.add('active');
+    if (targetTab) {
+      targetTab.classList.add('active');
+      if (direction === 'right') {
+        targetTab.classList.add('slide-from-right');
+      } else if (direction === 'left') {
+        targetTab.classList.add('slide-from-left');
+      }
+      setTimeout(() => {
+        targetTab.classList.remove('slide-from-right', 'slide-from-left');
+      }, 240);
+    }
 
     const targetNav = document.getElementById(`nav-${tabId}`);
     if (targetNav) targetNav.classList.add('active');
 
     renderCurrentTab(tabId);
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  // Native Instagram / WhatsApp Style Horizontal Tab Swipe Navigation
+  function initSwipeGestures() {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isVerticalScroll = false;
+    let isSwipeCancelled = false;
+
+    // Elements that must not trigger a tab change
+    function isExcludedTarget(el) {
+      if (!el) return false;
+      return el.closest(
+        'input, textarea, select, button, .quick-patients-scroll, .pain-stepper-btn, .pain-value-display, canvas, .medical-pain-card, .sheet-overlay, .modal-overlay, a'
+      );
+    }
+
+    const appView = document.getElementById('doctorAppView');
+    if (!appView) return;
+
+    appView.addEventListener('touchstart', e => {
+      // Ignore multi-touch gestures (pinching, etc.)
+      if (e.touches.length > 1) {
+        isSwipeCancelled = true;
+        return;
+      }
+      // Ignore if a modal or search sheet is currently open
+      if (document.querySelector('.sheet-overlay.active, .modal-overlay.active')) {
+        isSwipeCancelled = true;
+        return;
+      }
+      // Ignore interactive inputs or carousels
+      if (isExcludedTarget(e.target)) {
+        isSwipeCancelled = true;
+        return;
+      }
+
+      isSwipeCancelled = false;
+      isVerticalScroll = false;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }, { passive: true });
+
+    appView.addEventListener('touchmove', e => {
+      if (isSwipeCancelled || isVerticalScroll) return;
+
+      const deltaX = e.touches[0].clientX - touchStartX;
+      const deltaY = e.touches[0].clientY - touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      // Lock gesture as vertical if vertical movement leads after 8px
+      if (absX > 8 || absY > 8) {
+        if (absY > absX) {
+          isVerticalScroll = true; // User is scrolling vertically
+        }
+      }
+    }, { passive: true });
+
+    appView.addEventListener('touchend', e => {
+      if (isSwipeCancelled || isVerticalScroll) return;
+      if (!e.changedTouches || e.changedTouches.length === 0) return;
+
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      const deltaY = e.changedTouches[0].clientY - touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const elapsed = Date.now() - touchStartTime;
+
+      // Realistic Instagram / WhatsApp swipe physics:
+      // 1. Minimum horizontal travel: 52px (or 35px if quick flick < 250ms)
+      // 2. Strict horizontal dominance: horizontal travel must be at least 1.5x vertical travel
+      // 3. Time limit: within 500ms
+      const isQuickFlick = elapsed <= 260 && absX >= 35 && absY <= 25;
+      const isStandardSwipe = elapsed <= 500 && absX >= 52 && absX >= (absY * 1.5);
+
+      if (isQuickFlick || isStandardSwipe) {
+        const activeTab = document.querySelector('.tab-content.active');
+        const currTabId = activeTab ? activeTab.id : 'tab1';
+        const currIdx = TAB_ORDER.indexOf(currTabId);
+        if (currIdx === -1) return;
+
+        if (deltaX < 0) {
+          // Swiped LEFT (finger moved right to left) -> Go to NEXT Tab
+          if (currIdx < TAB_ORDER.length - 1) {
+            const nextTabId = TAB_ORDER[currIdx + 1];
+            switchTab(nextTabId, 'right');
+            if (navigator.vibrate) try { navigator.vibrate(10); } catch(err) {}
+          }
+        } else {
+          // Swiped RIGHT (finger moved left to right) -> Go to PREVIOUS Tab
+          if (currIdx > 0) {
+            const prevTabId = TAB_ORDER[currIdx - 1];
+            switchTab(prevTabId, 'left');
+            if (navigator.vibrate) try { navigator.vibrate(10); } catch(err) {}
+          }
+        }
+      }
+    }, { passive: true });
   }
 
   function renderCurrentTab(tabId) {
