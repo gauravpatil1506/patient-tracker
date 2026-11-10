@@ -6,48 +6,124 @@
 window.PhysioClinical = (function() {
   let isSubmitting = false;
 
-  // Initialize Ergonomic Pain Scale Selectors (1-10 in 2 rows of 5)
+  const PAIN_LEVELS = {
+    0: { label: "None", emoji: "😄", color: "#10b981" },
+    1: { label: "Mild", emoji: "😊", color: "#10b981" },
+    2: { label: "Mild", emoji: "😊", color: "#10b981" },
+    3: { label: "Mild", emoji: "🙂", color: "#10b981" },
+    4: { label: "Moderate", emoji: "😐", color: "#f59e0b" },
+    5: { label: "Moderate", emoji: "😐", color: "#f59e0b" },
+    6: { label: "Moderate", emoji: "😕", color: "#f59e0b" },
+    7: { label: "Severe", emoji: "😣", color: "#ef4444" },
+    8: { label: "Severe", emoji: "😣", color: "#ef4444" },
+    9: { label: "Extreme", emoji: "😫", color: "#dc2626" },
+    10: { label: "Extreme", emoji: "😭", color: "#991b1b" }
+  };
+
+  // Initialize Dual Ergonomic Pain Module
   function initPainSelectors() {
-    const beforeContainer = document.getElementById('painBeforeChips');
-    const afterContainer = document.getElementById('painAfterChips');
-    if (!beforeContainer || !afterContainer) return;
-
-    beforeContainer.innerHTML = createPainChipsHTML('painBefore');
-    afterContainer.innerHTML = createPainChipsHTML('painAfter');
+    updatePainDisplay('painBefore');
+    updatePainDisplay('painAfter');
+    updatePainDelta();
   }
 
-  function createPainChipsHTML(inputPrefix) {
-    let html = '';
-    for (let i = 1; i <= 10; i++) {
-      html += `<button type="button" class="pain-chip" data-val="${i}" onclick="PhysioClinical.selectPainChip('${inputPrefix}', ${i})">${i}</button>`;
+  function adjustPain(prefix, delta) {
+    const input = document.getElementById(prefix);
+    if (!input) return;
+
+    let current = (input.value === '' || input.value === null) ? null : parseInt(input.value, 10);
+    let next;
+    if (current === null) {
+      next = delta > 0 ? (prefix === 'painAfter' ? 3 : 5) : 0;
+    } else {
+      next = current + delta;
+      if (next < 0) next = 0;
+      if (next > 10) next = 10;
     }
-    return html;
+
+    input.value = next;
+    updatePainDisplay(prefix);
+    updatePainDelta();
   }
 
-  function selectPainChip(inputPrefix, value) {
-    const hiddenInput = document.getElementById(inputPrefix);
-    if (!hiddenInput) return;
+  function setPainDirect(prefix, val) {
+    const input = document.getElementById(prefix);
+    if (!input) return;
+    input.value = (val === '' || val === null) ? '' : val;
+    updatePainDisplay(prefix);
+    updatePainDelta();
+  }
 
-    // Toggle off if tapping already selected chip
-    if (parseInt(hiddenInput.value, 10) === value) {
-      hiddenInput.value = '';
-      const container = document.getElementById(inputPrefix + 'Chips');
-      if (container) {
-        container.querySelectorAll('.pain-chip').forEach(c => c.classList.remove('active'));
+  function togglePainDirectPrompt(prefix) {
+    const input = document.getElementById(prefix);
+    if (!input) return;
+    const isBefore = prefix === 'painBefore';
+    const choice = prompt(`Enter Pain Score (0 to 10) ${isBefore ? 'BEFORE' : 'AFTER'} session (or leave blank to clear):`, input.value || '');
+    if (choice === null) return;
+    const clean = choice.trim();
+    if (clean === '') {
+      input.value = '';
+    } else {
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num >= 0 && num <= 10) {
+        input.value = num;
       }
-      return;
     }
+    updatePainDisplay(prefix);
+    updatePainDelta();
+  }
 
-    hiddenInput.value = value;
-    const container = document.getElementById(inputPrefix + 'Chips');
-    if (container) {
-      container.querySelectorAll('.pain-chip').forEach(chip => {
-        if (parseInt(chip.getAttribute('data-val'), 10) === value) {
-          chip.classList.add('active');
-        } else {
-          chip.classList.remove('active');
-        }
-      });
+  function updatePainDisplay(prefix) {
+    const input = document.getElementById(prefix);
+    const suffix = prefix === 'painBefore' ? 'PainBefore' : 'PainAfter';
+    const valEl = document.getElementById('val' + suffix);
+    const tagEl = document.getElementById('tag' + suffix);
+    const moduleEl = document.getElementById('module' + suffix);
+    if (!input || !valEl || !tagEl) return;
+
+    const val = (input.value === '' || input.value === null) ? null : parseInt(input.value, 10);
+    if (val === null) {
+      valEl.innerText = '—';
+      tagEl.innerText = 'Optional';
+      tagEl.style.background = 'var(--bg-input)';
+      tagEl.style.color = 'var(--text-muted)';
+      if (moduleEl) moduleEl.style.borderColor = 'var(--border-subtle)';
+    } else {
+      const info = PAIN_LEVELS[val] || { label: "Score " + val, emoji: "", color: "var(--primary)" };
+      valEl.innerText = val;
+      tagEl.innerText = `${info.emoji} ${info.label}`;
+      tagEl.style.background = info.color + '22';
+      tagEl.style.color = info.color;
+      if (moduleEl) moduleEl.style.borderColor = info.color + '77';
+    }
+  }
+
+  function updatePainDelta() {
+    const bInput = document.getElementById('painBefore');
+    const aInput = document.getElementById('painAfter');
+    const deltaLabel = document.getElementById('painDeltaLabel');
+    const deltaPillar = document.getElementById('painDeltaPillar');
+    if (!bInput || !aInput || !deltaLabel || !deltaPillar) return;
+
+    const b = (bInput.value === '' || bInput.value === null) ? null : parseInt(bInput.value, 10);
+    const a = (aInput.value === '' || aInput.value === null) ? null : parseInt(aInput.value, 10);
+
+    if (b !== null && a !== null) {
+      const diff = b - a;
+      if (diff > 0) {
+        const pct = Math.round((diff / (b || 1)) * 100);
+        deltaLabel.innerHTML = `<strong>−${diff}</strong> (${pct}% Relief)`;
+        deltaPillar.className = 'pain-delta-pillar positive';
+      } else if (diff === 0) {
+        deltaLabel.innerHTML = `No change`;
+        deltaPillar.className = 'pain-delta-pillar neutral';
+      } else {
+        deltaLabel.innerHTML = `+${Math.abs(diff)} increase`;
+        deltaPillar.className = 'pain-delta-pillar negative';
+      }
+    } else {
+      deltaLabel.innerText = 'Relief Delta';
+      deltaPillar.className = 'pain-delta-pillar idle';
     }
   }
 
@@ -55,11 +131,9 @@ window.PhysioClinical = (function() {
     ['painBefore', 'painAfter'].forEach(prefix => {
       const input = document.getElementById(prefix);
       if (input) input.value = '';
-      const container = document.getElementById(prefix + 'Chips');
-      if (container) {
-        container.querySelectorAll('.pain-chip').forEach(c => c.classList.remove('active'));
-      }
+      updatePainDisplay(prefix);
     });
+    updatePainDelta();
   }
 
   // Quick-Select Recent Patients Carousel
@@ -273,7 +347,11 @@ window.PhysioClinical = (function() {
 
   return {
     initPainSelectors,
-    selectPainChip,
+    adjustPain,
+    setPainDirect,
+    togglePainDirectPrompt,
+    updatePainDisplay,
+    updatePainDelta,
     resetPainChips,
     renderQuickPatientsBar,
     quickSelectPatient,

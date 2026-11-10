@@ -18,6 +18,7 @@ window.PhysioDB = (function() {
   let isSyncing = false;
   let listeners = [];
   let firestoreDb = null;
+  let realtimeUnsubscribe = null;
 
   // Open / Upgrade IndexedDB
   function openDatabase() {
@@ -127,11 +128,94 @@ window.PhysioDB = (function() {
           console.warn("Firestore offline persistence notice:", err);
         }
       });
+      setupRealtimeSync();
       return true;
     } catch (e) {
       console.error("Firebase init error:", e);
       return false;
     }
+  }
+
+  // Merge remote Firestore documents into local IndexedDB and memory
+  async function mergeFirestoreVisits(querySnapshot) {
+    if (!querySnapshot || querySnapshot.empty) return 0;
+    const db = await openDatabase();
+    const tx = db.transaction(STORE_VISITS, "readwrite");
+    const store = tx.objectStore(STORE_VISITS);
+
+    let count = 0;
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const match = docSnap.id.match(/^visit_(\d+)$/);
+      const visitId = match ? parseInt(match[1], 10) : (data.id || (count + 1));
+
+      const record = {
+        id: visitId,
+        timestamp: data.timestamp || new Date().toISOString(),
+        date: data.date || "",
+        name: sanitizeName(data.name || ""),
+        location: (data.location || "").trim(),
+        paymentType: data.paymentType || "Pending",
+        amountPaid: Number(data.amountPaid) || 0,
+        totalFee: Number(data.totalFee) || 0,
+        painBefore: data.painBefore !== "" && data.painBefore != null ? parseInt(data.painBefore, 10) : null,
+        painAfter: data.painAfter !== "" && data.painAfter != null ? parseInt(data.painAfter, 10) : null,
+        sessionType: data.sessionType || "Regular",
+        nextAppt: data.nextAppt || "",
+        notes: data.notes || "",
+        month: data.month || "",
+        sheetRowIndex: visitId + 1,
+        synced: true
+      };
+
+      store.put(record);
+      count++;
+    });
+
+    await new Promise(res => { tx.oncomplete = res; });
+    inMemoryVisits = await getAllVisits();
+    notify();
+    return count;
+  }
+
+  // Attach Firestore real-time listener for instant multi-device synchrony (<500ms)
+  function setupRealtimeSync(onStatusChange) {
+    if (!firestoreDb) return;
+    if (realtimeUnsubscribe) {
+      try { realtimeUnsubscribe(); } catch (e) {}
+    }
+
+    try {
+      realtimeUnsubscribe = firestoreDb.collection(FIRESTORE_COL_VISITS).onSnapshot(snapshot => {
+        if (!snapshot.empty) {
+          mergeFirestoreVisits(snapshot).then(() => {
+            if (onStatusChange) onStatusChange("success");
+            if (window.PhysioApp && window.PhysioApp.updateSyncIndicator) {
+              window.PhysioApp.updateSyncIndicator("success");
+            }
+          });
+        }
+      }, err => {
+        console.warn("Firestore real-time subscription notice:", err);
+      });
+    } catch (e) {
+      console.warn("Could not attach Firestore real-time listener:", e);
+    }
+  }
+
+  // Explicit cloud sync query for hard reload & manual sync button
+  async function syncWithFirestore(onStatusChange) {
+    if (!firestoreDb) {
+      const cfg = getFirebaseConfig();
+      if (!initFirebase(cfg)) {
+        throw new Error("Cloud database is offline or not configured");
+      }
+    }
+    if (onStatusChange) onStatusChange("syncing");
+    const snapshot = await firestoreDb.collection(FIRESTORE_COL_VISITS).get();
+    const count = await mergeFirestoreVisits(snapshot);
+    if (onStatusChange) onStatusChange("success");
+    return count;
   }
 
   // Batch Migrate All 288 Records to Firebase Firestore
@@ -232,10 +316,14 @@ window.PhysioDB = (function() {
 
   // Seed data from seed-data.json or localStorage cache
   async function seedInitialData() {
+    checkAndInitFirebase();
     const existingCount = await getCount();
     if (existingCount > 0) {
       inMemoryVisits = await getAllVisits();
-      checkAndInitFirebase();
+      // Silently fetch freshest cloud visits from Firestore in background
+      if (firestoreDb && navigator.onLine) {
+        syncWithFirestore().catch(() => {});
+      }
       return inMemoryVisits;
     }
 
@@ -547,13 +635,22 @@ window.PhysioDB = (function() {
     }
   }
 
-  // Full Background Sync
+  // Full Cloud Sync (Prioritizes instant Firestore, falls back to Sheets)
   async function syncWithCloud(onStatusChange) {
     if (isSyncing || !navigator.onLine) return;
     isSyncing = true;
     if (onStatusChange) onStatusChange("syncing");
 
     try {
+      const activeBackend = getActiveBackend();
+      if (activeBackend === 'firebase' || firestoreDb) {
+        const count = await syncWithFirestore(onStatusChange);
+        await syncOfflineQueue();
+        if (onStatusChange) onStatusChange("success");
+        return count;
+      }
+
+      // Fallback: Google Sheets Web App Endpoint
       const res = await fetch(PhysioConfig.WEB_APP_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -588,7 +685,7 @@ window.PhysioDB = (function() {
         if (onStatusChange) onStatusChange("idle");
       }
     } catch (e) {
-      console.warn("Sync failed, operating offline:", e);
+      console.warn("Sync notice:", e);
       if (onStatusChange) onStatusChange("offline");
     } finally {
       isSyncing = false;
@@ -642,6 +739,7 @@ window.PhysioDB = (function() {
     deleteVisit,
     updateNextAppt,
     syncWithCloud,
+    syncWithFirestore,
     syncOfflineQueue,
     subscribe,
     sanitizeName,

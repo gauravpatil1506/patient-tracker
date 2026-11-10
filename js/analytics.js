@@ -44,6 +44,9 @@ window.PhysioAnalytics = (function() {
 
     const monthDataMap = {};
     const agedDebtors = {};
+    const modalityCounts = {};
+    let documentedSessions = 0;
+    let sumPainReliefPct = 0;
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     if (yearFilter !== "All") {
@@ -64,6 +67,18 @@ window.PhysioAnalytics = (function() {
 
       totalBilled += fee;
       totalCollected += paid;
+
+      // Track modalities
+      const sType = (v.sessionType || 'Regular').trim();
+      modalityCounts[sType] = (modalityCounts[sType] || 0) + 1;
+
+      // Track clinical recovery index
+      if (v.painBefore !== null && v.painAfter !== null && v.painBefore > 0) {
+        documentedSessions++;
+        const relief = v.painBefore - v.painAfter;
+        const reliefPct = Math.max(0, (relief / v.painBefore) * 100);
+        sumPainReliefPct += reliefPct;
+      }
 
       const mShort = monthNames[d.getMonth()];
       const mLabel = yearFilter === "All" ? `${mShort} '${rowYear.slice(-2)}` : mShort;
@@ -90,6 +105,42 @@ window.PhysioAnalytics = (function() {
     document.getElementById('dashBilled').innerText = PhysioPayments.formatINR(totalBilled);
     document.getElementById('dashCollected').innerText = PhysioPayments.formatINR(totalCollected);
     document.getElementById('dashPending').innerText = PhysioPayments.formatINR(totalPending);
+
+    // Practice-Wide Clinical Recovery Index
+    const recoveryPctEl = document.getElementById('dashRecoveryPct');
+    const recoveryMetaEl = document.getElementById('dashRecoveryMeta');
+    if (recoveryPctEl && recoveryMetaEl) {
+      if (documentedSessions > 0) {
+        const avgRelief = (sumPainReliefPct / documentedSessions).toFixed(1);
+        recoveryPctEl.innerText = `${avgRelief}%`;
+        recoveryMetaEl.innerText = `Average pain relief across ${documentedSessions} documented sessions`;
+      } else {
+        recoveryPctEl.innerText = `—`;
+        recoveryMetaEl.innerText = `Awaiting documented before/after pain records`;
+      }
+    }
+
+    // Treatment Modality Distribution Breakdown
+    const modalityContainer = document.getElementById('dashModalityList');
+    if (modalityContainer) {
+      const totalSessions = Object.values(modalityCounts).reduce((a, b) => a + b, 0);
+      const sortedModalities = Object.entries(modalityCounts).sort((a, b) => b[1] - a[1]);
+      let modHtml = '';
+      sortedModalities.forEach(([mod, count]) => {
+        const pct = totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
+        modHtml += `
+        <div class="modality-row">
+          <div class="modality-info">
+            <span class="modality-name">${mod}</span>
+            <span class="modality-count">${count} visits (${pct}%)</span>
+          </div>
+          <div class="modality-bar-bg">
+            <div class="modality-bar-fill" style="width: ${pct}%;"></div>
+          </div>
+        </div>`;
+      });
+      modalityContainer.innerHTML = modHtml;
+    }
 
     // Update Cashflow Chart
     let labels = Object.keys(monthDataMap);

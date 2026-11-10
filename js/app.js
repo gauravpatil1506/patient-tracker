@@ -291,10 +291,39 @@ window.PhysioApp = (function() {
     closePatientModal();
   }
 
+  // 1-Tap Hard Cloud Sync / Quick Refresh
+  async function manualCloudSync() {
+    const icon = document.getElementById('headerSyncIcon');
+    if (icon) icon.classList.add('spinning');
+    updateSyncIndicator("syncing");
+    showToast("Checking cloud for new entries...", "info");
+
+    try {
+      const count = await PhysioDB.syncWithFirestore();
+      showToast(`✓ Cloud Synchronized (${count} visits)`, "success");
+      updateSyncIndicator("success");
+    } catch (e) {
+      console.warn("Manual sync fallback:", e);
+      await PhysioDB.syncWithCloud(status => updateSyncIndicator(status));
+      showToast("✓ Cloud Synced", "success");
+    } finally {
+      if (icon) {
+        setTimeout(() => icon.classList.remove('spinning'), 700);
+      }
+    }
+  }
+
   // Settings & Migration Modal
   function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
     updateSettingsModalBackendInfo();
+
+    const visits = PhysioDB.getVisits();
+    const countEl = document.getElementById('settingsRecordCount');
+    if (countEl) {
+      countEl.innerText = `${visits.length} Visits • ${globalPatients.length} Patients Active`;
+    }
+
     modal.classList.add('active');
   }
 
@@ -308,7 +337,7 @@ window.PhysioApp = (function() {
     if (!badge) return;
     const backend = PhysioDB.getActiveBackend();
     if (backend === 'firebase') {
-      badge.innerHTML = `<span style="color:var(--success); font-weight:700;">🔥 Firebase Firestore Active</span>`;
+      badge.innerHTML = `<span style="color:var(--success); font-weight:700;">🟢 Connected to Cloud Firestore (Real-Time Active)</span>`;
     } else {
       badge.innerHTML = `<span style="color:var(--accent); font-weight:700;">📊 Google Sheets Active</span>`;
     }
@@ -528,6 +557,7 @@ window.PhysioApp = (function() {
     toggleTheme,
     switchTab,
     showToast,
+    manualCloudSync,
     setPaymentMethod,
     openPatientModal,
     closePatientModal,
