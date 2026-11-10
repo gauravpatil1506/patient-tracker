@@ -9,6 +9,10 @@ window.PhysioDB = (function() {
   const STORE_VISITS = "visits";
   const STORE_META = "meta";
 
+  // Standardized Firestore Collections (GP_PT Prefix)
+  const FIRESTORE_COL_VISITS = "GP_PT_visits";
+  const FIRESTORE_COL_PATIENTS = "GP_PT_patients";
+
   let dbInstance = null;
   let inMemoryVisits = [];
   let isSyncing = false;
@@ -154,7 +158,7 @@ window.PhysioDB = (function() {
 
       chunk.forEach(v => {
         const docId = `visit_${v.id || i}`;
-        const docRef = firestoreDb.collection("visits").doc(docId);
+        const docRef = firestoreDb.collection(FIRESTORE_COL_VISITS).doc(docId);
         batch.set(docRef, {
           timestamp: v.timestamp || new Date().toISOString(),
           date: v.date || "",
@@ -206,7 +210,7 @@ window.PhysioDB = (function() {
 
     Object.values(patientMap).forEach(p => {
       const docId = `pat_${encodeURIComponent(p.name).replace(/%/g, '_')}`;
-      const docRef = firestoreDb.collection("patients").doc(docId);
+      const docRef = firestoreDb.collection(FIRESTORE_COL_PATIENTS).doc(docId);
       patientBatch.set(docRef, {
         name: p.name,
         phone: phones[p.name] || "",
@@ -355,7 +359,7 @@ window.PhysioDB = (function() {
 
     // 2. Dispatch to Active Cloud Backend
     if (getActiveBackend() === 'firebase' && firestoreDb) {
-      firestoreDb.collection("visits").doc(`visit_${id}`).set(cleanRecord).then(() => {
+      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(`visit_${id}`).set(cleanRecord).then(() => {
         markSynced(id);
       }).catch(err => console.warn("Firestore write queued offline:", err));
     }
@@ -398,7 +402,7 @@ window.PhysioDB = (function() {
 
     // Update in Firestore
     if (getActiveBackend() === 'firebase' && firestoreDb) {
-      firestoreDb.collection("visits").doc(`visit_${visitId}`).update({
+      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(`visit_${visitId}`).update({
         amountPaid: fullAmount,
         paymentType: paymentMethod,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -435,7 +439,7 @@ window.PhysioDB = (function() {
     notify();
 
     if (getActiveBackend() === 'firebase' && firestoreDb) {
-      firestoreDb.collection("visits").doc(`visit_${visitId}`).delete().catch(e => console.warn("Firestore delete queued:", e));
+      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(`visit_${visitId}`).delete().catch(e => console.warn("Firestore delete queued:", e));
     }
 
     const payload = {
@@ -464,7 +468,7 @@ window.PhysioDB = (function() {
     notify();
 
     if (getActiveBackend() === 'firebase' && firestoreDb) {
-      firestoreDb.collection("visits").doc(`visit_${latestVisit.id}`).update({
+      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(`visit_${latestVisit.id}`).update({
         nextAppt: nextApptDate
       }).catch(e => console.warn(e));
     }
