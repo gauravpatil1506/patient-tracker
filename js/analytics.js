@@ -52,7 +52,7 @@ window.PhysioAnalytics = (function() {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     if (yearFilter !== "All") {
-      monthNames.forEach(m => { monthDataMap[m] = { collected: 0, pending: 0 }; });
+      monthNames.forEach(m => { monthDataMap[m] = { online: 0, cash: 0, pending: 0, collected: 0 }; });
     }
 
     visits.forEach(v => {
@@ -92,8 +92,17 @@ window.PhysioAnalytics = (function() {
       const mShort = monthNames[d.getMonth()];
       const mLabel = yearFilter === "All" ? `${mShort} '${rowYear.slice(-2)}` : mShort;
 
-      if (!monthDataMap[mLabel]) monthDataMap[mLabel] = { collected: 0, pending: 0 };
+      if (!monthDataMap[mLabel]) {
+        monthDataMap[mLabel] = { online: 0, cash: 0, pending: 0, collected: 0 };
+      }
       monthDataMap[mLabel].collected += paid;
+
+      // Channel bifurcation: Online UPI vs Cash
+      if (pType.includes('cash')) {
+        monthDataMap[mLabel].cash += paid;
+      } else {
+        monthDataMap[mLabel].online += paid;
+      }
 
       if (balance > 0 || pType === 'pending') {
         totalPending += balance;
@@ -175,37 +184,94 @@ window.PhysioAnalytics = (function() {
       labels = labels.slice(-8); // Keep last 8 months for clear mobile display
     }
 
-    const collectedSeries = labels.map(l => monthDataMap[l].collected);
-    const pendingSeries = labels.map(l => monthDataMap[l].pending);
+    const onlineSeries = labels.map(l => monthDataMap[l].online || 0);
+    const cashSeries = labels.map(l => monthDataMap[l].cash || 0);
+    const pendingSeries = labels.map(l => monthDataMap[l].pending || 0);
 
     const canvas = document.getElementById('cashflowChart');
     if (canvas && window.Chart) {
       const ctx = canvas.getContext('2d');
-      if (cashflowChart) {
+      if (cashflowChart && cashflowChart.data.datasets && cashflowChart.data.datasets.length === 3) {
         cashflowChart.data.labels = labels;
-        cashflowChart.data.datasets[0].data = collectedSeries;
-        cashflowChart.data.datasets[1].data = pendingSeries;
+        cashflowChart.data.datasets[0].data = onlineSeries;
+        cashflowChart.data.datasets[1].data = cashSeries;
+        cashflowChart.data.datasets[2].data = pendingSeries;
         cashflowChart.update('none');
       } else {
+        if (cashflowChart) {
+          cashflowChart.destroy();
+          cashflowChart = null;
+        }
         cashflowChart = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: labels,
             datasets: [
-              { label: 'Collected (₹)', data: collectedSeries, backgroundColor: '#10b981', stack: 'Stack 0', borderRadius: 4 },
+              { label: 'Online UPI (₹)', data: onlineSeries, backgroundColor: '#0284c7', stack: 'Stack 0', borderRadius: 4 },
+              { label: 'Cash (₹)', data: cashSeries, backgroundColor: '#10b981', stack: 'Stack 0', borderRadius: 4 },
               { label: 'Pending (₹)', data: pendingSeries, backgroundColor: '#ef4444', stack: 'Stack 0', borderRadius: 4 }
             ]
           },
           options: {
             responsive: true,
             maintainAspectRatio: true,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
             plugins: {
-              legend: { position: 'top' },
-              title: { display: true, text: 'Monthly Financial Velocity' }
+              legend: {
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  padding: 12,
+                  font: { size: 11.5, weight: '600' }
+                }
+              },
+              title: {
+                display: true,
+                text: 'Monthly Financial Velocity (Bifurcated)',
+                font: { size: 12.5, weight: '700' },
+                padding: { top: 4, bottom: 8 }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    if (context.parsed.y !== null) {
+                      label += '₹' + Math.round(context.parsed.y).toLocaleString('en-IN');
+                    }
+                    return label;
+                  },
+                  footer: function(tooltipItems) {
+                    let total = 0;
+                    let collected = 0;
+                    tooltipItems.forEach(item => {
+                      const val = item.parsed.y || 0;
+                      total += val;
+                      // Online UPI is index 0, Cash is index 1
+                      if (item.datasetIndex === 0 || item.datasetIndex === 1) {
+                        collected += val;
+                      }
+                    });
+                    return `Total: ₹${Math.round(total).toLocaleString('en-IN')} (Paid: ₹${Math.round(collected).toLocaleString('en-IN')})`;
+                  }
+                }
+              }
             },
             scales: {
               x: { stacked: true, grid: { display: false } },
-              y: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+              y: {
+                stacked: true,
+                grid: { color: 'rgba(0,0,0,0.05)' },
+                ticks: {
+                  callback: function(v) {
+                    return v >= 1000 ? '₹' + (v / 1000) + 'k' : '₹' + v;
+                  }
+                }
+              }
             },
             animation: false
           }
