@@ -1770,3 +1770,208 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-full);
   transition: width 0.3s ease;
 }
+
+/* ==========================================================================
+   AUTHENTICATION & QUICK 4-DIGIT PIN LOCK SCREEN
+   ========================================================================== */
+.auth-viewport {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 40px);
+  padding: 16px 14px;
+  box-sizing: border-box;
+}
+
+.auth-lock-card {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 26px 20px 22px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card-glow {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(0, 121, 107, 0.22) 0%, transparent 70%);
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.auth-avatar-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.auth-avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #26a69a);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 20px rgba(0, 121, 107, 0.35);
+  border: 3px solid var(--bg-card);
+}
+
+.auth-status-online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 8px #10b981;
+}
+
+.auth-greeting-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.auth-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(0, 121, 107, 0.08);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  margin: 6px 0 10px 0;
+}
+
+.auth-instruction {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 14px 0;
+  min-height: 18px;
+}
+
+/* 4-PIN Visual Indicator Dots */
+.pin-dots-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.pin-dot-slot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-subtle);
+  background: var(--bg-input);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pin-dot-slot.filled {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(0, 121, 107, 0.6);
+  transform: scale(1.18);
+}
+
+/* Hidden native input for mobile / hardware keyboard */
+.hidden-pin-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: auto;
+  width: 1px;
+  height: 1px;
+  top: -100px;
+  left: -100px;
+}
+
+/* Touch Numeric Keypad */
+.auth-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  width: 100%;
+  max-width: 270px;
+  margin-bottom: 12px;
+}
+
+.keypad-btn {
+  height: 50px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.keypad-btn:active {
+  transform: scale(0.93);
+  background: var(--border-subtle);
+}
+
+.keypad-btn.btn-action {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.auth-session-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* Shake Animation on Wrong PIN */
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.auth-lock-card.shake {
+  animation: pinShake 0.4s ease;
+}

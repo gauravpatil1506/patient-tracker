@@ -48,6 +48,11 @@ window.PhysioConfig = {
     OFFLINE_QUEUE: "physio_offline_queue",
     FIREBASE_CONFIG: "physio_firebase_config",
     ACTIVE_BACKEND: "physio_active_backend", // 'firebase' | 'sheets'
-    CUSTOM_PHONE_MAP: "physio_patient_phones"
+    CUSTOM_PHONE_MAP: "physio_patient_phones",
+    CURRENT_USER: "physio_current_user",
+    CURRENT_NAME: "physio_current_name",
+    CURRENT_ROLE: "physio_current_role",
+    SECURE_PIN: "physio_secure_pin",
+    LOGIN_TIME: "physio_login_time"
   }
 };

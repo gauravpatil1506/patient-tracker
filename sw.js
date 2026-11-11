@@ -3,7 +3,7 @@
  * Network-First for core app files (guarantees instant updates) with Cache Fallback for 100% offline support
  */
 
-const CACHE_NAME = 'physio-tracker-v8';
+const CACHE_NAME = 'physio-tracker-v9';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,7 @@ const CORE_ASSETS = [
   './vendor/firebase-app-compat.js',
   './vendor/firebase-firestore-compat.js',
   './js/config.js',
+  './js/auth.js',
   './js/db.js',
   './js/clinical.js',
   './js/ledger.js',

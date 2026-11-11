@@ -15,8 +15,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/design-system.css?v=8">
-  <link rel="stylesheet" href="css/app.css?v=8">
+  <link rel="stylesheet" href="css/design-system.css?v=9">
+  <link rel="stylesheet" href="css/app.css?v=9">
 
   <!-- Self-Hosted High Performance Vendor Libraries (Zero External CDN Latency) -->
   <script src="vendor/chart.min.js"></script>
@@ -31,6 +31,60 @@
 
   <!-- PATIENT STANDALONE INVOICE PORTAL MOUNT (Activated via ?invoice=TOKEN) -->
   <div id="patientInvoiceMount" class="patient-invoice-shell" style="display: none;"></div>
+
+  <!-- AUTHENTICATION VIEW (4-Digit Quick PIN Lock Screen) -->
+  <section id="authSection" class="auth-viewport" style="display: none;">
+    <div class="auth-lock-card" id="authLockCard">
+      <div class="auth-card-glow"></div>
+
+      <div class="auth-avatar-wrap">
+        <div class="auth-avatar-circle">DA</div>
+        <div class="auth-status-online-dot" title="Clinic Protected"></div>
+      </div>
+
+      <h2 class="auth-greeting-title" id="authGreetingTitle">Dr. Anjali Vishwakarma</h2>
+      <div class="auth-user-badge">
+        <span>🔒 Clinic Security Lock</span>
+      </div>
+      <p class="auth-instruction" id="authInstruction">Enter your 4-digit PIN to unlock</p>
+
+      <!-- 4-Digit Visual PIN Slot Indicators -->
+      <div class="pin-dots-container" id="pinDotsContainer" onclick="PhysioApp.focusPinInput()" title="Tap to enter PIN">
+        <span class="pin-dot-slot" id="pinDot0"></span>
+        <span class="pin-dot-slot" id="pinDot1"></span>
+        <span class="pin-dot-slot" id="pinDot2"></span>
+        <span class="pin-dot-slot" id="pinDot3"></span>
+      </div>
+
+      <!-- Hidden Native Input for Device Keyboard / Accessibility -->
+      <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="loginPin" class="hidden-pin-input"
+             autocomplete="one-time-code" oninput="PhysioApp.handlePinInput(this.value)">
+
+      <!-- Interactive Numeric Keypad for 1-Tap Mobile Access -->
+      <div class="auth-keypad">
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('1')">1</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('2')">2</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('3')">3</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('4')">4</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('5')">5</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('6')">6</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('7')">7</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('8')">8</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('9')">9</button>
+        <button type="button" class="keypad-btn btn-action" onclick="PhysioApp.handleKeypadPress('clear')">Clear</button>
+        <button type="button" class="keypad-btn" onclick="PhysioApp.handleKeypadPress('0')">0</button>
+        <button type="button" class="keypad-btn btn-action" onclick="PhysioApp.handleKeypadPress('backspace')" title="Delete digit">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
+        </button>
+      </div>
+
+      <div id="authMsg" class="status-msg" style="min-height: 20px; margin-top: 4px; font-size: 12px; font-weight: 600;"></div>
+
+      <div class="auth-session-footer">
+        <span>🔒 Secure device session • Stays active until you sign out</span>
+      </div>
+    </div>
+  </section>
 
   <!-- MAIN DOCTOR CLINIC APPLICATION SHELL -->
   <div id="doctorAppView">
@@ -508,6 +562,17 @@
           </button>
         </div>
 
+        <!-- Security & Access -->
+        <div class="settings-actions-group" style="margin-top: 14px;">
+          <div class="settings-group-title">Clinic Security & Access</div>
+          <button class="btn-main btn-secondary" style="padding:11px; font-size:13.5px;" onclick="PhysioApp.promptChangePin()">
+            🔒 Change 4-Digit Security PIN
+          </button>
+          <button class="btn-main" style="background:#ef4444; padding:11px; font-size:13.5px; margin-top:8px;" onclick="PhysioAuth.logout()">
+            🚪 Lock App / Sign Out
+          </button>
+        </div>
+
         <!-- Collapsed Developer Tools (For Gaurav - Doctor won't be bothered by technical details) -->
         <details class="dev-settings-accordion">
           <summary class="dev-settings-summary">⚙️ Advanced Developer Settings</summary>
@@ -538,12 +603,13 @@
   </div>
 
   <!-- Application Modules -->
-  <script src="js/config.js?v=8"></script>
-  <script src="js/db.js?v=8"></script>
-  <script src="js/payments.js?v=8"></script>
-  <script src="js/clinical.js?v=8"></script>
-  <script src="js/ledger.js?v=8"></script>
-  <script src="js/analytics.js?v=8"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/config.js?v=9"></script>
+  <script src="js/auth.js?v=9"></script>
+  <script src="js/db.js?v=9"></script>
+  <script src="js/payments.js?v=9"></script>
+  <script src="js/clinical.js?v=9"></script>
+  <script src="js/ledger.js?v=9"></script>
+  <script src="js/analytics.js?v=9"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>

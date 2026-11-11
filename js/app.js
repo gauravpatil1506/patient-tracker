@@ -6,6 +6,10 @@
 window.PhysioApp = (function() {
   let currentModalContext = '';
   let globalPatients = [];
+  let isWorkspaceInitialized = false;
+  let currentPinStr = '';
+  let authMode = 'login'; // 'login' | 'setup_create' | 'setup_confirm'
+  let tempSetupPin = '';
 
   // Bootstrapping
   async function init() {
@@ -20,6 +24,27 @@ window.PhysioApp = (function() {
       renderStandaloneInvoiceMode(invoiceToken);
       return;
     }
+
+    // Check Authentication Session
+    const session = PhysioAuth.checkSession();
+    if (!session) {
+      showAuthScreen();
+      // Silently pre-warm database in background for instant readiness once unlocked
+      PhysioDB.init().then(visits => updateGlobalPatientsList(visits)).catch(() => {});
+      return;
+    }
+
+    await launchDoctorWorkspace();
+  }
+
+  async function launchDoctorWorkspace() {
+    const authSec = document.getElementById('authSection');
+    const doctorView = document.getElementById('doctorAppView');
+    if (authSec) authSec.style.display = 'none';
+    if (doctorView) doctorView.style.display = 'block';
+
+    if (isWorkspaceInitialized) return;
+    isWorkspaceInitialized = true;
 
     // Doctor Clinic Mode: Initialize IndexedDB
     updateSyncIndicator("syncing");
@@ -74,6 +99,232 @@ window.PhysioApp = (function() {
       });
     }
   }
+
+  /* -------------------------------------------------------------------------
+   * Security & Quick 4-Digit PIN Authentication Handlers
+   * ------------------------------------------------------------------------- */
+  async function showAuthScreen() {
+    const authSec = document.getElementById('authSection');
+    const doctorView = document.getElementById('doctorAppView');
+    if (doctorView) doctorView.style.display = 'none';
+    if (authSec) authSec.style.display = 'flex';
+
+    resetPinDisplay();
+
+    const isConfigured = await PhysioAuth.isPinConfigured();
+    if (!isConfigured) {
+      authMode = 'setup_create';
+      tempSetupPin = '';
+      updateAuthUI('Welcome, Dr. Anjali!', 'Create your 4-digit Clinic PIN', '🔒 Initial Setup');
+    } else {
+      authMode = 'login';
+      updateAuthUI('Dr. Anjali Vishwakarma', 'Enter your 4-digit PIN to unlock', '🔒 Clinic Security Lock');
+    }
+
+    focusPinInput();
+  }
+
+  function updateAuthUI(title, instruction, badge) {
+    const titleEl = document.getElementById('authGreetingTitle');
+    const instEl = document.getElementById('authInstruction');
+    const badgeEl = document.querySelector('.auth-user-badge span');
+    if (titleEl) titleEl.innerText = title;
+    if (instEl) instEl.innerText = instruction;
+    if (badgeEl && badge) badgeEl.innerText = badge;
+  }
+
+  function resetPinDisplay() {
+    currentPinStr = '';
+    const pinInput = document.getElementById('loginPin');
+    if (pinInput) pinInput.value = '';
+    updateDotsUI();
+    const msg = document.getElementById('authMsg');
+    if (msg) msg.innerText = '';
+  }
+
+  function updateDotsUI() {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById(`pinDot${i}`);
+      if (dot) {
+        if (i < currentPinStr.length) {
+          dot.classList.add('filled');
+        } else {
+          dot.classList.remove('filled');
+        }
+      }
+    }
+  }
+
+  function focusPinInput() {
+    const pinInput = document.getElementById('loginPin');
+    if (pinInput) pinInput.focus();
+  }
+
+  function triggerHaptic() {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(12); } catch (e) {}
+    }
+  }
+
+  async function handleKeypadPress(action) {
+    triggerHaptic();
+    const msg = document.getElementById('authMsg');
+    if (msg) msg.innerText = '';
+
+    if (action === 'clear') {
+      resetPinDisplay();
+      return;
+    }
+
+    if (action === 'backspace') {
+      if (currentPinStr.length > 0) {
+        currentPinStr = currentPinStr.slice(0, -1);
+        updateDotsUI();
+      }
+      return;
+    }
+
+    if (currentPinStr.length < 4 && /^[0-9]$/.test(action)) {
+      currentPinStr += action;
+      updateDotsUI();
+
+      if (currentPinStr.length === 4) {
+        await executePinSubmission(currentPinStr);
+      }
+    }
+  }
+
+  async function handlePinInput(val) {
+    const clean = (val || '').replace(/\D/g, '').substring(0, 4);
+    currentPinStr = clean;
+    updateDotsUI();
+
+    if (currentPinStr.length === 4) {
+      await executePinSubmission(currentPinStr);
+    }
+  }
+
+  async function executePinSubmission(pin) {
+    const msg = document.getElementById('authMsg');
+    const card = document.getElementById('authLockCard');
+
+    if (authMode === 'setup_create') {
+      tempSetupPin = pin;
+      authMode = 'setup_confirm';
+      updateAuthUI('Confirm Your PIN', 'Re-enter your 4-digit PIN to confirm', '🔒 Initial Setup');
+      resetPinDisplay();
+      if (msg) {
+        msg.innerText = 'Now re-enter to confirm.';
+        msg.style.color = 'var(--primary)';
+      }
+      return;
+    }
+
+    if (authMode === 'setup_confirm') {
+      if (pin !== tempSetupPin) {
+        if (card) {
+          card.classList.add('shake');
+          setTimeout(() => card.classList.remove('shake'), 400);
+        }
+        if (msg) {
+          msg.innerText = 'PINs did not match. Please start over.';
+          msg.style.color = 'var(--danger)';
+        }
+        authMode = 'setup_create';
+        tempSetupPin = '';
+        setTimeout(() => {
+          updateAuthUI('Welcome, Dr. Anjali!', 'Create your 4-digit Clinic PIN', '🔒 Initial Setup');
+          resetPinDisplay();
+        }, 1200);
+        return;
+      }
+
+      if (msg) {
+        msg.innerText = 'Setting up clinic PIN...';
+        msg.style.color = 'var(--primary)';
+      }
+
+      try {
+        await PhysioAuth.setupPin(pin);
+        showToast('✓ PIN configured successfully! Welcome Dr. Anjali', 'success');
+        await launchDoctorWorkspace();
+      } catch (err) {
+        if (msg) {
+          msg.innerText = err.message || 'Error setting PIN';
+          msg.style.color = 'var(--danger)';
+        }
+        resetPinDisplay();
+      }
+      return;
+    }
+
+    // Default: 'login' mode
+    if (msg) {
+      msg.innerText = 'Verifying security PIN...';
+      msg.style.color = 'var(--primary)';
+    }
+
+    try {
+      await PhysioAuth.login(pin);
+      showToast('✓ Welcome back, Dr. Anjali!', 'success');
+      await launchDoctorWorkspace();
+    } catch (err) {
+      if (card) {
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 400);
+      }
+      if (msg) {
+        msg.innerText = err.message || 'Incorrect PIN. Please try again.';
+        msg.style.color = 'var(--danger)';
+      }
+      resetPinDisplay();
+    }
+  }
+
+  async function promptChangePin() {
+    closeSettingsModal();
+    const oldPin = prompt("Enter your CURRENT 4-digit PIN:");
+    if (oldPin === null) return;
+    if (!/^\d{4}$/.test(oldPin.trim())) {
+      showToast("Current PIN must be 4 digits", "error");
+      return;
+    }
+
+    const newPin = prompt("Enter your NEW 4-digit PIN:");
+    if (newPin === null) return;
+    if (!/^\d{4}$/.test(newPin.trim())) {
+      showToast("New PIN must be exactly 4 digits", "error");
+      return;
+    }
+
+    const confirmPin = prompt("Confirm your NEW 4-digit PIN:");
+    if (confirmPin === null) return;
+    if (newPin.trim() !== confirmPin.trim()) {
+      showToast("New PINs did not match", "error");
+      return;
+    }
+
+    try {
+      await PhysioAuth.changePin(oldPin.trim(), newPin.trim());
+      showToast("✓ Security PIN updated successfully!", "success");
+    } catch (err) {
+      showToast(err.message || "Failed to update PIN", "error");
+    }
+  }
+
+  // Keyboard shortcut listener for desktop / laptop entry
+  window.addEventListener('keydown', (e) => {
+    const authSec = document.getElementById('authSection');
+    if (!authSec || authSec.style.display === 'none') return;
+
+    if (e.key >= '0' && e.key <= '9') {
+      handleKeypadPress(e.key);
+    } else if (e.key === 'Backspace') {
+      handleKeypadPress('backspace');
+    } else if (e.key === 'Escape') {
+      handleKeypadPress('clear');
+    }
+  });
 
   // Register Service Worker for Instant PWA Caching
   function registerServiceWorker() {
@@ -692,7 +943,11 @@ window.PhysioApp = (function() {
     copyUPI,
     handleSaveFirebaseConfig,
     handleStartFirebaseMigration,
-    handleSwitchBackend
+    handleSwitchBackend,
+    handleKeypadPress,
+    handlePinInput,
+    focusPinInput,
+    promptChangePin
   };
 })();
 
