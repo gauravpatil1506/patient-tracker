@@ -250,6 +250,83 @@ window.PhysioAnalytics = (function() {
         agedList.innerHTML = agedHtml;
       }
     }
+
+    // Refresh WhatsApp Outreach Message Preview
+    renderOutreachPreview();
+  }
+
+  /* -------------------------------------------------------------------------
+   * Clinic Outreach & Referral WhatsApp Broadcaster
+   * ------------------------------------------------------------------------- */
+  function getPromoMessage() {
+    const phone = (PhysioConfig.CLINIC_PHONE || "8108245286").replace(/\D/g, '');
+    const cleanPhone = phone.length === 10 ? `91${phone}` : phone;
+    const waBookingUrl = `https://wa.me/${cleanPhone}?text=Hello%20Dr.%20Anjali,%20I%20would%20like%20to%20consult%20for%20physiotherapy`;
+
+    return `🌸 *Is Body Pain or Stiffness Slowing You Down?* 🌸
+
+Most people ignore persistent neck pain, lower back stiffness, or joint aches until it affects daily life. Painkillers only mask the symptoms — real healing begins when you fix the *root cause*.
+
+🌿 *Dr. Anjali Vishwakarma*
+_Physiotherapy & Rehabilitation Specialist_
+
+✨ *Specialized Treatments Offered:*
+• Chronic Back & Neck Pain Relief
+• Frozen Shoulder, Knee & Sciatica Care
+• Advanced Manual Therapy & Joint Mobilization
+• Craniosacral Therapy (Deep Healing & Migraine Relief)
+• Posture Correction & Personalized Rehab Exercises
+• 🏠 Clinic & Home Visit Consultations Available
+
+🌟 *"Move better, feel lighter, live pain-free."*
+
+📲 *Book a Consultation / Inquire via WhatsApp:*
+👉 ${waBookingUrl}
+
+_(Feel free to forward this to friends or family members who might need expert pain relief!)_`;
+  }
+
+  function renderOutreachPreview() {
+    const previewEl = document.getElementById('outreachMessagePreview');
+    if (previewEl) {
+      previewEl.textContent = getPromoMessage();
+    }
+  }
+
+  function sharePromoWhatsApp() {
+    const msg = getPromoMessage();
+    // Leaving out phone number in api.whatsapp.com/send allows selecting any individual, group, or broadcast list
+    const shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(shareUrl, '_blank');
+  }
+
+  function copyPromoMessage() {
+    const text = getPromoMessage();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        PhysioApp.showToast("✓ WhatsApp message copied to clipboard!", "success");
+      }).catch(() => {
+        fallbackCopyText(text);
+      });
+    } else {
+      fallbackCopyText(text);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      PhysioApp.showToast("✓ WhatsApp message copied to clipboard!", "success");
+    } catch (e) {
+      PhysioApp.showToast("Could not copy automatically", "info");
+    }
+    document.body.removeChild(ta);
   }
 
   // Patient Individual Analytics (Pain Progression)
@@ -331,6 +408,9 @@ window.PhysioAnalytics = (function() {
 
   return {
     renderDashboard,
-    renderPatientAnalytics
+    renderPatientAnalytics,
+    sharePromoWhatsApp,
+    copyPromoMessage,
+    getPromoMessage
   };
 })();

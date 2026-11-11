@@ -4,6 +4,7 @@
 window.PhysioConfig = {
   CLINIC_NAME: "Dr. Anjali Vishwakarma",
   CLINIC_TITLE: "Physiotherapy & Rehabilitation Clinic",
+  CLINIC_PHONE: "8108245286",
   CLINIC_UPI_ID: "dranjalivish@axl",
   CLINIC_PAYEE_NAME: "Anjali Vishwakarma",
   
