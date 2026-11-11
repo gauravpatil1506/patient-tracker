@@ -7,6 +7,56 @@
 window.PhysioAnalytics = (function() {
   let cashflowChart = null;
   let painChart = null;
+  let cashflowTooltipTimer = null;
+  let painTooltipTimer = null;
+
+  function scheduleCashflowTooltipDismiss(chart) {
+    if (cashflowTooltipTimer) {
+      clearTimeout(cashflowTooltipTimer);
+    }
+    cashflowTooltipTimer = setTimeout(() => {
+      dismissChartTooltip(chart || cashflowChart);
+    }, 10000); // 10 seconds exactly
+  }
+
+  function schedulePainTooltipDismiss(chart) {
+    if (painTooltipTimer) {
+      clearTimeout(painTooltipTimer);
+    }
+    painTooltipTimer = setTimeout(() => {
+      dismissChartTooltip(chart || painChart);
+    }, 10000); // 10 seconds exactly
+  }
+
+  function dismissChartTooltip(chart) {
+    if (!chart) return;
+    try {
+      if (chart.tooltip) {
+        chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+      }
+      chart.setActiveElements([]);
+      chart.update();
+    } catch (e) {
+      console.warn("Chart tooltip dismiss notice:", e);
+    }
+  }
+
+  // Global tap listener to dismiss tooltip when touching outside
+  if (typeof window !== 'undefined' && !window._hasGlobalChartDismissListener) {
+    window._hasGlobalChartDismissListener = true;
+    document.addEventListener('touchstart', function(e) {
+      if (!e.target.closest('#cashflowChart') && !e.target.closest('.chart-wrapper')) {
+        if (cashflowChart && cashflowChart.tooltip && cashflowChart.tooltip.getActiveElements().length > 0) {
+          dismissChartTooltip(cashflowChart);
+        }
+      }
+      if (!e.target.closest('#painChart')) {
+        if (painChart && painChart.tooltip && painChart.tooltip.getActiveElements().length > 0) {
+          dismissChartTooltip(painChart);
+        }
+      }
+    }, { passive: true });
+  }
 
   function initYearFilter() {
     const filter = document.getElementById('dashYearFilter');
@@ -190,6 +240,13 @@ window.PhysioAnalytics = (function() {
 
     const canvas = document.getElementById('cashflowChart');
     if (canvas && window.Chart) {
+      if (!canvas._hasTooltipAutoDismiss) {
+        canvas._hasTooltipAutoDismiss = true;
+        canvas.addEventListener('touchstart', () => scheduleCashflowTooltipDismiss(cashflowChart), { passive: true });
+        canvas.addEventListener('touchend', () => scheduleCashflowTooltipDismiss(cashflowChart), { passive: true });
+        canvas.addEventListener('click', () => scheduleCashflowTooltipDismiss(cashflowChart));
+      }
+
       const ctx = canvas.getContext('2d');
       if (cashflowChart && cashflowChart.data.datasets && cashflowChart.data.datasets.length === 3) {
         cashflowChart.data.labels = labels;
@@ -215,6 +272,13 @@ window.PhysioAnalytics = (function() {
           options: {
             responsive: true,
             maintainAspectRatio: true,
+            onClick: function(e, elements, chart) {
+              if (elements && elements.length > 0) {
+                scheduleCashflowTooltipDismiss(chart);
+              } else {
+                dismissChartTooltip(chart);
+              }
+            },
             interaction: {
               mode: 'index',
               intersect: false
@@ -442,6 +506,13 @@ _(Feel free to forward this to friends or family members who might need expert p
 
     const canvas = document.getElementById('painChart');
     if (canvas && window.Chart) {
+      if (!canvas._hasTooltipAutoDismiss) {
+        canvas._hasTooltipAutoDismiss = true;
+        canvas.addEventListener('touchstart', () => schedulePainTooltipDismiss(painChart), { passive: true });
+        canvas.addEventListener('touchend', () => schedulePainTooltipDismiss(painChart), { passive: true });
+        canvas.addEventListener('click', () => schedulePainTooltipDismiss(painChart));
+      }
+
       const ctx = canvas.getContext('2d');
       if (painChart) {
         painChart.data.labels = dates;
@@ -461,6 +532,13 @@ _(Feel free to forward this to friends or family members who might need expert p
           options: {
             responsive: true,
             maintainAspectRatio: true,
+            onClick: function(e, elements, chart) {
+              if (elements && elements.length > 0) {
+                schedulePainTooltipDismiss(chart);
+              } else {
+                dismissChartTooltip(chart);
+              }
+            },
             scales: {
               y: { min: 0, max: 10, ticks: { stepSize: 1 } },
               x: { grid: { display: false } }
