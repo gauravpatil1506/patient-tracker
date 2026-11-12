@@ -8,8 +8,8 @@ window.PhysioApp = (function() {
   let globalPatients = [];
   let isWorkspaceInitialized = false;
   let currentPinStr = '';
-  let authMode = 'login'; // 'login' | 'setup_create' | 'setup_confirm'
-  let tempSetupPin = '';
+  let failedPinAttempts = 0;
+  let lockUntilTimestamp = 0;
 
   // Bootstrapping
   async function init() {
@@ -103,24 +103,14 @@ window.PhysioApp = (function() {
   /* -------------------------------------------------------------------------
    * Security & Quick 4-Digit PIN Authentication Handlers
    * ------------------------------------------------------------------------- */
-  async function showAuthScreen() {
+  function showAuthScreen() {
     const authSec = document.getElementById('authSection');
     const doctorView = document.getElementById('doctorAppView');
     if (doctorView) doctorView.style.display = 'none';
     if (authSec) authSec.style.display = 'flex';
 
     resetPinDisplay();
-
-    const isConfigured = await PhysioAuth.isPinConfigured();
-    if (!isConfigured) {
-      authMode = 'setup_create';
-      tempSetupPin = '';
-      updateAuthUI('Welcome, Dr. Anjali!', 'Create your 4-digit Clinic PIN', '🔒 Initial Setup');
-    } else {
-      authMode = 'login';
-      updateAuthUI('Dr. Anjali Vishwakarma', 'Enter your 4-digit PIN to unlock', '🔒 Clinic Security Lock');
-    }
-
+    updateAuthUI('Dr. Anjali Vishwakarma', 'Enter your 4-digit PIN to unlock', '🔒 Clinic Security Lock');
     focusPinInput();
   }
 
@@ -208,57 +198,18 @@ window.PhysioApp = (function() {
     const msg = document.getElementById('authMsg');
     const card = document.getElementById('authLockCard');
 
-    if (authMode === 'setup_create') {
-      tempSetupPin = pin;
-      authMode = 'setup_confirm';
-      updateAuthUI('Confirm Your PIN', 'Re-enter your 4-digit PIN to confirm', '🔒 Initial Setup');
+    // Check rate limit lockout
+    const now = Date.now();
+    if (now < lockUntilTimestamp) {
+      const remainingSec = Math.ceil((lockUntilTimestamp - now) / 1000);
+      if (msg) {
+        msg.innerText = `Too many incorrect attempts. Please wait ${remainingSec}s.`;
+        msg.style.color = 'var(--danger)';
+      }
       resetPinDisplay();
-      if (msg) {
-        msg.innerText = 'Now re-enter to confirm.';
-        msg.style.color = 'var(--primary)';
-      }
       return;
     }
 
-    if (authMode === 'setup_confirm') {
-      if (pin !== tempSetupPin) {
-        if (card) {
-          card.classList.add('shake');
-          setTimeout(() => card.classList.remove('shake'), 400);
-        }
-        if (msg) {
-          msg.innerText = 'PINs did not match. Please start over.';
-          msg.style.color = 'var(--danger)';
-        }
-        authMode = 'setup_create';
-        tempSetupPin = '';
-        setTimeout(() => {
-          updateAuthUI('Welcome, Dr. Anjali!', 'Create your 4-digit Clinic PIN', '🔒 Initial Setup');
-          resetPinDisplay();
-        }, 1200);
-        return;
-      }
-
-      if (msg) {
-        msg.innerText = 'Setting up clinic PIN...';
-        msg.style.color = 'var(--primary)';
-      }
-
-      try {
-        await PhysioAuth.setupPin(pin);
-        showToast('✓ PIN configured successfully! Welcome Dr. Anjali', 'success');
-        await launchDoctorWorkspace();
-      } catch (err) {
-        if (msg) {
-          msg.innerText = err.message || 'Error setting PIN';
-          msg.style.color = 'var(--danger)';
-        }
-        resetPinDisplay();
-      }
-      return;
-    }
-
-    // Default: 'login' mode
     if (msg) {
       msg.innerText = 'Verifying security PIN...';
       msg.style.color = 'var(--primary)';
@@ -266,16 +217,26 @@ window.PhysioApp = (function() {
 
     try {
       await PhysioAuth.login(pin);
-      showToast('✓ Welcome back, Dr. Anjali!', 'success');
+      failedPinAttempts = 0;
+      showToast('✓ Welcome, Dr. Anjali!', 'success');
       await launchDoctorWorkspace();
     } catch (err) {
+      failedPinAttempts++;
       if (card) {
         card.classList.add('shake');
         setTimeout(() => card.classList.remove('shake'), 400);
       }
-      if (msg) {
-        msg.innerText = err.message || 'Incorrect PIN. Please try again.';
-        msg.style.color = 'var(--danger)';
+      if (failedPinAttempts >= 5) {
+        lockUntilTimestamp = Date.now() + 30000; // 30 second cooldown
+        if (msg) {
+          msg.innerText = 'Too many incorrect attempts. Keypad locked for 30s.';
+          msg.style.color = 'var(--danger)';
+        }
+      } else {
+        if (msg) {
+          msg.innerText = err.message || 'Incorrect PIN. Access denied.';
+          msg.style.color = 'var(--danger)';
+        }
       }
       resetPinDisplay();
     }
@@ -306,7 +267,7 @@ window.PhysioApp = (function() {
 
     try {
       await PhysioAuth.changePin(oldPin.trim(), newPin.trim());
-      showToast("✓ Security PIN updated successfully!", "success");
+      showToast("✓ Security PIN updated across all devices!", "success");
     } catch (err) {
       showToast(err.message || "Failed to update PIN", "error");
     }

@@ -7,6 +7,7 @@ window.PhysioConfig = {
   CLINIC_PHONE: "8108245286",
   CLINIC_UPI_ID: "dranjalivish@axl",
   CLINIC_PAYEE_NAME: "Anjali Vishwakarma",
+  DEFAULT_PIN: "2506",
   
   // Google Apps Script Live Web App Endpoint (Directly bound to "Physio Tracker" Google Sheet)
   WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwJbROFtopSIyAz5J5YsnFav1R8c_9dLx6FSmOQARAywEZMOSW6M4Rc5boAE_lPrJti/exec",

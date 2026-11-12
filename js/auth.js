@@ -1,6 +1,6 @@
 /**
  * Dr. Anjali Vishwakarma - Physiotherapy & Rehabilitation Clinic
- * Clinic Security & 4-Digit Quick PIN Authentication Engine
+ * Clinic Security & Single-PIN Authentication Engine
  */
 
 window.PhysioAuth = (function() {
@@ -27,55 +27,108 @@ window.PhysioAuth = (function() {
     return null;
   }
 
-  async function fetchPinFromCloud() {
-    try {
-      if (navigator.onLine && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-        const db = firebase.firestore();
-        const docSnap = await db.collection("clinic_meta").doc("security").get();
-        if (docSnap.exists) {
-          const data = docSnap.data();
-          if (data && data.pin) {
-            localStorage.setItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN, data.pin.toString());
-            return data.pin.toString();
+  function ensureFirebase() {
+    if (typeof firebase !== 'undefined' && PhysioConfig.FIREBASE_CONFIG && PhysioConfig.FIREBASE_CONFIG.projectId) {
+      try {
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp(PhysioConfig.FIREBASE_CONFIG);
+        }
+        return firebase.apps.length > 0;
+      } catch (e) {
+        console.warn("Firebase app init check:", e);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Fetch authorized PIN with 3-tier fallback:
+   * 1. Firestore SDK
+   * 2. Firestore REST API (fast, works before SDK loads)
+   * 3. LocalStorage / PhysioConfig.DEFAULT_PIN ("2506")
+   */
+  async function fetchAuthorizedPin() {
+    // 1. If online, try Firestore SDK
+    if (navigator.onLine) {
+      try {
+        if (ensureFirebase()) {
+          const db = firebase.firestore();
+          const docSnap = await db.collection("clinic_meta").doc("security").get();
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            if (data && data.pin) {
+              const cloudPin = data.pin.toString().trim();
+              localStorage.setItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN, cloudPin);
+              return cloudPin;
+            }
           }
         }
+      } catch (e) {
+        console.warn("Firestore SDK PIN check notice:", e);
       }
-    } catch (e) {
-      console.warn("Cloud security PIN fetch notice:", e);
+
+      // 2. Direct REST API fallback
+      try {
+        const projectId = PhysioConfig.FIREBASE_CONFIG.projectId;
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/clinic_meta/security`, {
+          cache: 'no-store'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.fields && data.fields.pin && data.fields.pin.stringValue) {
+            const cloudPin = data.fields.pin.stringValue.trim();
+            localStorage.setItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN, cloudPin);
+            return cloudPin;
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore REST PIN check notice:", e);
+      }
     }
-    return null;
+
+    // 3. Cached local PIN or Config baseline
+    const localPin = localStorage.getItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN);
+    if (localPin) return localPin.trim();
+
+    return PhysioConfig.DEFAULT_PIN || "2506";
   }
 
   async function savePinToCloud(pin) {
+    const cleanPin = pin.toString().trim();
+    let synced = false;
+
+    // 1. Try Firestore SDK
     try {
-      if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      if (ensureFirebase()) {
         const db = firebase.firestore();
         await db.collection("clinic_meta").doc("security").set({
-          pin: pin.toString(),
+          pin: cleanPin,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           clinicName: PhysioConfig.CLINIC_NAME || "Dr. Anjali Vishwakarma"
         }, { merge: true });
+        synced = true;
       }
     } catch (e) {
-      console.warn("Could not sync PIN to Firestore:", e);
+      console.warn("Firestore SDK PIN save notice:", e);
     }
-  }
 
-  async function isPinConfigured() {
-    const localPin = localStorage.getItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN);
-    if (localPin) return true;
-    const cloudPin = await fetchPinFromCloud();
-    return !!cloudPin;
-  }
-
-  async function setupPin(pin) {
-    const cleanPin = (pin || "").toString().trim();
-    if (!cleanPin || cleanPin.length !== 4 || !/^\d{4}$/.test(cleanPin)) {
-      throw new Error("PIN must be exactly 4 numeric digits.");
+    // 2. Try REST API patch if SDK wasn't available
+    if (!synced) {
+      try {
+        const projectId = PhysioConfig.FIREBASE_CONFIG.projectId;
+        await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/clinic_meta/security?updateMask.fieldPaths=pin`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields: {
+              pin: { stringValue: cleanPin }
+            }
+          })
+        });
+      } catch (e) {
+        console.warn("REST PIN patch notice:", e);
+      }
     }
-    localStorage.setItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN, cleanPin);
-    savePinToCloud(cleanPin).catch(() => {});
-    return setSession("anjali", PhysioConfig.CLINIC_NAME || "Dr. Anjali Vishwakarma", "Doctor");
   }
 
   async function login(pin) {
@@ -84,27 +137,12 @@ window.PhysioAuth = (function() {
       throw new Error("PIN must be exactly 4 digits.");
     }
 
-    let configuredPin = localStorage.getItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN);
-    if (!configuredPin) {
-      configuredPin = await fetchPinFromCloud();
-    }
+    const authorizedPin = await fetchAuthorizedPin();
 
-    if (!configuredPin) {
-      // First-time baseline setup
-      return setupPin(cleanPin);
-    }
-
-    if (cleanPin === configuredPin) {
+    if (cleanPin === authorizedPin) {
       return setSession("anjali", PhysioConfig.CLINIC_NAME || "Dr. Anjali Vishwakarma", "Doctor");
     } else {
-      // If mismatch, try fetching freshest cloud PIN once in case set on another device
-      if (navigator.onLine) {
-        const freshCloudPin = await fetchPinFromCloud();
-        if (freshCloudPin && cleanPin === freshCloudPin) {
-          return setSession("anjali", PhysioConfig.CLINIC_NAME || "Dr. Anjali Vishwakarma", "Doctor");
-        }
-      }
-      throw new Error("Incorrect PIN. Please try again.");
+      throw new Error("Incorrect PIN. Access denied.");
     }
   }
 
@@ -112,12 +150,9 @@ window.PhysioAuth = (function() {
     const cleanOld = (oldPin || "").toString().trim();
     const cleanNew = (newPin || "").toString().trim();
 
-    let currentPin = localStorage.getItem(PhysioConfig.STORAGE_KEYS.SECURE_PIN);
-    if (!currentPin) {
-      currentPin = await fetchPinFromCloud();
-    }
+    const currentPin = await fetchAuthorizedPin();
 
-    if (currentPin && cleanOld !== currentPin) {
+    if (cleanOld !== currentPin) {
       throw new Error("Current PIN is incorrect.");
     }
 
@@ -167,8 +202,7 @@ window.PhysioAuth = (function() {
   return {
     init,
     checkSession,
-    isPinConfigured,
-    setupPin,
+    fetchAuthorizedPin,
     login,
     changePin,
     logout,
