@@ -3,7 +3,7 @@
  * Network-First for core app files (guarantees instant updates) with Cache Fallback for 100% offline support
  */
 
-const CACHE_NAME = 'physio-tracker-v14';
+const CACHE_NAME = 'physio-tracker-v15';
 const CORE_ASSETS = [
   './',
   './index.html',

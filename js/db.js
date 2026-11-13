@@ -284,10 +284,30 @@ window.PhysioDB = (function() {
     }
   }
 
+  // Two-Way Sync: Find all local visits with synced === false and push them to Firestore
+  async function pushUnsyncedVisitsToFirestore() {
+    if (!navigator.onLine) return;
+    try {
+      const localVisits = await getAllVisits();
+      const unsynced = localVisits.filter(v => v.synced === false);
+      if (unsynced.length === 0) return;
+
+      for (const v of unsynced) {
+        const docId = `visit_${v.id}`;
+        await dispatchFirestoreRestWrite(docId, v, v.id);
+      }
+    } catch (e) {
+      console.warn("Could not push un-synced visits to cloud:", e);
+    }
+  }
+
   // Dual-Channel Cloud Sync (REST Fast Path + SDK Realtime Channel)
   async function syncWithFirestore(onStatusChange) {
     if (onStatusChange) onStatusChange("syncing");
     let count = 0;
+
+    // STEP 0: Push any local un-synced visits to Firestore (Two-Way Sync Guarantee)
+    await pushUnsyncedVisitsToFirestore();
 
     // Strategy 1: Direct HTTPS REST (instant, works everywhere, immune to WebChannel drops)
     try {
