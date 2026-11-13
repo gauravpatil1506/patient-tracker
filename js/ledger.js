@@ -268,8 +268,9 @@ window.PhysioLedger = (function() {
     });
 
     upcoming.sort((a, b) => a.date.getTime() - b.date.getTime());
+    const top10Upcoming = upcoming.slice(0, 10);
 
-    if (upcoming.length === 0) {
+    if (top10Upcoming.length === 0) {
       upcomingDiv.innerHTML = `
       <div class="card" style="text-align:center; padding:20px;">
         <p style="color:var(--text-muted); margin:0; font-size:13.5px;">No upcoming sessions scheduled.</p>
@@ -278,7 +279,7 @@ window.PhysioLedger = (function() {
       let upHtml = '';
       const phones = PhysioDB.getPatientPhones();
 
-      upcoming.forEach(item => {
+      top10Upcoming.forEach(item => {
         const d = item.date;
         const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', weekday: 'short' });
         const phone = phones[PhysioDB.sanitizeName(item.name)];
@@ -312,7 +313,7 @@ window.PhysioLedger = (function() {
       upcomingDiv.innerHTML = upHtml;
     }
 
-    // Last 5 Sessions (Tab 2) - Multi-criteria reverse chronological sort (Date -> ID -> Timestamp)
+    // Top 10 Recent Sessions (Tab 2) - Multi-criteria reverse chronological sort (Date -> ID -> Timestamp)
     const sortedVisits = [...visits].sort((a, b) => {
       const da = new Date(a.date).getTime() || 0;
       const db = new Date(b.date).getTime() || 0;
@@ -320,12 +321,12 @@ window.PhysioLedger = (function() {
       if ((b.id || 0) !== (a.id || 0)) return (b.id || 0) - (a.id || 0);
       return (new Date(b.timestamp).getTime() || 0) - (new Date(a.timestamp).getTime() || 0);
     });
-    const top5 = sortedVisits.slice(0, 5);
+    const top10 = sortedVisits.slice(0, 10);
 
     let recentHTML = '';
     const displayStyle = deleteMode ? 'block' : 'none';
 
-    top5.forEach(v => {
+    top10.forEach(v => {
       const d = v.date ? new Date(v.date) : null;
       const dateStr = d && !isNaN(d) ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "No Date";
       const fee = parseFloat(v.totalFee) || 0;

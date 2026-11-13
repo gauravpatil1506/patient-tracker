@@ -284,20 +284,72 @@ window.PhysioDB = (function() {
     }
   }
 
-  // Two-Way Sync: Find all local visits with synced === false and push them to Firestore
+  // Automatic Two-Way Cloud Sync:
+  // Detects any local visits in IndexedDB that do NOT exist in Firestore (or are marked un-synced)
+  // and pushes them directly to Firestore with full clinical fidelity
   async function pushUnsyncedVisitsToFirestore() {
     if (!navigator.onLine) return;
     try {
       const localVisits = await getAllVisits();
-      const unsynced = localVisits.filter(v => v.synced === false);
-      if (unsynced.length === 0) return;
+      if (!localVisits || localVisits.length === 0) return;
 
-      for (const v of unsynced) {
+      const cfg = getFirebaseConfig();
+      if (!cfg || !cfg.projectId) return;
+
+      const restDocs = await fetchVisitsFromFirestoreREST();
+      const remoteIdMap = new Map();
+      let maxRemoteId = 0;
+
+      if (restDocs && Array.isArray(restDocs)) {
+        restDocs.forEach(d => {
+          const docId = d.name ? d.name.split('/').pop() : "";
+          const match = docId.match(/^visit_(\d+)$/);
+          if (match) {
+            const numId = parseInt(match[1], 10);
+            if (numId > maxRemoteId) maxRemoteId = numId;
+            const fields = d.fields || {};
+            const name = fields.name && fields.name.stringValue ? fields.name.stringValue.trim().toLowerCase() : "";
+            const date = fields.date && fields.date.stringValue ? fields.date.stringValue.trim() : "";
+            remoteIdMap.set(numId, `${name}_${date}`);
+          }
+        });
+      }
+
+      // Identify local visits missing in remote cloud or pending sync
+      const visitsToPush = [];
+      const db = await openDatabase();
+
+      for (const v of localVisits) {
+        if (!v || !v.name) continue;
+        const vId = Number(v.id) || 0;
+        const localKey = `${(v.name || '').trim().toLowerCase()}_${(v.date || '').trim()}`;
+
+        if (!remoteIdMap.has(vId)) {
+          // Record exists locally but does NOT exist in Firestore: must push!
+          visitsToPush.push(v);
+        } else if (remoteIdMap.get(vId) !== localKey) {
+          // ID collision with a different record: assign a new unique ID
+          maxRemoteId++;
+          v.id = maxRemoteId;
+          v.synced = false;
+          const tx = db.transaction(STORE_VISITS, "readwrite");
+          tx.objectStore(STORE_VISITS).put(v);
+          await new Promise(res => { tx.oncomplete = res; });
+          visitsToPush.push(v);
+        } else if (v.synced === false) {
+          visitsToPush.push(v);
+        }
+      }
+
+      if (visitsToPush.length === 0) return;
+
+      console.log(`Two-way sync: pushing ${visitsToPush.length} authentic local visits to Firestore...`);
+      for (const v of visitsToPush) {
         const docId = `visit_${v.id}`;
         await dispatchFirestoreRestWrite(docId, v, v.id);
       }
     } catch (e) {
-      console.warn("Could not push un-synced visits to cloud:", e);
+      console.warn("Two-way push sync notice:", e);
     }
   }
 
@@ -767,12 +819,23 @@ window.PhysioDB = (function() {
   }
 
   async function markSynced(id) {
-    const visit = inMemoryVisits.find(v => v.id === id);
+    let visit = inMemoryVisits.find(v => v.id === id);
+    const db = await openDatabase();
     if (visit) {
       visit.synced = true;
-      const db = await openDatabase();
       const tx = db.transaction(STORE_VISITS, "readwrite");
       tx.objectStore(STORE_VISITS).put(visit);
+    } else {
+      const tx = db.transaction(STORE_VISITS, "readwrite");
+      const store = tx.objectStore(STORE_VISITS);
+      const req = store.get(id);
+      req.onsuccess = () => {
+        if (req.result) {
+          req.result.synced = true;
+          const putTx = db.transaction(STORE_VISITS, "readwrite");
+          putTx.objectStore(STORE_VISITS).put(req.result);
+        }
+      };
     }
   }
 
