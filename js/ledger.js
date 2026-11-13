@@ -312,8 +312,14 @@ window.PhysioLedger = (function() {
       upcomingDiv.innerHTML = upHtml;
     }
 
-    // Last 5 Sessions (Tab 2) - Dynamic multi-row stacked architecture
-    const sortedVisits = [...visits].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Last 5 Sessions (Tab 2) - Multi-criteria reverse chronological sort (Date -> ID -> Timestamp)
+    const sortedVisits = [...visits].sort((a, b) => {
+      const da = new Date(a.date).getTime() || 0;
+      const db = new Date(b.date).getTime() || 0;
+      if (db !== da) return db - da;
+      if ((b.id || 0) !== (a.id || 0)) return (b.id || 0) - (a.id || 0);
+      return (new Date(b.timestamp).getTime() || 0) - (new Date(a.timestamp).getTime() || 0);
+    });
     const top5 = sortedVisits.slice(0, 5);
 
     let recentHTML = '';

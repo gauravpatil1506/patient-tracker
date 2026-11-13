@@ -46,8 +46,16 @@ window.PhysioApp = (function() {
     if (isWorkspaceInitialized) return;
     isWorkspaceInitialized = true;
 
-    // Doctor Clinic Mode: Initialize IndexedDB
+    // Doctor Clinic Mode: Initialize IndexedDB & Cloud Sync
     updateSyncIndicator("syncing");
+
+    // Subscribe to DB mutations BEFORE init so live and boot cloud updates refresh the active UI immediately
+    PhysioDB.subscribe(updatedVisits => {
+      updateGlobalPatientsList(updatedVisits);
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab) renderCurrentTab(activeTab.id);
+    });
+
     const visits = await PhysioDB.init();
     updateGlobalPatientsList(visits);
 
@@ -55,6 +63,7 @@ window.PhysioApp = (function() {
     PhysioClinical.initPainSelectors();
     PhysioClinical.renderQuickPatientsBar();
     renderCurrentTab('tab1');
+    updateSyncIndicator("success");
     
     const dateInput = document.getElementById('date');
     if (dateInput && !dateInput.value) {
@@ -63,13 +72,6 @@ window.PhysioApp = (function() {
 
     // Populate Settings modal status
     updateSettingsModalBackendInfo();
-
-    // Subscribe to DB mutations
-    PhysioDB.subscribe(updatedVisits => {
-      updateGlobalPatientsList(updatedVisits);
-      const activeTab = document.querySelector('.tab-content.active');
-      if (activeTab) renderCurrentTab(activeTab.id);
-    });
 
     // Background sync with cloud
     PhysioDB.syncWithCloud(status => {
@@ -632,16 +634,26 @@ window.PhysioApp = (function() {
     const icon = document.getElementById('headerSyncIcon');
     if (icon) icon.classList.add('spinning');
     updateSyncIndicator("syncing");
-    showToast("Checking cloud for new entries...", "info");
+    showToast("Checking cloud for latest clinic sessions...", "info");
 
     try {
       const count = await PhysioDB.syncWithFirestore();
-      showToast(`✓ Cloud Synchronized (${count} visits)`, "success");
+      updateGlobalPatientsList(PhysioDB.getVisits());
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab) renderCurrentTab(activeTab.id);
+      showToast(`✓ Cloud Synchronized (${count} sessions)`, "success");
       updateSyncIndicator("success");
     } catch (e) {
       console.warn("Manual sync fallback:", e);
-      await PhysioDB.syncWithCloud(status => updateSyncIndicator(status));
-      showToast("✓ Cloud Synced", "success");
+      try {
+        await PhysioDB.syncWithCloud(status => updateSyncIndicator(status));
+        updateGlobalPatientsList(PhysioDB.getVisits());
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) renderCurrentTab(activeTab.id);
+        showToast("✓ Cloud Synced", "success");
+      } catch (err2) {
+        showToast("Cloud sync failed. Operating in offline mode.", "error");
+      }
     } finally {
       if (icon) {
         setTimeout(() => icon.classList.remove('spinning'), 700);
