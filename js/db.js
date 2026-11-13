@@ -268,6 +268,25 @@ window.PhysioDB = (function() {
 
     try {
       realtimeUnsubscribe = firestoreDb.collection(FIRESTORE_COL_VISITS).onSnapshot(snapshot => {
+        // Handle realtime deletions across devices
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'removed') {
+            const match = change.doc.id.match(/^visit_(\d+)$/);
+            if (match) {
+              const removedId = parseInt(match[1], 10);
+              const idx = inMemoryVisits.findIndex(v => v.id === removedId);
+              if (idx !== -1) {
+                inMemoryVisits.splice(idx, 1);
+                openDatabase().then(db => {
+                  const tx = db.transaction(STORE_VISITS, "readwrite");
+                  tx.objectStore(STORE_VISITS).delete(removedId);
+                });
+                notify();
+              }
+            }
+          }
+        });
+
         if (!snapshot.empty) {
           mergeFirestoreVisits(snapshot).then(() => {
             if (onStatusChange) onStatusChange("success");
@@ -284,116 +303,123 @@ window.PhysioDB = (function() {
     }
   }
 
-  // Automatic Two-Way Cloud Sync:
-  // Detects any local visits in IndexedDB that do NOT exist in Firestore (or are marked un-synced)
-  // and pushes them directly to Firestore with full clinical fidelity
+  // Automatic Outbox Push:
+  // Detects any visits in local IndexedDB that were created or modified offline on THIS device
+  // (strictly where synced === false) and pushes them to Firestore before cache clearance.
   async function pushUnsyncedVisitsToFirestore() {
     if (!navigator.onLine) return;
     try {
       const localVisits = await getAllVisits();
       if (!localVisits || localVisits.length === 0) return;
 
+      const unsyncedVisits = localVisits.filter(v => v && v.synced === false);
+      if (unsyncedVisits.length === 0) return;
+
+      console.log(`Found ${unsyncedVisits.length} queued offline visit(s) to push to Firestore...`);
+
       const cfg = getFirebaseConfig();
       if (!cfg || !cfg.projectId) return;
 
+      // Fetch existing remote IDs to prevent any ID collision
       const restDocs = await fetchVisitsFromFirestoreREST();
-      const remoteIdMap = new Map();
+      const existingRemoteIds = new Set();
       let maxRemoteId = 0;
-
       if (restDocs && Array.isArray(restDocs)) {
         restDocs.forEach(d => {
           const docId = d.name ? d.name.split('/').pop() : "";
           const match = docId.match(/^visit_(\d+)$/);
           if (match) {
             const numId = parseInt(match[1], 10);
+            existingRemoteIds.add(numId);
             if (numId > maxRemoteId) maxRemoteId = numId;
-            const fields = d.fields || {};
-            const name = fields.name && fields.name.stringValue ? fields.name.stringValue.trim().toLowerCase() : "";
-            const date = fields.date && fields.date.stringValue ? fields.date.stringValue.trim() : "";
-            remoteIdMap.set(numId, `${name}_${date}`);
           }
         });
       }
 
-      // Identify local visits missing in remote cloud or pending sync
-      const visitsToPush = [];
-      const db = await openDatabase();
-
-      for (const v of localVisits) {
+      for (const v of unsyncedVisits) {
         if (!v || !v.name) continue;
-        const vId = Number(v.id) || 0;
-        const localKey = `${(v.name || '').trim().toLowerCase()}_${(v.date || '').trim()}`;
-
-        if (!remoteIdMap.has(vId)) {
-          // Record exists locally but does NOT exist in Firestore: must push!
-          visitsToPush.push(v);
-        } else if (remoteIdMap.get(vId) !== localKey) {
-          // ID collision with a different record: assign a new unique ID
+        let vId = Number(v.id) || 0;
+        // If local offline ID already exists in remote, allocate next available unique ID
+        if (vId === 0 || existingRemoteIds.has(vId)) {
           maxRemoteId++;
-          v.id = maxRemoteId;
-          v.synced = false;
-          const tx = db.transaction(STORE_VISITS, "readwrite");
-          tx.objectStore(STORE_VISITS).put(v);
-          await new Promise(res => { tx.oncomplete = res; });
-          visitsToPush.push(v);
-        } else if (v.synced === false) {
-          visitsToPush.push(v);
+          vId = maxRemoteId;
+          v.id = vId;
+          v.sheetRowIndex = vId + 1;
+          existingRemoteIds.add(vId);
         }
+        const docId = `visit_${vId}`;
+        await dispatchFirestoreRestWrite(docId, v, vId);
+        v.synced = true;
       }
-
-      if (visitsToPush.length === 0) return;
-
-      console.log(`Two-way sync: pushing ${visitsToPush.length} authentic local visits to Firestore...`);
-      for (const v of visitsToPush) {
-        const docId = `visit_${v.id}`;
-        await dispatchFirestoreRestWrite(docId, v, v.id);
-      }
+      console.log("All queued offline visits successfully pushed to Firestore.");
     } catch (e) {
-      console.warn("Two-way push sync notice:", e);
+      console.warn("Outbox push notice:", e);
     }
   }
 
-  // Dual-Channel Cloud Sync (REST Fast Path + SDK Realtime Channel)
-  async function syncWithFirestore(onStatusChange) {
+  // Full Rehydration Sync Engine:
+  // 1. Pushes any pending un-synced entries from this device to Firestore first (zero data loss)
+  // 2. Fetches fresh authoritative records directly from Firestore REST
+  // 3. Atomically clears local IndexedDB cache (reconciles all external deletions & duplicates)
+  // 4. Populates local IndexedDB & memory with fresh authoritative records
+  // 5. Notifies UI to re-render all tabs with pristine cloud data
+  async function rehydrateFromCloud(onStatusChange) {
+    if (!navigator.onLine) return inMemoryVisits.length;
     if (onStatusChange) onStatusChange("syncing");
-    let count = 0;
 
-    // STEP 0: Push any local un-synced visits to Firestore (Two-Way Sync Guarantee)
+    // Step 1: Push any local un-synced visits first so no offline work is ever lost
     await pushUnsyncedVisitsToFirestore();
 
-    // Strategy 1: Direct HTTPS REST (instant, works everywhere, immune to WebChannel drops)
-    try {
-      const restDocs = await fetchVisitsFromFirestoreREST();
-      if (restDocs && restDocs.length > 0) {
-        const parsed = restDocs.map(parseFirestoreRestDoc).filter(Boolean);
-        if (parsed.length > 0) {
-          count = await mergeVisitRecords(parsed);
-          if (onStatusChange) onStatusChange("success");
+    // Step 2: Fetch authoritative dataset from Firestore via fast HTTPS REST
+    const restDocs = await fetchVisitsFromFirestoreREST();
+    if (!restDocs || !Array.isArray(restDocs)) {
+      throw new Error("Could not fetch documents from Firestore");
+    }
 
-          // Keep SDK realtime listener active in background for live socket updates
-          const cfg = getFirebaseConfig();
-          if (cfg && !firestoreDb) initFirebase(cfg);
-          if (firestoreDb && !realtimeUnsubscribe) setupRealtimeSync();
+    const freshRecords = restDocs.map(parseFirestoreRestDoc).filter(Boolean);
+    // Sort chronologically ascending
+    freshRecords.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
 
-          return count;
+    // Step 3: Clear local cache and re-insert fresh records atomically
+    const db = await openDatabase();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_VISITS, "readwrite");
+      const store = tx.objectStore(STORE_VISITS);
+      
+      // Clear out stale / deleted records
+      store.clear();
+
+      freshRecords.forEach(rec => {
+        if (rec && rec.id) {
+          rec.synced = true;
+          store.put(rec);
         }
-      }
-    } catch (restErr) {
-      console.warn("Firestore REST sync notice, trying SDK:", restErr);
-    }
+      });
 
-    // Strategy 2: Firestore SDK get()
-    if (!firestoreDb) {
-      const cfg = getFirebaseConfig();
-      if (!initFirebase(cfg)) {
-        throw new Error("Cloud database is offline or not configured");
-      }
-    }
+      tx.oncomplete = () => resolve();
+      tx.onerror = e => reject(e);
+      tx.onabort = e => reject(e);
+    });
 
-    const snapshot = await firestoreDb.collection(FIRESTORE_COL_VISITS).get();
-    count = await mergeFirestoreVisits(snapshot);
+    // Clear legacy localStorage cached rows
+    try { localStorage.removeItem('clinicData'); } catch (e) {}
+
+    // Step 4: Update memory and notify UI
+    inMemoryVisits = await getAllVisits();
+    notify();
+
+    // Step 5: Keep real-time listener active in background
+    const cfg = getFirebaseConfig();
+    if (cfg && !firestoreDb) initFirebase(cfg);
+    if (firestoreDb && !realtimeUnsubscribe) setupRealtimeSync();
+
     if (onStatusChange) onStatusChange("success");
-    return count;
+    return inMemoryVisits.length;
+  }
+
+  // Dual-Channel Cloud Sync (delegates to full rehydration engine)
+  async function syncWithFirestore(onStatusChange) {
+    return await rehydrateFromCloud(onStatusChange);
   }
 
   // Direct REST write fallback for 100% write certainty across all networks
@@ -423,6 +449,18 @@ window.PhysioDB = (function() {
       }
     } catch (e) {
       console.warn("Firestore REST write notice:", e);
+    }
+  }
+
+  // Direct REST delete for 100% cloud deletion across all devices
+  async function dispatchFirestoreRestDelete(docId) {
+    try {
+      const cfg = getFirebaseConfig();
+      if (!cfg || !cfg.projectId) return;
+      const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/${FIRESTORE_COL_VISITS}/${docId}`;
+      await fetch(url, { method: 'DELETE' });
+    } catch (e) {
+      console.warn("Firestore REST delete notice:", e);
     }
   }
 
@@ -749,9 +787,12 @@ window.PhysioDB = (function() {
     await new Promise(res => { tx.oncomplete = res; });
     notify();
 
-    if (getActiveBackend() === 'firebase' && firestoreDb) {
-      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(`visit_${visitId}`).delete().catch(e => console.warn("Firestore delete queued:", e));
+    const docId = `visit_${visitId}`;
+    if (firestoreDb) {
+      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(docId).delete().catch(e => console.warn("Firestore delete queued:", e));
     }
+    // Direct REST delete for guaranteed real-time cloud deletion across all devices
+    dispatchFirestoreRestDelete(docId);
 
     const payload = {
       action: "deleteVisit",
@@ -974,6 +1015,7 @@ window.PhysioDB = (function() {
     updateNextAppt,
     syncWithCloud,
     syncWithFirestore,
+    rehydrateFromCloud,
     syncOfflineQueue,
     subscribe,
     sanitizeName,

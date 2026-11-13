@@ -634,10 +634,10 @@ window.PhysioApp = (function() {
     const icon = document.getElementById('headerSyncIcon');
     if (icon) icon.classList.add('spinning');
     updateSyncIndicator("syncing");
-    showToast("Checking cloud for latest clinic sessions...", "info");
+    showToast("Pushing queue, clearing cache & fetching fresh data...", "info");
 
     try {
-      const count = await PhysioDB.syncWithFirestore();
+      const count = await PhysioDB.rehydrateFromCloud();
       updateGlobalPatientsList(PhysioDB.getVisits());
       const activeTab = document.querySelector('.tab-content.active');
       if (activeTab) renderCurrentTab(activeTab.id);
