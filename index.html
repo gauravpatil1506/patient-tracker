@@ -15,8 +15,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/design-system.css?v=18">
-  <link rel="stylesheet" href="css/app.css?v=18">
+  <link rel="stylesheet" href="css/design-system.css?v=19">
+  <link rel="stylesheet" href="css/app.css?v=19">
 
   <!-- Self-Hosted High Performance Vendor Libraries (Zero External CDN Latency) -->
   <script src="vendor/chart.min.js"></script>
@@ -124,10 +124,10 @@
       </div>
 
       <form id="entryForm" onsubmit="PhysioClinical.handleEntryFormSubmit(event)" class="entry-form-compact">
-        <div class="card form-card compact-entry-card">
+        <div class="card form-card">
           
-          <!-- Row 1: Patient Name & WhatsApp Phone (Side-by-Side 60/40 Split) -->
-          <div class="grid-patient-phone">
+          <!-- Row 1: Patient Name & WhatsApp Phone (Equal Balanced 50/50 Grid) -->
+          <div class="grid-2">
             <div class="form-group">
               <label class="field-label">Patient Name *</label>
               <button type="button" class="patient-select-btn" id="btnTab1Patient" onclick="PhysioApp.openPatientModal('tab1')">Select Patient...</button>
@@ -171,7 +171,7 @@
             <div class="medical-pain-card">
               <!-- Header Bar with Live Relief Delta -->
               <div class="pain-card-header">
-                <span class="pain-header-title">🩺 Pain Score (0–10)</span>
+                <span class="pain-header-title">🩺 Pain Score</span>
                 <div class="pain-delta-pillar idle" id="painDeltaPillar" title="Clinical Recovery Delta">
                   <span class="delta-arrow">➔</span>
                   <span class="delta-label" id="painDeltaLabel">Relief Delta</span>
@@ -183,7 +183,7 @@
                 <!-- Pain Before Module -->
                 <div class="pain-module" id="modulePainBefore">
                   <div class="pain-module-header">
-                    <span class="pain-module-label">Before Session</span>
+                    <span class="pain-module-label">Before</span>
                     <span class="pain-status-tag" id="tagPainBefore">Optional</span>
                   </div>
                   <div class="pain-control-row">
@@ -200,7 +200,7 @@
                 <!-- Pain After Module -->
                 <div class="pain-module" id="modulePainAfter">
                   <div class="pain-module-header">
-                    <span class="pain-module-label">After Session</span>
+                    <span class="pain-module-label">After</span>
                     <span class="pain-status-tag" id="tagPainAfter">Optional</span>
                   </div>
                   <div class="pain-control-row">
@@ -249,12 +249,12 @@
           <!-- Row 7: Clinical Observations -->
           <div class="form-group" style="margin-bottom: 0;">
             <label class="field-label">Treatment Notes</label>
-            <input type="text" id="notes" placeholder="Exercises performed, ROM improvements, precautions..." class="compact-notes-input">
+            <textarea id="notes" rows="2" placeholder="Exercises performed, ROM improvements, precautions..."></textarea>
           </div>
 
         </div>
 
-        <button type="submit" class="btn-main submit-btn entry-submit-btn" id="submitBtn">
+        <button type="submit" class="btn-main submit-btn" id="submitBtn">
           Save Session Record
         </button>
       </form>
@@ -646,13 +646,13 @@
   </div>
 
   <!-- Application Modules -->
-  <script src="js/config.js?v=18"></script>
-  <script src="js/auth.js?v=18"></script>
-  <script src="js/db.js?v=18"></script>
-  <script src="js/payments.js?v=18"></script>
-  <script src="js/clinical.js?v=18"></script>
-  <script src="js/ledger.js?v=18"></script>
-  <script src="js/analytics.js?v=18"></script>
-  <script src="js/app.js?v=18"></script>
+  <script src="js/config.js?v=19"></script>
+  <script src="js/auth.js?v=19"></script>
+  <script src="js/db.js?v=19"></script>
+  <script src="js/payments.js?v=19"></script>
+  <script src="js/clinical.js?v=19"></script>
+  <script src="js/ledger.js?v=19"></script>
+  <script src="js/analytics.js?v=19"></script>
+  <script src="js/app.js?v=19"></script>
 </body>
 </html>

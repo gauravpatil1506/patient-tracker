@@ -134,14 +134,14 @@
    CONTAINER & TABS
    ======================================================== */
 .container {
-  padding: 12px 14px 84px;
+  padding: 12px 14px 20px;
   max-width: 600px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
 .tab-entry-container {
-  padding: 8px 12px calc(var(--bottom-nav-height, 58px) + 10px);
+  padding: 10px 14px 20px;
   max-width: 520px;
   margin: 0 auto;
 }
@@ -214,25 +214,19 @@
 }
 
 .form-card {
-  padding: 14px 12px;
-}
-
-.compact-entry-card {
-  padding: 10px 11px;
-  margin-bottom: 6px;
-  border-radius: var(--radius-md);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  padding: 14px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
 }
 
 /* ========================================================
-   FORM GROUPS & CLEAN MICRO-LABELS
+   FORM GROUPS & BALANCED 50/50 2-COLUMN GRID
    ======================================================== */
 .form-group {
-  margin-bottom: 8px;
-}
-
-.entry-form-compact .form-group {
-  margin-bottom: 6px;
+  margin-bottom: 9px;
 }
 
 .field-label {
@@ -245,15 +239,9 @@
   margin-bottom: 4px;
 }
 
-.entry-form-compact .field-label {
-  font-size: 9.5px;
-  margin-bottom: 2px;
-  letter-spacing: 0.03em;
-}
-
 input, select, textarea {
   width: 100%;
-  padding: 9px 11px;
+  padding: 10px 12px;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -265,13 +253,13 @@ input, select, textarea {
   box-sizing: border-box;
 }
 
-.entry-form-compact input, 
-.entry-form-compact select,
-.entry-form-compact .patient-select-btn {
-  padding: 6px 9px;
-  height: 35px;
-  font-size: 13px;
-  border-radius: 6px;
+/* Every single 1-row input across all rows has the exact same uniform 42px height! */
+input[type="date"],
+input[type="text"],
+input[type="tel"],
+input[type="number"],
+.patient-select-btn {
+  height: 42px;
   box-sizing: border-box;
 }
 
@@ -288,32 +276,26 @@ input:focus, select:focus, textarea:focus {
 
 .input-icon {
   position: absolute;
-  left: 9px;
-  font-size: 13px;
+  left: 10px;
+  font-size: 14px;
   pointer-events: none;
   opacity: 0.7;
 }
 
 .input-with-icon input {
-  padding-left: 28px !important;
+  padding-left: 32px !important;
 }
 
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
-.grid-patient-phone {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 8px;
-}
-
-/* Patient Selector Button (Dropdown look) */
+/* Patient Selector Button (Dropdown look) - matches other inputs perfectly */
 .patient-select-btn {
   width: 100%;
-  padding: 9px 11px;
+  padding: 10px 12px;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -344,18 +326,18 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========================================================
-   RECENT PATIENTS QUICK-BAR (COMPACT 1-LINE CHIPS)
+   RECENT PATIENTS QUICK-BAR (1-LINE CHIPS)
    ======================================================== */
 .quick-patients-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
-  min-height: 26px;
+  margin-bottom: 8px;
+  min-height: 28px;
 }
 
 .quick-patients-label {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -366,11 +348,11 @@ input:focus, select:focus, textarea:focus {
 
 .quick-patients-scroll {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 1px 0;
+  padding: 2px 0;
 }
 
 .quick-patients-scroll::-webkit-scrollbar {
@@ -378,11 +360,11 @@ input:focus, select:focus, textarea:focus {
 }
 
 .patient-chip {
-  padding: 3px 8px;
+  padding: 4px 10px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-main);
   white-space: nowrap;
@@ -404,11 +386,11 @@ input:focus, select:focus, textarea:focus {
 .medical-pain-card {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 6px 8px;
+  padding: 8px 10px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -417,12 +399,12 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 3px;
+  padding-bottom: 4px;
   border-bottom: 1px dashed var(--border-subtle);
 }
 
 .pain-header-title {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -433,24 +415,25 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .delta-arrow {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
   transition: color var(--transition-fast);
 }
 
 .delta-label {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.02em;
@@ -477,7 +460,7 @@ input:focus, select:focus, textarea:focus {
 .pain-columns-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -485,11 +468,11 @@ input:focus, select:focus, textarea:focus {
 .pain-module {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
   box-sizing: border-box;
   transition: border-color var(--transition-fast), background var(--transition-fast);
@@ -499,11 +482,11 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .pain-module-label {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -512,9 +495,9 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pain-status-tag {
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 1px 5px;
+  padding: 1px 6px;
   border-radius: var(--radius-full);
   background: var(--bg-input);
   color: var(--text-muted);
@@ -530,13 +513,13 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pain-stepper-btn {
-  width: 27px;
-  height: 27px;
+  width: 29px;
+  height: 29px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
   background: var(--bg-input);
   color: var(--text-main);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -549,7 +532,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pain-stepper-btn:active {
-  transform: scale(0.88);
+  transform: scale(0.9);
   background: var(--primary-light);
   border-color: var(--primary);
 }
@@ -558,10 +541,10 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
   cursor: pointer;
   user-select: none;
-  min-width: 30px;
+  min-width: 32px;
   padding: 1px 3px;
   border-radius: var(--radius-sm);
 }
@@ -571,7 +554,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pain-num {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   color: var(--text-main);
   font-variant-numeric: tabular-nums;
@@ -579,7 +562,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pain-scale-max {
-  font-size: 10px;
+  font-size: 10.5px;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -590,24 +573,25 @@ input:focus, select:focus, textarea:focus {
 .pay-method-selector {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-  margin-top: 1px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .pay-method-pill {
-  padding: 5px 2px;
-  border-radius: 6px;
+  padding: 7px 4px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: var(--bg-input);
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  height: 31px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
+  box-sizing: border-box;
 }
 
 .pay-method-pill.active {
@@ -617,45 +601,27 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 2px 6px rgba(0, 121, 107, 0.25);
 }
 
-.compact-notes-input {
-  height: 32px !important;
-  font-size: 12.5px !important;
-  padding: 5px 9px !important;
-  border-radius: 6px !important;
+textarea#notes {
+  height: 52px;
+  resize: none;
+  font-size: 13.5px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
 }
 
-.entry-submit-btn {
+.submit-btn {
   width: 100%;
-  height: 42px;
-  font-size: 14.5px;
+  height: 48px;
+  font-size: 15px;
   font-weight: 700;
-  border-radius: 8px;
-  margin: 6px 0 0 0;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 121, 107, 0.28);
-}
-
-.pay-method-pill {
-  padding: 10px 4px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-input);
-  color: var(--text-muted);
-  font-size: 12.5px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.pay-method-pill.active {
-  background: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 14px rgba(0, 121, 107, 0.28);
+  letter-spacing: 0.01em;
 }
 
 .pay-method-pill[data-mode="cash"].active {
