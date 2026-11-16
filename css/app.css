@@ -137,6 +137,13 @@
   padding: 12px 14px 84px;
   max-width: 600px;
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.tab-entry-container {
+  padding: 8px 12px calc(var(--bottom-nav-height, 58px) + 10px);
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .tab-content {
@@ -207,37 +214,64 @@
 }
 
 .form-card {
-  padding: 16px 14px;
+  padding: 14px 12px;
+}
+
+.compact-entry-card {
+  padding: 10px 11px;
+  margin-bottom: 6px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 /* ========================================================
    FORM GROUPS & CLEAN MICRO-LABELS
    ======================================================== */
 .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.entry-form-compact .form-group {
+  margin-bottom: 6px;
 }
 
 .field-label {
   display: block;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+}
+
+.entry-form-compact .field-label {
+  font-size: 9.5px;
+  margin-bottom: 2px;
+  letter-spacing: 0.03em;
 }
 
 input, select, textarea {
   width: 100%;
-  padding: 11px 12px;
+  padding: 9px 11px;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   color: var(--text-main);
-  font-size: 15px;
+  font-size: 14px;
   font-family: inherit;
   outline: none;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.entry-form-compact input, 
+.entry-form-compact select,
+.entry-form-compact .patient-select-btn {
+  padding: 6px 9px;
+  height: 35px;
+  font-size: 13px;
+  border-radius: 6px;
   box-sizing: border-box;
 }
 
@@ -254,43 +288,54 @@ input:focus, select:focus, textarea:focus {
 
 .input-icon {
   position: absolute;
-  left: 12px;
-  font-size: 14px;
+  left: 9px;
+  font-size: 13px;
   pointer-events: none;
   opacity: 0.7;
 }
 
 .input-with-icon input {
-  padding-left: 36px;
+  padding-left: 28px !important;
 }
 
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
+}
+
+.grid-patient-phone {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 8px;
 }
 
 /* Patient Selector Button (Dropdown look) */
 .patient-select-btn {
   width: 100%;
-  padding: 12px 14px;
+  padding: 9px 11px;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   color: var(--text-main);
-  font-size: 15px;
+  font-size: 14px;
   text-align: left;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
   transition: var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .patient-select-btn:after {
   content: "▾";
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-muted);
+  margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .patient-select-btn:active {
@@ -299,28 +344,33 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========================================================
-   RECENT PATIENTS QUICK-BAR
+   RECENT PATIENTS QUICK-BAR (COMPACT 1-LINE CHIPS)
    ======================================================== */
 .quick-patients-bar {
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  min-height: 26px;
 }
 
 .quick-patients-label {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .quick-patients-scroll {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   overflow-x: auto;
-  padding-bottom: 4px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  padding: 1px 0;
 }
 
 .quick-patients-scroll::-webkit-scrollbar {
@@ -328,17 +378,18 @@ input:focus, select:focus, textarea:focus {
 }
 
 .patient-chip {
-  padding: 6px 12px;
+  padding: 3px 8px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-main);
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .patient-chip:active {
@@ -348,28 +399,99 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========================================================
-   COMPACT DUAL MEDICAL PAIN CARD (SIDE-BY-SIDE STEPPERS)
+   SYMMETRICAL 2-COLUMN DUAL MEDICAL PAIN CARD (ZERO CLIPPING)
    ======================================================== */
 .medical-pain-card {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 10px;
-  box-shadow: var(--shadow-sm);
-}
-
-.pain-module {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.pain-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 3px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.pain-header-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.pain-delta-pillar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.delta-arrow {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.delta-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.pain-delta-pillar.positive {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.pain-delta-pillar.positive .delta-arrow,
+.pain-delta-pillar.positive .delta-label {
+  color: #059669;
+}
+
+.pain-delta-pillar.negative {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.pain-delta-pillar.negative .delta-arrow,
+.pain-delta-pillar.negative .delta-label {
+  color: #dc2626;
+}
+
+.pain-columns-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pain-module {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 5px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
+  min-width: 0;
+  box-sizing: border-box;
   transition: border-color var(--transition-fast), background var(--transition-fast);
 }
 
@@ -377,41 +499,44 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 2px;
 }
 
 .pain-module-label {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .pain-status-tag {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 1px 5px;
   border-radius: var(--radius-full);
   background: var(--bg-input);
   color: var(--text-muted);
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .pain-control-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  gap: 2px;
 }
 
 .pain-stepper-btn {
-  width: 32px;
-  height: 32px;
+  width: 27px;
+  height: 27px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
-  background: var(--bg-card);
+  background: var(--bg-input);
   color: var(--text-main);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -420,6 +545,7 @@ input:focus, select:focus, textarea:focus {
   transition: transform 0.1s ease, background 0.15s ease;
   padding: 0;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .pain-stepper-btn:active {
@@ -432,20 +558,20 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   cursor: pointer;
   user-select: none;
-  min-width: 36px;
-  padding: 2px 4px;
+  min-width: 30px;
+  padding: 1px 3px;
   border-radius: var(--radius-sm);
 }
 
 .pain-value-display:active {
-  background: var(--bg-card);
+  background: var(--bg-input);
 }
 
 .pain-num {
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--text-main);
   font-variant-numeric: tabular-nums;
@@ -453,51 +579,9 @@ input:focus, select:focus, textarea:focus {
 }
 
 .pain-scale-max {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   font-weight: 500;
-}
-
-.pain-delta-pillar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  min-width: 64px;
-  text-align: center;
-}
-
-.delta-arrow {
-  font-size: 13px;
-  color: var(--text-muted);
-  transition: color var(--transition-fast);
-}
-
-.delta-label {
-  font-size: 9.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.03em;
-  margin-top: 3px;
-  line-height: 1.2;
-}
-
-.pain-delta-pillar.positive .delta-arrow {
-  color: #10b981;
-}
-
-.pain-delta-pillar.positive .delta-label {
-  color: #10b981;
-}
-
-.pain-delta-pillar.negative .delta-arrow {
-  color: #ef4444;
-}
-
-.pain-delta-pillar.negative .delta-label {
-  color: #ef4444;
 }
 
 /* ========================================================
@@ -506,8 +590,51 @@ input:focus, select:focus, textarea:focus {
 .pay-method-selector {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+.pay-method-pill {
+  padding: 5px 2px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.pay-method-pill.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 6px rgba(0, 121, 107, 0.25);
+}
+
+.compact-notes-input {
+  height: 32px !important;
+  font-size: 12.5px !important;
+  padding: 5px 9px !important;
+  border-radius: 6px !important;
+}
+
+.entry-submit-btn {
+  width: 100%;
+  height: 42px;
+  font-size: 14.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  margin: 6px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 121, 107, 0.28);
 }
 
 .pay-method-pill {
