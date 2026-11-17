@@ -460,12 +460,14 @@ window.PhysioClinical = (function() {
     let html = '';
     patientVisits.forEach(v => {
       const d = v.date ? new Date(v.date) : null;
-      const displayDate = d && !isNaN(d) ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : "No Date";
+      const displayDate = d && !isNaN(d) ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "No Date";
+      const timeStr = v.fromTime && window.PhysioLedger && window.PhysioLedger.formatCompactTime ? `, ${window.PhysioLedger.formatCompactTime(v.fromTime)}` : '';
+      const displayDateWithTime = `${displayDate}${timeStr}`;
       
       html += `
       <div class="card" style="border-left: 4px solid var(--primary); padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-          <span style="font-weight:700; color:var(--primary); font-size:15px;">${displayDate}</span>
+          <span style="font-weight:700; color:var(--primary); font-size:15px;">${displayDateWithTime}</span>
           <span class="badge badge-success">${v.sessionType || "Session"}</span>
         </div>
         <div style="background: var(--bg-input); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 10px; display:flex; justify-content:space-around; align-items:center; text-align:center;">

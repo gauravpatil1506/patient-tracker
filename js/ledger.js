@@ -11,7 +11,7 @@ window.PhysioLedger = (function() {
   let deleteMode = false;
   let cachedPendingListForWA = [];
 
-  // Strictly formats time into a short string: e.g. "11AM", "2PM", "10:30AM"
+  // Formats time into formatted string: e.g. "02 PM", "11 AM", "09 AM", "02:30 PM"
   function formatCompactTime(timeStr) {
     if (!timeStr || typeof timeStr !== 'string') return '';
     const parts = timeStr.trim().split(':');
@@ -22,8 +22,9 @@ window.PhysioLedger = (function() {
     const ampm = h >= 12 ? 'PM' : 'AM';
     let h12 = h % 12;
     if (h12 === 0) h12 = 12;
+    const hPad = String(h12).padStart(2, '0');
     const mStr = m === 0 ? '' : `:${String(m).padStart(2, '0')}`;
-    return `${h12}${mStr}${ampm}`;
+    return `${hPad}${mStr} ${ampm}`;
   }
 
   function switchLedgerView(view) {
