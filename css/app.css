@@ -255,6 +255,7 @@ input, select, textarea {
 
 /* Every single 1-row input across all rows has the exact same uniform 42px height! */
 input[type="date"],
+input[type="time"],
 input[type="text"],
 input[type="tel"],
 input[type="number"],
@@ -624,6 +625,84 @@ textarea#notes {
   letter-spacing: 0.01em;
 }
 
+.submit-btn.btn-update-mode {
+  background: linear-gradient(135deg, #d97706, #059669);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+}
+
+.submit-btn.btn-update-mode:active {
+  background: #b45309;
+}
+
+/* Edit Mode Visual Banner (Tab 1) */
+.edit-mode-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(0, 121, 107, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.edit-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.edit-banner-badge {
+  background: #f59e0b;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.edit-banner-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-cancel-edit {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.btn-cancel-edit:hover,
+.btn-cancel-edit:active {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
 .pay-method-pill[data-mode="cash"].active {
   background: var(--success);
   border-color: var(--success);
@@ -802,6 +881,70 @@ textarea#notes {
   padding: 11px 13px;
   margin-bottom: 9px;
   position: relative;
+}
+
+/* Card Head Action Cluster (Edit & Delete side-by-side with zero layout shift) */
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.card-action-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-card-action {
+  width: 28px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.1s ease, background 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-card-action:active {
+  transform: scale(0.9);
+}
+
+.btn-card-edit {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: rgba(0, 121, 107, 0.3);
+}
+
+.btn-card-edit:hover {
+  background: rgba(0, 121, 107, 0.2);
+}
+
+.btn-card-delete {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.btn-card-delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-subtle-action.active-edit-toggle {
+  background: var(--primary);
+  color: #ffffff !important;
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-weight: 700;
+  opacity: 1 !important;
+  box-shadow: 0 2px 6px rgba(0, 121, 107, 0.25);
 }
 
 /* Tab 2: Upcoming Appointments Card (Strict Visual Symmetry with Recent Sessions) */

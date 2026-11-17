@@ -5,6 +5,7 @@
 
 window.PhysioClinical = (function() {
   let isSubmitting = false;
+  let editingVisitId = null;
 
   const PAIN_LEVELS = {
     0: { label: "None", emoji: "😄", color: "#10b981" },
@@ -195,7 +196,162 @@ window.PhysioClinical = (function() {
     }
   }
 
-  // Handle New Visit Form Submission
+  // Auto-populate To Time to 1 hour after From Time (Dr. Anjali can still override)
+  function handleFromTimeChange() {
+    const fromEl = document.getElementById('fromTime');
+    const toEl = document.getElementById('toTime');
+    if (!fromEl || !toEl) return;
+
+    const val = fromEl.value; // "HH:MM"
+    if (!val) return;
+
+    const parts = val.split(':');
+    if (parts.length < 2) return;
+
+    let h = parseInt(parts[0], 10);
+    let m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return;
+
+    const nextH = (h + 1) % 24;
+    toEl.value = `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  // Hydrate Tab 1 with existing session data for editing
+  function startEditVisit(visitId) {
+    const numId = Number(visitId);
+    const visit = PhysioDB.getVisitById ? PhysioDB.getVisitById(numId) : PhysioDB.getVisits().find(v => Number(v.id) === numId);
+    if (!visit) {
+      PhysioApp.showToast("Session record not found", "error");
+      return;
+    }
+
+    editingVisitId = numId;
+
+    // 1. Switch to Tab 1 (New Visit / Edit Session)
+    if (window.PhysioApp && window.PhysioApp.switchTab) {
+      window.PhysioApp.switchTab('tab1');
+    }
+
+    // 2. Hydrate form inputs
+    const nameInput = document.getElementById('name');
+    const selectBtn = document.getElementById('btnTab1Patient');
+    if (nameInput) nameInput.value = visit.name || "";
+    if (selectBtn) selectBtn.innerHTML = `<strong>${visit.name || "Select Patient..."}</strong>`;
+
+    const phones = PhysioDB.getPatientPhones();
+    const phoneInput = document.getElementById('patientPhone');
+    if (phoneInput) {
+      phoneInput.value = phones[PhysioDB.sanitizeName(visit.name)] || "";
+    }
+
+    const dateInput = document.getElementById('date');
+    if (dateInput) dateInput.value = visit.date || "";
+
+    const fromTimeInput = document.getElementById('fromTime');
+    if (fromTimeInput) fromTimeInput.value = visit.fromTime || "";
+
+    const toTimeInput = document.getElementById('toTime');
+    if (toTimeInput) toTimeInput.value = visit.toTime || "";
+
+    const locInput = document.getElementById('location');
+    if (locInput) locInput.value = visit.location || "";
+
+    const typeInput = document.getElementById('sessionType');
+    if (typeInput) typeInput.value = visit.sessionType || "";
+
+    const nextApptInput = document.getElementById('nextAppt');
+    if (nextApptInput) nextApptInput.value = visit.nextAppt || "";
+
+    const feeInput = document.getElementById('totalFee');
+    if (feeInput) feeInput.value = visit.totalFee != null ? visit.totalFee : "";
+
+    const paidInput = document.getElementById('amountPaid');
+    if (paidInput) paidInput.value = visit.amountPaid != null ? visit.amountPaid : 0;
+
+    const notesInput = document.getElementById('notes');
+    if (notesInput) notesInput.value = visit.notes || "";
+
+    // Hydrate Pain Scores
+    const bInput = document.getElementById('painBefore');
+    const aInput = document.getElementById('painAfter');
+    if (bInput) bInput.value = (visit.painBefore !== null && visit.painBefore !== undefined && visit.painBefore !== "") ? visit.painBefore : "";
+    if (aInput) aInput.value = (visit.painAfter !== null && visit.painAfter !== undefined && visit.painAfter !== "") ? visit.painAfter : "";
+    updatePainDisplay('painBefore');
+    updatePainDisplay('painAfter');
+    updatePainDelta();
+
+    // Hydrate Payment Method
+    const pType = (visit.paymentType || "").toLowerCase();
+    const feeVal = parseFloat(visit.totalFee) || 0;
+    const paidVal = parseFloat(visit.amountPaid) || 0;
+    if (pType === 'cash') {
+      PhysioApp.setPaymentMethod('cash');
+    } else if (pType === 'pending' || (paidVal === 0 && feeVal > 0)) {
+      PhysioApp.setPaymentMethod('unpaid');
+    } else {
+      PhysioApp.setPaymentMethod('online');
+    }
+
+    // 3. Dynamic UI Swap: Show Edit Mode Banner & Update Submit Button
+    const banner = document.getElementById('editModeBanner');
+    const bannerText = document.getElementById('editBannerPatient');
+    if (banner) {
+      banner.style.display = 'flex';
+      if (bannerText) {
+        bannerText.innerText = `Editing session: ${visit.name} (${visit.date || 'No Date'})`;
+      }
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      submitBtn.innerText = "Update Session Record";
+      submitBtn.classList.add('btn-update-mode');
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    PhysioApp.showToast(`Editing session for ${visit.name}`, "info");
+  }
+
+  // Cancel active Edit Mode and reset form to pristine New Visit state
+  function cancelEditMode() {
+    editingVisitId = null;
+
+    const banner = document.getElementById('editModeBanner');
+    if (banner) banner.style.display = 'none';
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      submitBtn.innerText = "Save Session Record";
+      submitBtn.classList.remove('btn-update-mode');
+    }
+
+    const form = document.getElementById('entryForm');
+    if (form) form.reset();
+
+    const dateInput = document.getElementById('date');
+    if (dateInput) dateInput.valueAsDate = new Date();
+
+    const fromTimeInput = document.getElementById('fromTime');
+    if (fromTimeInput) fromTimeInput.value = "";
+
+    const toTimeInput = document.getElementById('toTime');
+    if (toTimeInput) toTimeInput.value = "";
+
+    const amountPaid = document.getElementById('amountPaid');
+    if (amountPaid) amountPaid.value = "0";
+
+    const nameInput = document.getElementById('name');
+    if (nameInput) nameInput.value = "";
+
+    const selectBtn = document.getElementById('btnTab1Patient');
+    if (selectBtn) selectBtn.innerHTML = "Select Patient...";
+
+    PhysioApp.setPaymentMethod('online');
+    resetPainChips();
+    renderQuickPatientsBar();
+  }
+
+  // Handle New Visit / Edit Session Form Submission
   async function handleEntryFormSubmit(e) {
     e.preventDefault();
     if (isSubmitting) return;
@@ -216,13 +372,17 @@ window.PhysioClinical = (function() {
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
-    submitBtn.innerText = "Saving...";
     isSubmitting = true;
+
+    const fromTimeVal = (document.getElementById('fromTime')?.value || "").trim();
+    const toTimeVal = (document.getElementById('toTime')?.value || "").trim();
 
     const visitData = {
       date: document.getElementById('date').value,
       name: rawName,
       location: document.getElementById('location').value,
+      fromTime: fromTimeVal,
+      toTime: toTimeVal,
       sessionType: document.getElementById('sessionType').value,
       painBefore: document.getElementById('painBefore').value,
       painAfter: document.getElementById('painAfter').value,
@@ -240,25 +400,32 @@ window.PhysioClinical = (function() {
     }
 
     try {
-      await PhysioDB.addVisit(visitData);
-      PhysioApp.showToast("✓ Visit saved successfully", "success");
-
-      // Reset Form for next record
-      document.getElementById('entryForm').reset();
-      document.getElementById('date').valueAsDate = new Date();
-      document.getElementById('amountPaid').value = "0";
-      document.getElementById('name').value = "";
-      document.getElementById('btnTab1Patient').innerHTML = "Select Patient...";
-      PhysioApp.setPaymentMethod('online');
-      resetPainChips();
-      renderQuickPatientsBar();
-
+      if (editingVisitId !== null) {
+        submitBtn.innerText = "Updating...";
+        const targetId = editingVisitId;
+        await PhysioDB.updateVisit(targetId, visitData);
+        PhysioApp.showToast("✓ Session record updated", "success");
+        cancelEditMode();
+        // Route back to Recent tab so changes reflect immediately in the UI
+        if (window.PhysioApp && window.PhysioApp.switchTab) {
+          window.PhysioApp.switchTab('tab2');
+        }
+      } else {
+        submitBtn.innerText = "Saving...";
+        await PhysioDB.addVisit(visitData);
+        PhysioApp.showToast("✓ Visit saved successfully", "success");
+        cancelEditMode();
+      }
     } catch (err) {
       console.error(err);
-      PhysioApp.showToast("Error saving session", "error");
+      PhysioApp.showToast(editingVisitId !== null ? "Error updating session" : "Error saving session", "error");
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerText = "Save Session Record";
+      if (editingVisitId !== null) {
+        submitBtn.innerText = "Update Session Record";
+      } else {
+        submitBtn.innerText = "Save Session Record";
+      }
       isSubmitting = false;
     }
   }
@@ -355,6 +522,10 @@ window.PhysioClinical = (function() {
     resetPainChips,
     renderQuickPatientsBar,
     quickSelectPatient,
+    handleFromTimeChange,
+    startEditVisit,
+    cancelEditMode,
+    getEditingVisitId: () => editingVisitId,
     handleEntryFormSubmit,
     renderPatientHistory,
     saveNextAppt

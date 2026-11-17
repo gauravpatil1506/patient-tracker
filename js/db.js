@@ -83,6 +83,8 @@ window.PhysioDB = (function() {
       visit.date || "",
       visit.name || "",
       visit.location || "",
+      visit.fromTime || "",
+      visit.toTime || "",
       visit.paymentType || "Pending",
       visit.amountPaid != null ? visit.amountPaid : 0,
       visit.totalFee != null ? visit.totalFee : 0,
@@ -182,6 +184,8 @@ window.PhysioDB = (function() {
       date: extract(f.date) || "",
       name: sanitizeName(extract(f.name) || ""),
       location: (extract(f.location) || "").trim(),
+      fromTime: extract(f.fromTime) || "",
+      toTime: extract(f.toTime) || "",
       paymentType: extract(f.paymentType) || "Pending",
       amountPaid: Number(extract(f.amountPaid)) || 0,
       totalFee: Number(extract(f.totalFee)) || 0,
@@ -242,6 +246,8 @@ window.PhysioDB = (function() {
         date: data.date || "",
         name: sanitizeName(data.name || ""),
         location: (data.location || "").trim(),
+        fromTime: (data.fromTime || "").trim(),
+        toTime: (data.toTime || "").trim(),
         paymentType: data.paymentType || "Pending",
         amountPaid: Number(data.amountPaid) || 0,
         totalFee: Number(data.totalFee) || 0,
@@ -494,6 +500,8 @@ window.PhysioDB = (function() {
           date: v.date || "",
           name: v.name || "",
           location: v.location || "",
+          fromTime: v.fromTime || "",
+          toTime: v.toTime || "",
           paymentType: v.paymentType || "Pending",
           amountPaid: Number(v.amountPaid) || 0,
           totalFee: Number(v.totalFee) || 0,
@@ -673,6 +681,8 @@ window.PhysioDB = (function() {
       date: visitData.date,
       name: sanitizeName(visitData.name),
       location: (visitData.location || "").trim(),
+      fromTime: (visitData.fromTime || "").trim(),
+      toTime: (visitData.toTime || "").trim(),
       sessionType: (visitData.sessionType || "Regular").trim(),
       painBefore: visitData.painBefore !== "" && visitData.painBefore != null ? parseInt(visitData.painBefore, 10) : null,
       painAfter: visitData.painAfter !== "" && visitData.painAfter != null ? parseInt(visitData.painAfter, 10) : null,
@@ -719,6 +729,8 @@ window.PhysioDB = (function() {
       date: cleanRecord.date,
       name: cleanRecord.name,
       location: cleanRecord.location,
+      fromTime: cleanRecord.fromTime || "",
+      toTime: cleanRecord.toTime || "",
       sessionType: cleanRecord.sessionType,
       painBefore: cleanRecord.painBefore != null ? cleanRecord.painBefore : "",
       painAfter: cleanRecord.painAfter != null ? cleanRecord.painAfter : "",
@@ -732,6 +744,87 @@ window.PhysioDB = (function() {
     dispatchCloudAction(payload, cleanRecord.id);
 
     return cleanRecord;
+  }
+
+  // Update existing visit record without ID duplication
+  async function updateVisit(visitId, updatedData) {
+    const numId = Number(visitId);
+    const idx = inMemoryVisits.findIndex(v => Number(v.id) === numId);
+    if (idx === -1) {
+      throw new Error(`Visit record with ID ${visitId} not found.`);
+    }
+
+    const existing = inMemoryVisits[idx];
+    const updatedRecord = {
+      ...existing,
+      id: numId,
+      date: updatedData.date || existing.date,
+      name: sanitizeName(updatedData.name || existing.name),
+      location: (updatedData.location !== undefined ? updatedData.location : (existing.location || "")).trim(),
+      fromTime: (updatedData.fromTime !== undefined ? updatedData.fromTime : (existing.fromTime || "")).trim(),
+      toTime: (updatedData.toTime !== undefined ? updatedData.toTime : (existing.toTime || "")).trim(),
+      sessionType: (updatedData.sessionType !== undefined ? updatedData.sessionType : (existing.sessionType || "Regular")).trim(),
+      painBefore: (updatedData.painBefore !== "" && updatedData.painBefore != null) ? parseInt(updatedData.painBefore, 10) : null,
+      painAfter: (updatedData.painAfter !== "" && updatedData.painAfter != null) ? parseInt(updatedData.painAfter, 10) : null,
+      totalFee: updatedData.totalFee !== undefined ? (parseFloat(updatedData.totalFee) || 0) : existing.totalFee,
+      amountPaid: updatedData.amountPaid !== undefined ? (parseFloat(updatedData.amountPaid) || 0) : existing.amountPaid,
+      paymentType: updatedData.paymentType || existing.paymentType || "Pending",
+      nextAppt: updatedData.nextAppt !== undefined ? updatedData.nextAppt : (existing.nextAppt || ""),
+      notes: (updatedData.notes !== undefined ? updatedData.notes : (existing.notes || "")).trim(),
+      month: updatedData.month || existing.month || "",
+      updatedAt: new Date().toISOString(),
+      synced: false
+    };
+
+    // 1. Optimistic write to local IndexedDB
+    const db = await openDatabase();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_VISITS, "readwrite");
+      const store = tx.objectStore(STORE_VISITS);
+      store.put(updatedRecord);
+      tx.oncomplete = () => resolve();
+      tx.onerror = e => reject(e);
+      tx.onabort = e => reject(e);
+    });
+
+    inMemoryVisits[idx] = updatedRecord;
+    notify();
+
+    // 2. Dispatch update to Active Cloud Backend (Firestore SDK + REST write)
+    const docId = `visit_${numId}`;
+    if (firestoreDb) {
+      firestoreDb.collection(FIRESTORE_COL_VISITS).doc(docId).set(updatedRecord, { merge: true }).then(() => {
+        markSynced(numId);
+      }).catch(err => {
+        console.warn("Firestore SDK update notice, dispatching REST write:", err);
+        dispatchFirestoreRestWrite(docId, updatedRecord, numId);
+      });
+    } else {
+      dispatchFirestoreRestWrite(docId, updatedRecord, numId);
+    }
+
+    // Mirror update to Google Sheets
+    const payload = {
+      action: "updateVisit",
+      rowNumber: updatedRecord.sheetRowIndex,
+      date: updatedRecord.date,
+      name: updatedRecord.name,
+      location: updatedRecord.location,
+      fromTime: updatedRecord.fromTime || "",
+      toTime: updatedRecord.toTime || "",
+      sessionType: updatedRecord.sessionType,
+      painBefore: updatedRecord.painBefore != null ? updatedRecord.painBefore : "",
+      painAfter: updatedRecord.painAfter != null ? updatedRecord.painAfter : "",
+      totalFee: updatedRecord.totalFee,
+      amountPaid: updatedRecord.amountPaid,
+      paymentType: updatedRecord.paymentType,
+      nextAppt: updatedRecord.nextAppt,
+      notes: updatedRecord.notes,
+      month: updatedRecord.month
+    };
+    dispatchCloudAction(payload, updatedRecord.id);
+
+    return updatedRecord;
   }
 
   // Update payment status
@@ -990,7 +1083,7 @@ window.PhysioDB = (function() {
   }
 
   function exportCSVBackup() {
-    const headers = ["Timestamp", "Date of Visit", "Patient Name", "Location", "Payment Type", "Amount Paid", "Total Fee", "Pain Before", "Pain After", "Session Type", "Next Appointment Date", "Notes", "Month"];
+    const headers = ["Timestamp", "Date of Visit", "Patient Name", "Location", "From Time", "To Time", "Payment Type", "Amount Paid", "Total Fee", "Pain Before", "Pain After", "Session Type", "Next Appointment Date", "Notes", "Month"];
     const rows = [headers];
 
     inMemoryVisits.forEach(v => {
@@ -1009,7 +1102,9 @@ window.PhysioDB = (function() {
   return {
     init: seedInitialData,
     getVisits: () => inMemoryVisits,
+    getVisitById: (id) => inMemoryVisits.find(v => Number(v.id) === Number(id)),
     addVisit,
+    updateVisit,
     updatePayment,
     deleteVisit,
     updateNextAppt,

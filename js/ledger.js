@@ -11,6 +11,21 @@ window.PhysioLedger = (function() {
   let deleteMode = false;
   let cachedPendingListForWA = [];
 
+  // Strictly formats time into a short string: e.g. "11AM", "2PM", "10:30AM"
+  function formatCompactTime(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return '';
+    const parts = timeStr.trim().split(':');
+    if (parts.length < 2) return '';
+    let h = parseInt(parts[0], 10);
+    let m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return '';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12;
+    if (h12 === 0) h12 = 12;
+    const mStr = m === 0 ? '' : `:${String(m).padStart(2, '0')}`;
+    return `${h12}${mStr}${ampm}`;
+  }
+
   function switchLedgerView(view) {
     currentView = view;
     const btnPending = document.getElementById('btnTogglePending');
@@ -324,23 +339,37 @@ window.PhysioLedger = (function() {
     const top10 = sortedVisits.slice(0, 10);
 
     let recentHTML = '';
-    const displayStyle = deleteMode ? 'block' : 'none';
 
     top10.forEach(v => {
       const d = v.date ? new Date(v.date) : null;
       const dateStr = d && !isNaN(d) ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "No Date";
+      const compactTime = formatCompactTime(v.fromTime);
+      const timeDisplay = compactTime ? `, ${compactTime}` : '';
       const fee = parseFloat(v.totalFee) || 0;
       const paid = parseFloat(v.amountPaid) || 0;
       const isPaid = paid >= fee && fee > 0;
 
       recentHTML += `
       <div class="card session-item-card">
-        <!-- Row 1: Patient Name & Payment Status Badge -->
+        <!-- Row 1: Patient Name & Payment Status Badge or Edit/Delete Cluster -->
         <div class="card-row-head">
           <h4 class="card-item-title">${v.name}</h4>
-          <span class="badge ${isPaid ? 'badge-success' : 'badge-danger'}">
-            ${isPaid ? '✓ Paid' : 'Due: ₹' + (fee - paid).toLocaleString('en-IN')}
-          </span>
+          <div class="card-head-actions">
+            ${!deleteMode ? `
+              <span class="badge ${isPaid ? 'badge-success' : 'badge-danger'}">
+                ${isPaid ? '✓ Paid' : 'Due: ₹' + (fee - paid).toLocaleString('en-IN')}
+              </span>
+            ` : `
+              <div class="card-action-cluster">
+                <button type="button" class="btn-card-action btn-card-edit" onclick="PhysioClinical.startEditVisit(${v.id})" title="Edit Session">
+                  ✏️
+                </button>
+                <button type="button" class="btn-card-action btn-card-delete" onclick="PhysioLedger.handleDeleteVisit(${v.id})" title="Delete Session">
+                  🗑️
+                </button>
+              </div>
+            `}
+          </div>
         </div>
 
         <!-- Row 2: Therapy / Session Type (Full width, can have short or long words, never breaks other rows!) -->
@@ -348,19 +377,14 @@ window.PhysioLedger = (function() {
           <span class="therapy-pill">🩺 ${v.sessionType || "Regular Session"}</span>
         </div>
 
-        <!-- Row 3: Meta details with clean | separators and tabular alignment -->
+        <!-- Row 3: Meta details with clean | separators, date, compact From Time, and tabular alignment -->
         <div class="card-row-meta">
-          <span class="meta-item">📅 ${dateStr}</span>
+          <span class="meta-item">📅 ${dateStr}${timeDisplay}</span>
           <span class="meta-sep">|</span>
           <span class="meta-item">📍 ${v.location || "Clinic"}</span>
           <span class="meta-sep">|</span>
           <span class="meta-item">💰 Fee: ₹${fee.toLocaleString('en-IN')}</span>
         </div>
-
-        <!-- Delete button in edit mode -->
-        <button class="delete-btn" style="display: ${displayStyle}; position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 13px; cursor: pointer; box-shadow: var(--shadow-md);" onclick="PhysioLedger.handleDeleteVisit(${v.id})">
-          ✕
-        </button>
       </div>`;
     });
 
@@ -370,7 +394,15 @@ window.PhysioLedger = (function() {
   function toggleDeleteMode() {
     deleteMode = !deleteMode;
     const btn = document.getElementById('btnEditRecent');
-    if (btn) btn.style.opacity = deleteMode ? '1' : '0.6';
+    if (btn) {
+      if (deleteMode) {
+        btn.innerHTML = '✓ Done';
+        btn.classList.add('active-edit-toggle');
+      } else {
+        btn.innerHTML = '✏️ Edit';
+        btn.classList.remove('active-edit-toggle');
+      }
+    }
     renderUpcomingAndRecent();
   }
 
@@ -395,6 +427,8 @@ window.PhysioLedger = (function() {
     dispatchWhatsAppReminder,
     renderUpcomingAndRecent,
     toggleDeleteMode,
-    handleDeleteVisit
+    handleDeleteVisit,
+    formatCompactTime,
+    isEditMode: () => deleteMode
   };
 })();

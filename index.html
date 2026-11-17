@@ -15,8 +15,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/design-system.css?v=19">
-  <link rel="stylesheet" href="css/app.css?v=19">
+  <link rel="stylesheet" href="css/design-system.css?v=20">
+  <link rel="stylesheet" href="css/app.css?v=20">
 
   <!-- Self-Hosted High Performance Vendor Libraries (Zero External CDN Latency) -->
   <script src="vendor/chart.min.js"></script>
@@ -123,6 +123,15 @@
         <div id="quickPatientsList" class="quick-patients-scroll"></div>
       </div>
 
+      <!-- Edit Mode Visual Banner (Activated when editing an existing session) -->
+      <div id="editModeBanner" class="edit-mode-banner" style="display: none;">
+        <div class="edit-banner-info">
+          <span class="edit-banner-badge">EDITING</span>
+          <span class="edit-banner-text" id="editBannerPatient">Editing session record</span>
+        </div>
+        <button type="button" class="btn-cancel-edit" onclick="PhysioClinical.cancelEditMode()" title="Cancel editing">✕ Cancel</button>
+      </div>
+
       <form id="entryForm" onsubmit="PhysioClinical.handleEntryFormSubmit(event)" class="entry-form-compact">
         <div class="card form-card">
           
@@ -154,7 +163,19 @@
             </div>
           </div>
 
-          <!-- Row 3: Session Type & Next Visit -->
+          <!-- Row 3: Session Timings (From Time & To Time) -->
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="field-label">From Time</label>
+              <input type="time" id="fromTime" oninput="PhysioClinical.handleFromTimeChange()">
+            </div>
+            <div class="form-group">
+              <label class="field-label">To Time</label>
+              <input type="time" id="toTime">
+            </div>
+          </div>
+
+          <!-- Row 4: Session Type & Next Visit -->
           <div class="grid-2">
             <div class="form-group">
               <label class="field-label">Session Type *</label>
@@ -646,13 +667,13 @@
   </div>
 
   <!-- Application Modules -->
-  <script src="js/config.js?v=19"></script>
-  <script src="js/auth.js?v=19"></script>
-  <script src="js/db.js?v=19"></script>
-  <script src="js/payments.js?v=19"></script>
-  <script src="js/clinical.js?v=19"></script>
-  <script src="js/ledger.js?v=19"></script>
-  <script src="js/analytics.js?v=19"></script>
-  <script src="js/app.js?v=19"></script>
+  <script src="js/config.js?v=20"></script>
+  <script src="js/auth.js?v=20"></script>
+  <script src="js/db.js?v=20"></script>
+  <script src="js/payments.js?v=20"></script>
+  <script src="js/clinical.js?v=20"></script>
+  <script src="js/ledger.js?v=20"></script>
+  <script src="js/analytics.js?v=20"></script>
+  <script src="js/app.js?v=20"></script>
 </body>
 </html>
